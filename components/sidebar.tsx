@@ -97,9 +97,9 @@ function Brand() {
   return (
     <Link href="/" className="block">
       <p className="font-serif text-2xl font-bold leading-tight tracking-tight">
-        Encore
+        Concert
         <br />
-        Archive
+        Collect
       </p>
       <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
         Your shows. Your story.
@@ -199,7 +199,7 @@ export function Sidebar() {
       {/* Mobile top bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background/85 px-4 py-3 backdrop-blur lg:hidden">
         <Link href="/" className="font-serif text-lg font-bold tracking-tight">
-          Encore Archive
+          Concert Collect
         </Link>
         <button
           type="button"

@@ -1,4 +1,4 @@
-# Encore Archive
+# Concert Collect
 
 **Your shows. Your story.** A "Discogs for live music memories" — every concert
 page combines the show info, the setlist, the poster and its print details,

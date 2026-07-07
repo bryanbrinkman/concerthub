@@ -1,5 +1,5 @@
 /**
- * Encore Archive — local seed data.
+ * Concert Collect — local seed data.
  *
  * Everything here is mock data so the app works with no backend and no auth.
  *

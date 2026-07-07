@@ -1,5 +1,5 @@
 /**
- * Encore Archive — core data model.
+ * Concert Collect — core data model.
  *
  * These types are designed to be future-ready: today they are populated from
  * local seed data in `lib/data.ts`, but the shapes mirror what we expect to

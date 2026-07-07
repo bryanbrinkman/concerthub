@@ -5,8 +5,8 @@ import { Sidebar } from "@/components/sidebar";
 
 export const metadata: Metadata = {
   title: {
-    default: "Encore Archive",
-    template: "%s · Encore Archive",
+    default: "Concert Collect",
+    template: "%s · Concert Collect",
   },
   description:
     "Your shows. Your story. A personal archive for live music memories — setlists, posters, ticket stubs, and everything you kept.",
