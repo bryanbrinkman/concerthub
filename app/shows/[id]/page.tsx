@@ -75,7 +75,7 @@ export default async function ShowDetailPage({
   ).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Top bar: back + quick actions */}
       <div className="flex items-center justify-between gap-3">
         <Link
@@ -110,8 +110,8 @@ export default async function ShowDetailPage({
       />
 
       {/* Main content + right rail */}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0 space-y-6">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
+        <div className="min-w-0 space-y-5">
           <Tabs defaultValue="overview">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -126,8 +126,8 @@ export default async function ShowDetailPage({
               <TabsTrigger value="notes">Notes</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid gap-6 lg:grid-cols-2">
+            <TabsContent value="overview" className="space-y-5">
+              <div className="grid gap-5 lg:grid-cols-2">
                 <PosterDetailsCard poster={poster} />
                 <section>
                   <div className="mb-3 flex items-center justify-between">
@@ -172,7 +172,7 @@ export default async function ShowDetailPage({
         </div>
 
         {/* Right rail — stacks below main content under xl */}
-        <aside className="min-w-0 space-y-6">
+        <aside className="min-w-0 space-y-5">
           <EphemeraGrid items={ephemeraItems} />
           <MemoryCard memory={memory} />
           <MediaLinksCard links={links} />

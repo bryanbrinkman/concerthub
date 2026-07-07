@@ -34,15 +34,21 @@ export function PhotoGrid({ photos, limit, className }: PhotoGridProps) {
         <GradientArt
           key={photo.id}
           gradient={photo.gradient}
+          imageUrl={photo.imageUrl}
+          imageAlt={photo.caption}
           className={cn(
-            "rounded-xl border border-border",
+            "rounded-lg border border-border",
             // vary tile shapes a little, like a real photo dump
             i % 3 === 0 ? "aspect-[4/3]" : "aspect-[16/10]",
           )}
         >
-          <div className="flex w-full flex-col justify-between p-3">
-            <Camera className="h-4 w-4 text-white/70" />
-            <p className="text-xs font-medium text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.6)]">
+          <div className="flex w-full flex-col justify-between p-2.5">
+            {photo.imageUrl ? (
+              <span />
+            ) : (
+              <Camera className="h-4 w-4 text-white/70" />
+            )}
+            <p className="w-fit rounded bg-black/45 px-1.5 py-0.5 text-[11px] font-medium text-white/90">
               {photo.caption}
             </p>
           </div>

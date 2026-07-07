@@ -20,7 +20,7 @@ export default function VenuesPage() {
           const venueShows = getShowsByVenue(venue.id);
           const attended = venueShows.filter((s) => s.attended).length;
           return (
-            <Card key={venue.id} className="transition-colors hover:border-primary/40">
+            <Card key={venue.id} className="transition-colors hover:border-white/20">
               <CardContent className="flex items-center gap-4 p-5">
                 <GradientArt
                   gradient={venue.gradient}

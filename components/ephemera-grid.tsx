@@ -52,14 +52,21 @@ export function EphemeraGrid({ items }: { items: EphemeraItem[] }) {
           return (
             <div
               key={item.id}
-              className="group overflow-hidden rounded-xl border border-border bg-secondary/40 transition-colors hover:border-primary/40"
+              className="group overflow-hidden rounded-lg border border-border bg-secondary/40 transition-colors hover:border-white/20"
             >
-              <GradientArt gradient={item.gradient} className="aspect-square">
-                <div className="flex w-full items-center justify-center">
-                  <Icon className="h-7 w-7 text-white/80 drop-shadow" />
-                </div>
+              <GradientArt
+                gradient={item.gradient}
+                imageUrl={item.imageUrl}
+                imageAlt={item.title}
+                className="aspect-square"
+              >
+                {item.imageUrl ? null : (
+                  <div className="flex w-full items-center justify-center">
+                    <Icon className="h-6 w-6 text-white/70 drop-shadow" />
+                  </div>
+                )}
               </GradientArt>
-              <div className="p-2.5">
+              <div className="p-2">
                 <p className="truncate text-xs font-medium">{item.title}</p>
                 {item.detail ? (
                   <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
@@ -73,7 +80,7 @@ export function EphemeraGrid({ items }: { items: EphemeraItem[] }) {
         {/* upload slot */}
         <button
           type="button"
-          className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+          className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground"
         >
           <Plus className="h-5 w-5" />
           <span className="px-2 text-center text-[11px]">Upload ephemera</span>

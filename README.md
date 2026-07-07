@@ -74,10 +74,12 @@ lib/
 
 ### Placeholder artwork
 
-No copyrighted poster/photo assets are included. Every visual is a generated
-gradient card (`components/gradient-art.tsx`). When real uploads or
-API-sourced images exist, swap `GradientArt`/`PosterArt` for `next/image`
-without touching the surrounding layout.
+No copyrighted poster/photo assets are included. Visuals are freely-licensed
+Unsplash photos (concert shots for photo grids, abstract art standing in for
+posters) layered over muted duotone gradients in
+`components/gradient-art.tsx` — if an image URL ever fails, the gradient
+shows instead of a broken image. Swap the `imageUrl` fields in `lib/data.ts`
+for real uploads or API-sourced art without touching layout.
 
 ## Live integrations
 

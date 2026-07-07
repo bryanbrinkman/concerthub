@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CalendarDays, Heart, MapPin } from "lucide-react";
 
 import type { Show } from "@/lib/types";
-import { getArtist, getTour, getVenue } from "@/lib/data";
+import { getArtist, getPostersForShow, getTour, getVenue } from "@/lib/data";
 import { formatShortDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PosterArt } from "@/components/gradient-art";
@@ -12,15 +12,17 @@ export function ShowCard({ show }: { show: Show }) {
   const artist = getArtist(show.artistId);
   const venue = getVenue(show.venueId);
   const tour = show.tourId ? getTour(show.tourId) : undefined;
+  const posterImage = getPostersForShow(show.id)[0]?.imageUrl;
 
   return (
     <Link
       href={`/shows/${show.id}`}
-      className="group block overflow-hidden rounded-2xl border border-border bg-card transition-colors hover:border-primary/40"
+      className="group block overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-white/20"
     >
-      <div className="p-3 pb-0">
+      <div className="p-2.5 pb-0">
         <PosterArt
           gradient={show.gradient}
+          imageUrl={posterImage}
           title={artist?.name ?? "Unknown artist"}
           subtitle={tour?.name}
           footer={
@@ -29,7 +31,7 @@ export function ShowCard({ show }: { show: Show }) {
           className="transition-transform duration-300 group-hover:scale-[1.015]"
         />
       </div>
-      <div className="space-y-1.5 p-4">
+      <div className="space-y-1.5 p-3">
         <div className="flex items-start justify-between gap-2">
           <p className="truncate font-medium leading-tight">
             {artist?.name ?? "Unknown artist"}

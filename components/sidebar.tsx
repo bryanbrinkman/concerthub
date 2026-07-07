@@ -71,10 +71,10 @@ function NavLink({
       href={item.href}
       onClick={onNavigate}
       className={cn(
-        "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+        "group flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors",
         active
-          ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
-          : "text-muted-foreground hover:bg-accent hover:text-foreground",
+          ? "bg-white/[0.07] text-foreground"
+          : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground",
       )}
     >
       <item.icon
@@ -113,11 +113,11 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="px-5 pb-6 pt-6">
+      <div className="px-5 pb-5 pt-5">
         <Brand />
       </div>
 
-      <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-4 scrollbar-none">
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4 scrollbar-none">
         <div className="space-y-0.5">
           {MAIN_NAV.map((item) => (
             <NavLink
@@ -130,7 +130,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
           {/* TODO: wire up global search (cmd-k palette) */}
           <button
             type="button"
-            className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground"
           >
             <Search className="h-4 w-4 shrink-0" />
             <span className="flex-1 truncate text-left">Search</span>
@@ -192,7 +192,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop rail */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-border bg-card/60 backdrop-blur lg:block">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-56 border-r border-border bg-[#0e0e11] lg:block">
         <SidebarBody />
       </aside>
 

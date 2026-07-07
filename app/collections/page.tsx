@@ -35,7 +35,7 @@ export default function CollectionsPage() {
           {collections.map((collection) => (
             <Card
               key={collection.id}
-              className="overflow-hidden transition-colors hover:border-primary/40"
+              className="overflow-hidden transition-colors hover:border-white/20"
             >
               <GradientArt gradient={collection.gradient} className="h-24">
                 <div className="flex w-full items-end p-4">

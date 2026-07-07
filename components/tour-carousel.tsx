@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import type { Show } from "@/lib/types";
-import { getArtist, getVenue } from "@/lib/data";
+import { getArtist, getPostersForShow, getVenue } from "@/lib/data";
 import { cn, formatShortDate } from "@/lib/utils";
 import { GradientArt } from "@/components/gradient-art";
 
@@ -30,7 +30,7 @@ export function TourCarousel({
   };
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5">
+    <section className="rounded-xl border border-border bg-card p-4">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-base font-semibold">{title}</h2>
         <div className="flex gap-1.5">
@@ -60,27 +60,32 @@ export function TourCarousel({
         {shows.map((show) => {
           const venue = getVenue(show.venueId);
           const artist = getArtist(show.artistId);
+          const posterImage = getPostersForShow(show.id)[0]?.imageUrl;
           const current = show.id === currentShowId;
           return (
             <Link
               key={show.id}
               href={`/shows/${show.id}`}
               className={cn(
-                "flex w-56 shrink-0 items-center gap-3 rounded-xl border bg-secondary/40 p-2.5 transition-colors",
+                "flex w-56 shrink-0 items-center gap-3 rounded-lg border bg-secondary/40 p-2 transition-colors",
                 current
                   ? "border-primary/60 ring-1 ring-primary/40"
-                  : "border-border hover:border-primary/40",
+                  : "border-border hover:border-white/20",
               )}
             >
               <GradientArt
                 gradient={show.gradient}
+                imageUrl={posterImage}
+                imageAlt={artist ? `${artist.name} poster` : "Show poster"}
                 className="aspect-[3/4] w-11 shrink-0 rounded-md"
               >
-                <div className="flex w-full items-end justify-center pb-1">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-white/80">
-                    {artist?.name.slice(0, 4)}
-                  </span>
-                </div>
+                {posterImage ? null : (
+                  <div className="flex w-full items-end justify-center pb-1">
+                    <span className="text-[8px] font-bold uppercase tracking-wider text-white/80">
+                      {artist?.name.slice(0, 4)}
+                    </span>
+                  </div>
+                )}
               </GradientArt>
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">

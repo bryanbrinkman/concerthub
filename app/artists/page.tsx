@@ -22,7 +22,7 @@ export default function ArtistsPage() {
           const attended = artistShows.filter((s) => s.attended);
           const firstShow = attended[attended.length - 1];
           return (
-            <Card key={artist.id} className="transition-colors hover:border-primary/40">
+            <Card key={artist.id} className="transition-colors hover:border-white/20">
               <CardContent className="flex items-start gap-4 p-5">
                 <GradientArt
                   gradient={artist.gradient}

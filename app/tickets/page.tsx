@@ -45,14 +45,18 @@ export default function TicketsPage() {
                 className="group block"
               >
                 {/* stub-styled card: art on the left, perforation, details right */}
-                <div className="flex overflow-hidden rounded-2xl border border-border bg-card transition-colors group-hover:border-primary/40">
+                <div className="flex overflow-hidden rounded-xl border border-border bg-card transition-colors group-hover:border-white/20">
                   <GradientArt
                     gradient={ticket.gradient}
+                    imageUrl={ticket.imageUrl}
+                    imageAlt={ticket.title}
                     className="w-20 shrink-0"
                   >
-                    <div className="flex w-full items-center justify-center">
-                      <Ticket className="h-6 w-6 text-white/85" />
-                    </div>
+                    {ticket.imageUrl ? null : (
+                      <div className="flex w-full items-center justify-center">
+                        <Ticket className="h-6 w-6 text-white/85" />
+                      </div>
+                    )}
                   </GradientArt>
                   <div className="w-px shrink-0 self-stretch border-l border-dashed border-border" />
                   <div className="min-w-0 flex-1 p-4">

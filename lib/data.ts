@@ -26,6 +26,14 @@ import type {
   Venue,
 } from "./types";
 
+/**
+ * Freely-licensed Unsplash photos used as stand-in imagery until real
+ * uploads / API art exists. Rendered as background layers over gradients,
+ * so a missing image degrades to the gradient, never a broken icon.
+ */
+const unsplash = (id: string) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=80`;
+
 /* ------------------------------------------------------------------ */
 /* Artists                                                             */
 /* ------------------------------------------------------------------ */
@@ -381,6 +389,9 @@ export const posters: Poster[] = [
     gradient: "aurora",
     owned: true,
     // expressoBeansId: 123456, // <- paste the real EB item id to activate
+    // Stand-in abstract art (EB imagery replaces this once an id is set
+    // and this line is removed — hand-set imageUrl wins over scraped).
+    imageUrl: unsplash("photo-1579546929518-9e396f3cc809"),
     editions: [
       {
         id: "ed-tame-msg-reg",
@@ -410,6 +421,7 @@ export const posters: Poster[] = [
     notes: "Night-specific variant with moon phase",
     gradient: "jade",
     owned: true,
+    imageUrl: unsplash("photo-1541701494587-cb58502866ab"),
     editions: [
       {
         id: "ed-khruangbin-rr-reg",
@@ -432,6 +444,7 @@ export const posters: Poster[] = [
     notes: "Wishlist — still hunting a copy",
     gradient: "ember",
     owned: false,
+    imageUrl: unsplash("photo-1550684376-efcbd6e3f031"),
     editions: [
       {
         id: "ed-wod-msg-reg",
@@ -489,6 +502,7 @@ export const ephemera: EphemeraItem[] = [
     title: "Hat",
     detail: "Embroidered logo snapback",
     gradient: "midnight",
+    imageUrl: unsplash("photo-1521369909029-2afed882baee"),
   },
   {
     id: "eph-tame-tee",
@@ -497,6 +511,7 @@ export const ephemera: EphemeraItem[] = [
     title: "Tour Tee",
     detail: "Slow Rush dateback · L",
     gradient: "gold",
+    imageUrl: unsplash("photo-1521572163474-6864f9cf17ab"),
   },
 
   // Khruangbin @ Red Rocks
@@ -662,23 +677,28 @@ export const collections: Collection[] = [
 /* Photo placeholders                                                  */
 /* ------------------------------------------------------------------ */
 
-/** Mock "photos from the night" — rendered as gradient cards until uploads exist. */
+/**
+ * Mock "photos from the night". The imageUrls are freely-licensed Unsplash
+ * concert photography standing in for the user's own uploads — the gradient
+ * still renders underneath, so a failed image degrades gracefully.
+ */
 export interface ShowPhoto {
   id: string;
   showId: string;
   caption: string;
   gradient: GradientKey;
+  imageUrl?: string;
 }
 
 export const showPhotos: ShowPhoto[] = [
-  { id: "ph-1", showId: "tame-impala-msg-2022", caption: "Lasers over the floor", gradient: "neon" },
-  { id: "ph-2", showId: "tame-impala-msg-2022", caption: "Marquee — sold out", gradient: "midnight" },
-  { id: "ph-3", showId: "tame-impala-msg-2022", caption: "The big red sun", gradient: "ember" },
-  { id: "ph-4", showId: "tame-impala-msg-2022", caption: "Confetti during Eventually", gradient: "gold" },
-  { id: "ph-5", showId: "tame-impala-msg-2022", caption: "Balloons at the encore", gradient: "aurora" },
-  { id: "ph-6", showId: "tame-impala-msg-2022", caption: "View from Sec 110", gradient: "dusk" },
-  { id: "ph-7", showId: "khruangbin-red-rocks-2023", caption: "Golden hour at the rocks", gradient: "gold" },
-  { id: "ph-8", showId: "khruangbin-red-rocks-2023", caption: "Moon over the stage", gradient: "midnight" },
+  { id: "ph-1", showId: "tame-impala-msg-2022", caption: "Lasers over the floor", gradient: "neon", imageUrl: unsplash("photo-1470229722913-7c0e2dbbafd3") },
+  { id: "ph-2", showId: "tame-impala-msg-2022", caption: "Stage from the boards", gradient: "midnight", imageUrl: unsplash("photo-1493225457124-a3eb161ffa5f") },
+  { id: "ph-3", showId: "tame-impala-msg-2022", caption: "The big red sun", gradient: "ember", imageUrl: unsplash("photo-1516450360452-9312f5e86fc7") },
+  { id: "ph-4", showId: "tame-impala-msg-2022", caption: "Confetti during Eventually", gradient: "gold", imageUrl: unsplash("photo-1533174072545-7a4b6ad7a6c3") },
+  { id: "ph-5", showId: "tame-impala-msg-2022", caption: "Crowd at the encore", gradient: "aurora", imageUrl: unsplash("photo-1501386761578-eac5c94b800a") },
+  { id: "ph-6", showId: "tame-impala-msg-2022", caption: "View from Sec 110", gradient: "dusk", imageUrl: unsplash("photo-1459749411175-04bf5292ceea") },
+  { id: "ph-7", showId: "khruangbin-red-rocks-2023", caption: "Golden hour at the rocks", gradient: "gold", imageUrl: unsplash("photo-1506157786151-b8491531f063") },
+  { id: "ph-8", showId: "khruangbin-red-rocks-2023", caption: "Lights over the stage", gradient: "midnight", imageUrl: unsplash("photo-1540039155733-5bb30b53aa14") },
 ];
 
 /* ------------------------------------------------------------------ */

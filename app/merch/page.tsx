@@ -43,12 +43,19 @@ export default function MerchPage() {
               <Link
                 key={item.id}
                 href={show ? `/shows/${show.id}` : "/shows"}
-                className="group block overflow-hidden rounded-2xl border border-border bg-card transition-colors hover:border-primary/40"
+                className="group block overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-white/20"
               >
-                <GradientArt gradient={item.gradient} className="aspect-square">
-                  <div className="flex w-full items-center justify-center">
-                    <Shirt className="h-8 w-8 text-white/85" />
-                  </div>
+                <GradientArt
+                  gradient={item.gradient}
+                  imageUrl={item.imageUrl}
+                  imageAlt={item.title}
+                  className="aspect-square"
+                >
+                  {item.imageUrl ? null : (
+                    <div className="flex w-full items-center justify-center">
+                      <Shirt className="h-8 w-8 text-white/85" />
+                    </div>
+                  )}
                 </GradientArt>
                 <div className="p-3">
                   <p className="truncate text-sm font-medium">{item.title}</p>

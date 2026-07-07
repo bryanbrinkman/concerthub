@@ -26,7 +26,7 @@ export function MemoryCard({ memory, title = "Your memory" }: MemoryCardProps) {
   }
 
   return (
-    <Card className="bg-gradient-to-b from-primary/10 to-card">
+    <Card>
       <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
         <CardTitle>{title}</CardTitle>
         <Button variant="ghost" size="sm">

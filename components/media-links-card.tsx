@@ -62,7 +62,7 @@ export function MediaLinksCard({ links }: { links: MediaLink[] }) {
               rel="noreferrer"
               className="group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent"
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors group-hover:bg-primary/20 group-hover:text-primary">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors group-hover:bg-white/10 group-hover:text-foreground">
                 <Icon className="h-4 w-4" />
               </span>
               <span className="min-w-0 flex-1">

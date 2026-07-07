@@ -28,11 +28,8 @@ interface ShowHeroProps {
 /** Hero band: poster, title block, meta, CTAs, and (on wide screens) the setlist. */
 export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHeroProps) {
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-border bg-card">
-      {/* soft purple wash behind the hero */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_120%_at_0%_0%,rgba(139,92,246,0.14),transparent_55%)]" />
-
-      <div className="relative grid gap-6 p-5 sm:p-6 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+    <section className="relative overflow-hidden rounded-xl border border-border bg-card">
+      <div className="relative grid gap-5 p-4 sm:p-5 lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_350px]">
         {/* Poster */}
         <PosterImage
           imageUrl={poster?.resolvedImageUrl}
@@ -44,7 +41,7 @@ export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHer
               ? `${venue.name} · ${formatShowDate(show.date)}`
               : formatShowDate(show.date)
           }
-          className="mx-auto w-full max-w-[260px] shadow-[0_20px_50px_-20px_rgba(139,92,246,0.45)] lg:mx-0"
+          className="mx-auto w-full max-w-[250px] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)] lg:mx-0"
         />
 
         {/* Title + meta + CTAs */}
@@ -96,11 +93,11 @@ export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHer
             {show.attended ? (
               <>
                 <div className="flex -space-x-2">
-                  {["from-violet-500 to-fuchsia-500", "from-cyan-500 to-blue-600", "from-amber-500 to-rose-500"].map(
+                  {["from-zinc-500 to-zinc-700", "from-stone-500 to-stone-700", "from-slate-500 to-slate-700"].map(
                     (g) => (
                       <div
                         key={g}
-                        className={`h-7 w-7 rounded-full border-2 border-card bg-gradient-to-br ${g}`}
+                        className={`h-6 w-6 rounded-full border-2 border-card bg-gradient-to-br ${g}`}
                       />
                     ),
                   )}

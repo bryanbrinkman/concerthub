@@ -126,6 +126,8 @@ export interface EphemeraItem {
   /** Dense collector metadata, e.g. "Sec 110 · Row 18 · Seat 7". */
   detail?: string;
   gradient: GradientKey;
+  /** Photo/scan of the item; gradient + icon placeholder when unset. */
+  imageUrl?: string;
 }
 
 export interface UserMemory {

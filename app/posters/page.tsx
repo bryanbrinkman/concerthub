@@ -41,7 +41,7 @@ export default async function PostersPage() {
             const show = poster.showId ? getShow(poster.showId) : undefined;
             const primary = poster.editions[0];
             const card = (
-              <div className="group h-full overflow-hidden rounded-2xl border border-border bg-card p-3 transition-colors hover:border-primary/40">
+              <div className="group h-full overflow-hidden rounded-xl border border-border bg-card p-3 transition-colors hover:border-white/20">
                 <PosterImage
                   imageUrl={poster.resolvedImageUrl}
                   gradient={poster.gradient}
