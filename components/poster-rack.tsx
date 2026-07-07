@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ExternalLink,
   FolderPlus,
+  Pencil,
 } from "lucide-react";
 
 import type { GradientKey } from "@/lib/types";
@@ -29,6 +30,8 @@ export interface RackPoster {
   ebUrl: string;
   showHref?: string;
   showLabel?: string;
+  /** Link to the edit form (archive owner only). */
+  editHref?: string;
 }
 
 /** One dark slat of the rack — the flipped-past (or upcoming) posters. */
@@ -230,6 +233,14 @@ export function PosterRack({ posters }: { posters: RackPoster[] }) {
               <FolderPlus />
               Add to collection
             </Button>
+            {poster.editHref ? (
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={poster.editHref}>
+                  <Pencil />
+                  Edit
+                </Link>
+              </Button>
+            ) : null}
           </div>
         </div>
       </div>

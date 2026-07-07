@@ -40,6 +40,7 @@ export default async function PostersPage() {
       showLabel: show
         ? `${artist?.name ?? "Show"} · ${formatShortDate(show.date)}`
         : undefined,
+      editHref: archive.demo ? undefined : `/edit/poster/${poster.id}`,
     };
   });
 

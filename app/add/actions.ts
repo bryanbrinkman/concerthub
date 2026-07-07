@@ -168,6 +168,60 @@ export async function addPosterAction(formData: FormData) {
   redirect(showId ? `/shows/${showId}` : "/posters");
 }
 
+export async function updatePosterAction(formData: FormData) {
+  const { userId, db } = await requireUserDb();
+  const posterId = str(formData, "posterId");
+  if (!posterId) return;
+
+  const [existing] = await db
+    .select()
+    .from(t.posters)
+    .where(and(eq(t.posters.id, posterId), eq(t.posters.userId, userId)));
+  if (!existing) return;
+
+  const title = str(formData, "title") || existing.title;
+  const yearInput = Number(str(formData, "year"));
+  const showId = optional(str(formData, "showId"));
+  if (showId) await assertOwnsShow(db, userId, showId);
+
+  const runSize = Number(str(formData, "runSize"));
+  const copyNumber = Number(str(formData, "copyNumber"));
+  const edition: Edition = {
+    // keep the edition id stable across edits
+    id: existing.editions?.[0]?.id ?? crypto.randomUUID(),
+    name: str(formData, "editionName") || "Regular",
+    runSize: Number.isFinite(runSize) && runSize > 0 ? runSize : undefined,
+    copyNumber:
+      Number.isFinite(copyNumber) && copyNumber > 0 ? copyNumber : undefined,
+    technique: optional(str(formData, "technique")),
+    dimensions: optional(str(formData, "dimensions")),
+    markings: optional(str(formData, "markings")),
+  };
+
+  const imageUrls = formData
+    .getAll("imageUrls")
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+
+  await db
+    .update(t.posters)
+    .set({
+      title,
+      designer: str(formData, "designer") || "Unknown",
+      year: Number.isFinite(yearInput) && yearInput > 0 ? yearInput : existing.year,
+      notes: optional(str(formData, "notes")) ?? null,
+      owned: formData.get("owned") !== null,
+      showId: showId ?? null,
+      imageUrl: imageUrls[0] ?? null,
+      imageUrls: imageUrls.length > 1 ? imageUrls.slice(1) : null,
+      editions: [edition],
+    })
+    .where(and(eq(t.posters.id, posterId), eq(t.posters.userId, userId)));
+
+  revalidatePath("/", "layout");
+  redirect(showId ? `/shows/${showId}` : "/posters");
+}
+
 export async function addPhotoAction(formData: FormData) {
   const { userId, db } = await requireUserDb();
   const showId = str(formData, "showId");

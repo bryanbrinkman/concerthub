@@ -16,8 +16,15 @@ const PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 const inputClass =
   "h-9 w-full rounded-lg border border-border bg-secondary px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-export function MultiImageField({ name = "imageUrls" }: { name?: string }) {
-  const [urls, setUrls] = React.useState<string[]>([]);
+export function MultiImageField({
+  name = "imageUrls",
+  defaultUrls,
+}: {
+  name?: string;
+  /** Prefill when editing an existing poster. */
+  defaultUrls?: string[];
+}) {
+  const [urls, setUrls] = React.useState<string[]>(defaultUrls ?? []);
   const [draft, setDraft] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);

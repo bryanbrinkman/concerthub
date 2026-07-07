@@ -1,4 +1,5 @@
-import { ExternalLink, FolderPlus, Frame, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { ExternalLink, FolderPlus, Frame, Pencil, Trash2 } from "lucide-react";
 
 import type { EnrichedPoster } from "@/lib/expressobeans";
 import { deletePosterAction } from "@/app/manage-actions";
@@ -126,19 +127,27 @@ export function PosterDetailsCard({
           Add to collection
         </Button>
         {canEdit ? (
-          <form action={deletePosterAction} className="ml-auto">
-            <input type="hidden" name="id" value={poster.id} />
-            <Button
-              type="submit"
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-destructive"
-              title="Remove this print from your archive"
-            >
-              <Trash2 />
-              Remove
+          <div className="ml-auto flex items-center gap-1">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/edit/poster/${poster.id}`}>
+                <Pencil />
+                Edit
+              </Link>
             </Button>
-          </form>
+            <form action={deletePosterAction}>
+              <input type="hidden" name="id" value={poster.id} />
+              <Button
+                type="submit"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive"
+                title="Remove this print from your archive"
+              >
+                <Trash2 />
+                Remove
+              </Button>
+            </form>
+          </div>
         ) : null}
       </CardFooter>
     </Card>

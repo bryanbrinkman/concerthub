@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { PosterArt } from "@/components/gradient-art";
+import { PosterGallery } from "@/components/poster-gallery";
 import { EmptyState } from "@/components/empty-state";
 import { toggleInterestAction } from "./actions";
 
@@ -44,6 +45,7 @@ export default async function PrintsPage() {
             designer: t.posters.designer,
             year: t.posters.year,
             imageUrl: t.posters.imageUrl,
+            imageUrls: t.posters.imageUrls,
             gradient: t.posters.gradient,
             ownerId: t.posters.userId,
             ownerName: t.users.name,
@@ -111,16 +113,28 @@ export default async function PrintsPage() {
               viewerId != null &&
               interests.some((i) => i.userId === viewerId);
 
+            const galleryImages = [
+              ...(poster.imageUrl ? [poster.imageUrl] : []),
+              ...(poster.imageUrls ?? []),
+            ];
+
             return (
               <div key={poster.id} className="flex flex-col">
-                <PosterArt
-                  gradient={(poster.gradient ?? "midnight") as GradientKey}
-                  imageUrl={poster.imageUrl ?? undefined}
-                  title={poster.title}
-                  subtitle={poster.designer}
-                  footer={String(poster.year)}
-                  className="shadow-[0_20px_45px_-20px_rgba(0,0,0,0.9)]"
-                />
+                {galleryImages.length > 0 ? (
+                  <PosterGallery
+                    images={galleryImages}
+                    title={poster.title}
+                    className="shadow-[0_20px_45px_-20px_rgba(0,0,0,0.9)]"
+                  />
+                ) : (
+                  <PosterArt
+                    gradient={(poster.gradient ?? "midnight") as GradientKey}
+                    title={poster.title}
+                    subtitle={poster.designer}
+                    footer={String(poster.year)}
+                    className="shadow-[0_20px_45px_-20px_rgba(0,0,0,0.9)]"
+                  />
+                )}
                 <div className="mt-2.5 flex-1 space-y-1 px-0.5">
                   <p className="truncate text-sm font-medium">{poster.title}</p>
                   <p className="truncate text-xs text-muted-foreground">
