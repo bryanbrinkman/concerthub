@@ -79,6 +79,36 @@ body {
   background: rgba(139, 92, 246, 0.35);
 }
 
+/* Poster rack page-flip (components/poster-rack.tsx) */
+@keyframes fan-in-fwd {
+  from {
+    transform: rotateY(-70deg);
+    opacity: 0.25;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
+@keyframes fan-in-back {
+  from {
+    transform: rotateY(70deg);
+    opacity: 0.25;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
+.animate-fan-in-fwd {
+  animation: fan-in-fwd 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: left center;
+}
+.animate-fan-in-back {
+  animation: fan-in-back 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: right center;
+}
+
 /* Thin scrollbars for the carousel + sidebar */
 .scrollbar-none {
   scrollbar-width: none;

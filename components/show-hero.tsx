@@ -30,7 +30,7 @@ export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHer
   return (
     <section className="relative overflow-hidden rounded-xl border border-border bg-card">
       <div className="relative grid gap-5 p-4 sm:p-5 lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_350px]">
-        {/* Poster */}
+        {/* Poster — pinned top-left */}
         <PosterImage
           imageUrl={poster?.resolvedImageUrl}
           gradient={show.gradient}
@@ -41,11 +41,12 @@ export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHer
               ? `${venue.name} · ${formatShowDate(show.date)}`
               : formatShowDate(show.date)
           }
-          className="mx-auto w-full max-w-[250px] shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)] lg:mx-0"
+          className="mx-auto w-full max-w-[250px] self-start shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)] lg:mx-0"
         />
 
-        {/* Title + meta + CTAs */}
-        <div className="flex flex-col justify-center gap-4 py-1">
+        {/* Title + meta + CTAs — top-aligned with the poster, even when the
+            setlist column is much taller */}
+        <div className="flex flex-col items-start justify-start gap-4 self-start py-1">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
