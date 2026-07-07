@@ -3,6 +3,7 @@ import {
   ArrowRight,
   CalendarDays,
   Download,
+  Frame,
   Image as ImageIcon,
   Sparkles,
   Ticket,
@@ -10,28 +11,38 @@ import {
 } from "lucide-react";
 
 import { seedDemoAction } from "@/app/seed-actions";
-
 import {
   allShows,
   archiveCounts,
   findArtist,
   findShow,
-  findTour,
   findVenue,
   getArchive,
   postersForShow,
 } from "@/lib/archive";
+import { formatShortDate } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
-import { ShowCard } from "@/components/show-card";
+import { PosterArt } from "@/components/gradient-art";
 import { MemoryCard } from "@/components/memory-card";
 import { EmptyState } from "@/components/empty-state";
 
 export default async function DashboardPage() {
   const archive = await getArchive();
   const counts = archiveCounts(archive);
-  const recentShows = allShows(archive).filter((s) => s.attended).slice(0, 4);
+
+  // The poster is the star: the front page showcases only shows whose
+  // pages have real poster artwork attached.
+  const posterShows = allShows(archive)
+    .flatMap((show) => {
+      const posterImage = postersForShow(archive, show.id).find(
+        (p) => p.imageUrl,
+      )?.imageUrl;
+      return posterImage ? [{ show, posterImage }] : [];
+    })
+    .slice(0, 8);
+
   const latestMemory = [...archive.memories].sort((a, b) =>
     b.createdAt.localeCompare(a.createdAt),
   )[0];
@@ -52,8 +63,8 @@ export default async function DashboardPage() {
         title={archive.demo ? "Welcome to Concert Collect" : "Welcome back"}
         subtitle={
           archive.demo
-            ? "A live music archive — every show, stub, and story in one place. Sign in to start yours."
-            : "Your live music archive — every show, stub, and story in one place."
+            ? "A live music archive where the poster is the star. Sign in to hang your own wall."
+            : "Your poster wall — the shows worth framing."
         }
         actions={
           <Button asChild>
@@ -82,53 +93,85 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {/* Recently archived */}
+      {/* The poster wall */}
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Recently archived</h2>
+          <h2 className="text-lg font-semibold">The poster wall</h2>
           <Link
-            href="/shows"
+            href="/posters"
             className="text-sm text-primary transition-colors hover:text-primary/80"
           >
-            View all
+            Fan through the rack
           </Link>
         </div>
-        {recentShows.length === 0 ? (
+        {posterShows.length === 0 ? (
           <div className="space-y-4">
             <EmptyState
-              icon={Download}
-              title="Your archive is empty"
-              description="Import your setlist.fm history to fill it in one click, or start with the demo shows."
+              icon={archive.shows.length === 0 ? Download : Frame}
+              title={
+                archive.shows.length === 0
+                  ? "Your archive is empty"
+                  : "No posters on the wall yet"
+              }
+              description={
+                archive.shows.length === 0
+                  ? "Import your setlist.fm history to fill it in one click, or start with the demo shows."
+                  : "Add poster artwork to a show and it takes the spotlight here."
+              }
+              actionLabel={
+                archive.shows.length === 0 ? undefined : "Add a poster"
+              }
+              actionHref={archive.shows.length === 0 ? undefined : "/add/poster"}
             />
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button asChild>
-                <Link href="/import">
-                  <Download />
-                  Import from setlist.fm
-                </Link>
-              </Button>
-              {!archive.demo ? (
-                <form action={seedDemoAction}>
-                  <Button variant="outline" type="submit">
-                    <Sparkles />
-                    Copy the demo shows into my archive
-                  </Button>
-                </form>
-              ) : null}
-            </div>
+            {archive.shows.length === 0 ? (
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button asChild>
+                  <Link href="/import">
+                    <Download />
+                    Import from setlist.fm
+                  </Link>
+                </Button>
+                {!archive.demo ? (
+                  <form action={seedDemoAction}>
+                    <Button variant="outline" type="submit">
+                      <Sparkles />
+                      Copy the demo shows into my archive
+                    </Button>
+                  </form>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {recentShows.map((show) => (
-              <ShowCard
-                key={show.id}
-                show={show}
-                artist={findArtist(archive, show.artistId)}
-                venue={findVenue(archive, show.venueId)}
-                tour={show.tourId ? findTour(archive, show.tourId) : undefined}
-                posterImage={postersForShow(archive, show.id)[0]?.imageUrl}
-              />
-            ))}
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4">
+            {posterShows.map(({ show, posterImage }) => {
+              const artist = findArtist(archive, show.artistId);
+              const venue = findVenue(archive, show.venueId);
+              return (
+                <Link
+                  key={show.id}
+                  href={`/shows/${show.id}`}
+                  className="group block"
+                >
+                  <PosterArt
+                    gradient={show.gradient}
+                    imageUrl={posterImage}
+                    title={artist?.name ?? "Unknown artist"}
+                    className="shadow-[0_20px_45px_-20px_rgba(0,0,0,0.9)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-[1.02]"
+                  />
+                  <div className="mt-2.5 px-0.5">
+                    <p className="truncate text-sm font-medium">
+                      {artist?.name ?? "Unknown artist"}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {venue?.name}
+                      {venue ? " · " : ""}
+                      {formatShortDate(show.date)}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>
