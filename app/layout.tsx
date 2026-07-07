@@ -2,9 +2,16 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 import { auth, authEnabled, missingAuthEnv } from "@/auth";
-import { archiveCounts, getArchive } from "@/lib/archive";
+import {
+  archiveCounts,
+  findArtist,
+  findVenue,
+  getArchive,
+} from "@/lib/archive";
+import { formatShortDate } from "@/lib/utils";
 import { Sidebar } from "@/components/sidebar";
 import { Onboarding } from "@/components/onboarding";
+import { SearchPalette, type SearchItem } from "@/components/search-palette";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://concertcollect.com"),
@@ -39,6 +46,36 @@ export default async function RootLayout({
   const counts = archiveCounts(archive);
   const session = authEnabled ? await auth() : null;
 
+  // ⌘K search index: the viewer's archive + app pages.
+  const searchItems: SearchItem[] = [
+    ...archive.shows.map((show) => ({
+      label: `${findArtist(archive, show.artistId)?.name ?? "Unknown"} — ${
+        findVenue(archive, show.venueId)?.name ?? ""
+      }`,
+      sublabel: formatShortDate(show.date),
+      href: `/shows/${show.id}`,
+      group: "Shows",
+    })),
+    ...archive.artists.map((artist) => ({
+      label: artist.name,
+      href: `/artists/${artist.id}`,
+      group: "Artists",
+    })),
+    ...archive.venues.map((venue) => ({
+      label: venue.name,
+      sublabel: venue.city,
+      href: `/venues/${venue.id}`,
+      group: "Venues",
+    })),
+    { label: "Poster rack", href: "/posters", group: "Pages" },
+    { label: "Trading Post", href: "/prints", group: "Pages" },
+    { label: "Import from setlist.fm", href: "/import", group: "Pages" },
+    { label: "Tickets", href: "/tickets", group: "Pages" },
+    { label: "Merch", href: "/merch", group: "Pages" },
+    { label: "Memories", href: "/memories", group: "Pages" },
+    { label: "Add a show", href: "/add/show", group: "Pages" },
+  ];
+
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
@@ -59,6 +96,8 @@ export default async function RootLayout({
         </main>
         {/* First-run welcome for signed-in users with an empty archive */}
         <Onboarding enabled={!archive.demo && archive.shows.length === 0} />
+        {/* ⌘K search over the viewer's archive */}
+        <SearchPalette items={searchItems} />
       </body>
     </html>
   );

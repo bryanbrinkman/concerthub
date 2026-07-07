@@ -27,6 +27,7 @@ import { PageHeader } from "@/components/page-header";
 import { PosterArt } from "@/components/gradient-art";
 import { MemoryCard } from "@/components/memory-card";
 import { EmptyState } from "@/components/empty-state";
+import { ShareButton } from "@/components/share-button";
 
 export default async function DashboardPage() {
   const archive = await getArchive();
@@ -67,12 +68,20 @@ export default async function DashboardPage() {
             : "Your poster wall — the shows worth framing."
         }
         actions={
-          <Button asChild>
-            <Link href="/shows">
-              All shows
-              <ArrowRight />
-            </Link>
-          </Button>
+          <>
+            {!archive.demo && archive.userId ? (
+              <ShareButton
+                path={`/u/${archive.userId}`}
+                label="Share my archive"
+              />
+            ) : null}
+            <Button asChild>
+              <Link href="/shows">
+                All shows
+                <ArrowRight />
+              </Link>
+            </Button>
+          </>
         }
       />
 

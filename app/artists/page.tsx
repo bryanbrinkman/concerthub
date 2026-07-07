@@ -34,10 +34,14 @@ export default async function ArtistsPage() {
             const attended = showsByArtist(archive, artist.id).filter(
               (s) => s.attended,
             );
-            const firstShow = attended[attended.length - 1];
             return (
-              <Card key={artist.id} className="transition-colors hover:border-white/20">
-                <CardContent className="flex items-start gap-4 p-4">
+              <Link
+                key={artist.id}
+                href={`/artists/${artist.id}`}
+                className="block"
+              >
+                <Card className="h-full transition-colors hover:border-white/20">
+                  <CardContent className="flex items-start gap-4 p-4">
                   <GradientArt
                     gradient={artist.gradient}
                     className="h-14 w-14 shrink-0 rounded-full"
@@ -66,21 +70,14 @@ export default async function ArtistsPage() {
                       </div>
                     ) : null}
                     <p className="mt-3 text-xs text-muted-foreground">
-                      {attended.length > 0 && firstShow ? (
-                        <Link
-                          href={`/shows/${firstShow.id}`}
-                          className="transition-colors hover:text-primary"
-                        >
-                          Seen {attended.length}{" "}
-                          {attended.length === 1 ? "time" : "times"} →
-                        </Link>
-                      ) : (
-                        "Not seen yet — on the list"
-                      )}
+                      {attended.length > 0
+                        ? `Seen ${attended.length} ${attended.length === 1 ? "time" : "times"} →`
+                        : "Not seen yet — on the list"}
                     </p>
                   </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

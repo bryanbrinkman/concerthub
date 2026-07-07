@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2, Download, ExternalLink, ListMusic, MapPin } from "lucide-react";
+import { CalendarDays, Download, ExternalLink, ListMusic, MapPin } from "lucide-react";
 
 import { authEnabled, currentUserId } from "@/auth";
 import { fetchAttendedShows } from "@/lib/setlistfm";
@@ -8,30 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { importAttendedAction } from "./actions";
+import { ImportRunner } from "@/components/import-runner";
 
 export const metadata = { title: "Import from setlist.fm" };
-// Import walks the whole attended history — allow up to a minute.
 export const maxDuration = 60;
 
 /**
- * Import a setlist.fm profile's attendance history. Signed-in users get a
- * real "Import all" that upserts shows into their archive (deduped on the
- * setlist.fm id, so re-imports are safe); signed-out visitors get a preview.
+ * Import a setlist.fm profile's attendance history. Signed-in users run a
+ * chunked import with live progress (components/import-runner.tsx +
+ * /api/import); signed-out visitors get a preview.
  */
 export default async function ImportPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    user?: string;
-    p?: string;
-    done?: string;
-    total?: string;
-    partial?: string;
-    error?: string;
-  }>;
+  searchParams: Promise<{ user?: string; p?: string }>;
 }) {
-  const { user, p, done, total, partial, error } = await searchParams;
+  const { user, p } = await searchParams;
   const username = user?.trim();
   const page = Math.max(1, Number(p) || 1);
   const signedIn = authEnabled && Boolean(await currentUserId());
@@ -58,29 +50,6 @@ export default async function ImportPage({
           Fetch shows
         </Button>
       </form>
-
-      {done ? (
-        <div className="mb-5 flex items-start gap-2.5 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm">
-          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
-          <p>
-            Imported <span className="font-medium">{done}</span>
-            {total ? ` of ${total}` : ""} shows into your archive.
-            {partial
-              ? " That was the first chunk of a very large history — run the import again to continue where it left off."
-              : ""}{" "}
-            <a href="/shows" className="text-primary hover:underline">
-              View your shows →
-            </a>
-          </p>
-        </div>
-      ) : null}
-      {error ? (
-        <div className="mb-5 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm">
-          {error === "signin"
-            ? "You need to sign in before importing."
-            : "The database isn't configured, so imports can't be saved yet."}
-        </div>
-      ) : null}
 
       {!username ? (
         <EmptyState
@@ -110,13 +79,7 @@ export default async function ImportPage({
               &apos;s profile
             </p>
             {signedIn ? (
-              <form action={importAttendedAction}>
-                <input type="hidden" name="username" value={username} />
-                <Button type="submit">
-                  <Download />
-                  Import all {result.total} shows
-                </Button>
-              </form>
+              <ImportRunner username={username} total={result.total} />
             ) : (
               <Button
                 disabled
@@ -180,7 +143,7 @@ export default async function ImportPage({
             ))}
           </div>
 
-          {/* Pagination */}
+          {/* Pagination for the preview list */}
           {result.total > result.itemsPerPage ? (
             <div className="flex items-center justify-between pt-2">
               <Button variant="outline" size="sm" asChild={page > 1} disabled={page <= 1}>

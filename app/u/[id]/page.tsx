@@ -1,0 +1,153 @@
+import { notFound } from "next/navigation";
+import { CalendarDays, MapPin } from "lucide-react";
+import { desc, eq } from "drizzle-orm";
+
+import { getDb } from "@/lib/db";
+import * as t from "@/lib/db/schema";
+import type { GradientKey } from "@/lib/types";
+import { formatShortDate, formatShowDate } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { PosterArt } from "@/components/gradient-art";
+import { TicketArt } from "@/components/ticket-art";
+
+export const metadata = { title: "Collector profile" };
+
+/**
+ * Public, read-only collector profile: their attended shows and poster
+ * wall. Deliberately excludes memories, ephemera details, and photos —
+ * those stay private to the archive owner for now.
+ */
+export default async function ProfilePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const db = getDb();
+  if (!db) notFound();
+
+  const [user] = await db
+    .select({ id: t.users.id, name: t.users.name })
+    .from(t.users)
+    .where(eq(t.users.id, id));
+  if (!user) notFound();
+
+  const showRows = await db
+    .select({
+      id: t.shows.id,
+      date: t.shows.date,
+      showTime: t.shows.showTime,
+      gradient: t.shows.gradient,
+      artistName: t.artists.name,
+      venueName: t.venues.name,
+      venueCity: t.venues.city,
+      venueRegion: t.venues.region,
+      favorite: t.userShows.favorite,
+    })
+    .from(t.userShows)
+    .innerJoin(t.shows, eq(t.userShows.showId, t.shows.id))
+    .innerJoin(t.artists, eq(t.shows.artistId, t.artists.id))
+    .innerJoin(t.venues, eq(t.shows.venueId, t.venues.id))
+    .where(eq(t.userShows.userId, user.id))
+    .orderBy(desc(t.shows.date));
+
+  const posterRows = await db
+    .select({
+      id: t.posters.id,
+      title: t.posters.title,
+      designer: t.posters.designer,
+      year: t.posters.year,
+      imageUrl: t.posters.imageUrl,
+      gradient: t.posters.gradient,
+    })
+    .from(t.posters)
+    .where(eq(t.posters.userId, user.id));
+
+  const wall = posterRows.filter((p) => p.imageUrl);
+  const name = user.name ?? "A collector";
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {name}&apos;s archive
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {showRows.length} {showRows.length === 1 ? "show" : "shows"} ·{" "}
+          {posterRows.length} {posterRows.length === 1 ? "print" : "prints"} —
+          on Concert Collect
+        </p>
+      </div>
+
+      {wall.length > 0 ? (
+        <section>
+          <h2 className="mb-4 text-lg font-semibold">Poster wall</h2>
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4">
+            {wall.map((poster) => (
+              <div key={poster.id}>
+                <PosterArt
+                  gradient={(poster.gradient ?? "midnight") as GradientKey}
+                  imageUrl={poster.imageUrl ?? undefined}
+                  title={poster.title}
+                  className="shadow-[0_20px_45px_-20px_rgba(0,0,0,0.9)]"
+                />
+                <div className="mt-2 px-0.5">
+                  <p className="truncate text-sm font-medium">{poster.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {poster.designer} · {poster.year}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <section>
+        <h2 className="mb-4 text-lg font-semibold">Shows</h2>
+        {showRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Nothing archived yet.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+            {showRows.map((show) => (
+              <div key={show.id}>
+                <TicketArt
+                  seedId={show.id}
+                  gradient={(show.gradient ?? "midnight") as GradientKey}
+                  artist={show.artistName}
+                  venue={show.venueName}
+                  cityLine={`${show.venueCity}${show.venueRegion ? `, ${show.venueRegion}` : ""}`}
+                  dateLine={formatShowDate(show.date)}
+                  timeLine={show.showTime ?? undefined}
+                />
+                <div className="mt-2 space-y-1 px-0.5">
+                  <p className="truncate text-sm font-medium">
+                    {show.artistName}
+                  </p>
+                  <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    {show.venueName}
+                  </p>
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <CalendarDays className="h-3 w-3 shrink-0" />
+                    {formatShortDate(show.date)}
+                  </p>
+                  {show.favorite ? <Badge variant="success">Favorite</Badge> : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <p className="text-xs text-muted-foreground">
+        Concert Collect — your shows, your story.{" "}
+        <a href="/" className="text-primary hover:underline">
+          Start your own archive
+        </a>
+      </p>
+    </div>
+  );
+}

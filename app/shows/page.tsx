@@ -3,6 +3,7 @@ import { Download, Plus } from "lucide-react";
 
 import {
   allShows,
+  ephemeraForShow,
   findArtist,
   findTour,
   findVenue,
@@ -61,6 +62,11 @@ export default async function ShowsPage() {
               venue={findVenue(archive, show.venueId)}
               tour={show.tourId ? findTour(archive, show.tourId) : undefined}
               posterImage={postersForShow(archive, show.id)[0]?.imageUrl}
+              ticketDetail={
+                ephemeraForShow(archive, show.id).find(
+                  (e) => e.kind === "ticket",
+                )?.detail
+              }
             />
           ))}
         </div>

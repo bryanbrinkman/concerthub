@@ -1,6 +1,7 @@
-import { ExternalLink, FolderPlus, Frame } from "lucide-react";
+import { ExternalLink, FolderPlus, Frame, Trash2 } from "lucide-react";
 
 import type { EnrichedPoster } from "@/lib/expressobeans";
+import { deletePosterAction } from "@/app/manage-actions";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +12,13 @@ import { EmptyState } from "@/components/empty-state";
 export function PosterDetailsCard({
   poster,
   addHref,
+  canEdit,
 }: {
   poster?: EnrichedPoster;
   /** Link to the add-poster form; when unset the CTA is decorative. */
   addHref?: string;
+  /** Viewer owns this archive — show the remove control. */
+  canEdit?: boolean;
 }) {
   if (!poster) {
     return (
@@ -106,6 +110,21 @@ export function PosterDetailsCard({
           <FolderPlus />
           Add to collection
         </Button>
+        {canEdit ? (
+          <form action={deletePosterAction} className="ml-auto">
+            <input type="hidden" name="id" value={poster.id} />
+            <Button
+              type="submit"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-destructive"
+              title="Remove this print from your archive"
+            >
+              <Trash2 />
+              Remove
+            </Button>
+          </form>
+        ) : null}
       </CardFooter>
     </Card>
   );

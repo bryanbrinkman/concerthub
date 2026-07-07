@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MapPin, Users } from "lucide-react";
 
 import { getArchive, showsByVenue } from "@/lib/archive";
@@ -34,8 +35,13 @@ export default async function VenuesPage() {
               (s) => s.attended,
             ).length;
             return (
-              <Card key={venue.id} className="transition-colors hover:border-white/20">
-                <CardContent className="flex items-center gap-4 p-4">
+              <Link
+                key={venue.id}
+                href={`/venues/${venue.id}`}
+                className="block"
+              >
+                <Card className="h-full transition-colors hover:border-white/20">
+                  <CardContent className="flex items-center gap-4 p-4">
                   <GradientArt
                     gradient={venue.gradient}
                     className="h-16 w-16 shrink-0 rounded-xl"
@@ -63,8 +69,9 @@ export default async function VenuesPage() {
                       ? `${attended} ${attended === 1 ? "show" : "shows"}`
                       : "Tracked"}
                   </Badge>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

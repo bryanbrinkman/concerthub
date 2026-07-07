@@ -39,6 +39,12 @@ interface TicketArtProps {
   /** Top small line; falls back to the classic "An Evening With". */
   tourLine?: string;
   gradient: GradientKey;
+  /** Real seat data (parsed from a ticket ephemera item) overrides the
+   * generated numbers. */
+  sec?: string;
+  row?: string;
+  seat?: string;
+  price?: string;
   className?: string;
 }
 
@@ -51,13 +57,23 @@ export function TicketArt({
   timeLine,
   tourLine,
   gradient,
+  sec: realSec,
+  row: realRow,
+  seat: realSeat,
+  price,
   className,
 }: TicketArtProps) {
   const h = hash(seedId);
-  const sec = 100 + (h % 300);
-  const row = 1 + ((h >> 3) % 30);
-  const seat = 1 + ((h >> 7) % 28);
+  const sec = realSec ?? String(100 + (h % 300));
+  const row = realRow ?? String(1 + ((h >> 3) % 30));
+  const seat = realSeat ?? String(1 + ((h >> 7) % 28));
   const serial = String(h % 100000000).padStart(8, "0");
+  const grid: Array<[string, string]> = [
+    ["SEC", sec],
+    ["ROW", row],
+    ["SEAT", seat],
+  ];
+  if (price) grid.push(["PRICE", price]);
 
   return (
     <div
@@ -95,14 +111,13 @@ export function TicketArt({
             {cityLine.toUpperCase()}
           </p>
         ) : null}
-        <div className="my-[2%] grid w-full grid-cols-3 border-y border-zinc-900/25 py-[3%]">
-          {(
-            [
-              ["SEC", sec],
-              ["ROW", row],
-              ["SEAT", seat],
-            ] as const
-          ).map(([label, value]) => (
+        <div
+          className={cn(
+            "my-[2%] grid w-full border-y border-zinc-900/25 py-[3%]",
+            grid.length === 4 ? "grid-cols-4" : "grid-cols-3",
+          )}
+        >
+          {grid.map(([label, value]) => (
             <div key={label}>
               <p className="text-[clamp(0.26rem,3cqw,0.45rem)] tracking-[0.2em] text-zinc-500">
                 {label}

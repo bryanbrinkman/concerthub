@@ -6,10 +6,13 @@ import {
   Plus,
   Shirt,
   Ticket,
+  Trash2,
   Upload,
   Watch,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+
+import { deleteEphemeraAction } from "@/app/manage-actions";
 
 import type { EphemeraItem, EphemeraKind } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,10 +33,13 @@ const KIND_ICONS: Record<EphemeraKind, LucideIcon> = {
 export function EphemeraGrid({
   items,
   addHref,
+  canEdit,
 }: {
   items: EphemeraItem[];
   /** Link to the add-ephemera form; when unset the CTA is decorative. */
   addHref?: string;
+  /** Viewer owns this archive — show delete controls. */
+  canEdit?: boolean;
 }) {
   if (items.length === 0) {
     return (
@@ -61,8 +67,24 @@ export function EphemeraGrid({
           return (
             <div
               key={item.id}
-              className="group overflow-hidden rounded-lg border border-border bg-secondary/40 transition-colors hover:border-white/20"
+              className="group relative overflow-hidden rounded-lg border border-border bg-secondary/40 transition-colors hover:border-white/20"
             >
+              {canEdit ? (
+                <form
+                  action={deleteEphemeraAction}
+                  className="absolute right-1.5 top-1.5 z-10 opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <input type="hidden" name="id" value={item.id} />
+                  <button
+                    type="submit"
+                    aria-label={`Delete ${item.title}`}
+                    title="Delete"
+                    className="cursor-pointer rounded-full bg-black/60 p-1.5 text-white/80 transition-colors hover:bg-black/80 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </form>
+              ) : null}
               <GradientArt
                 gradient={item.gradient}
                 imageUrl={item.imageUrl}

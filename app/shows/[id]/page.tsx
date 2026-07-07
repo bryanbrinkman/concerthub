@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Heart, MoreHorizontal, Share2 } from "lucide-react";
+import { ChevronLeft, Heart, MoreHorizontal, Trash2 } from "lucide-react";
+
+import { removeShowAction, toggleFavoriteAction } from "@/app/show-actions";
 
 import {
   ephemeraForShow,
@@ -30,6 +32,7 @@ import { MemoryCard } from "@/components/memory-card";
 import { MemoryForm } from "@/components/memory-form";
 import { TourCarousel, type TourCarouselItem } from "@/components/tour-carousel";
 import { MediaLinksCard } from "@/components/media-links-card";
+import { ShareButton } from "@/components/share-button";
 
 export async function generateMetadata({
   params,
@@ -69,7 +72,9 @@ export default async function ShowDetailPage({
     enrichPoster(postersForShow(archive, show.id)[0]),
   ]);
 
+  const canEdit = !archive.demo;
   const ephemeraItems = ephemeraForShow(archive, show.id);
+  const ticketDetail = ephemeraItems.find((e) => e.kind === "ticket")?.detail;
   const memory = memoryForShow(archive, show.id);
   const links = mediaLinksForShow(archive, show.id);
   const photos = photosForShow(archive, show.id);
@@ -94,9 +99,28 @@ export default async function ShowDetailPage({
     };
   });
 
-  // Signed-in users get a real write path for their memory.
+  // Signed-in users get a real write path for their memory (add + edit).
   const memoryPanel = memory ? (
-    <MemoryCard memory={memory} />
+    canEdit ? (
+      <div className="space-y-2">
+        <MemoryCard memory={memory} />
+        <details>
+          <summary className="cursor-pointer px-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
+            Edit or delete this memory
+          </summary>
+          <div className="mt-2">
+            <MemoryForm
+              showId={show.id}
+              defaultText={memory.text}
+              memoryId={memory.id}
+              title="Edit memory"
+            />
+          </div>
+        </details>
+      </div>
+    ) : (
+      <MemoryCard memory={memory} />
+    )
   ) : archive.demo ? (
     <MemoryCard memory={undefined} />
   ) : (
@@ -115,17 +139,51 @@ export default async function ShowDetailPage({
           Back to all shows
         </Link>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Heart className={show.favorite ? "fill-primary text-primary" : ""} />
-            Favorite
-          </Button>
-          <Button variant="outline" size="sm">
-            <Share2 />
-            Share
-          </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8" aria-label="More">
-            <MoreHorizontal />
-          </Button>
+          {canEdit ? (
+            <form action={toggleFavoriteAction}>
+              <input type="hidden" name="showId" value={show.id} />
+              <Button type="submit" variant="outline" size="sm">
+                <Heart
+                  className={show.favorite ? "fill-primary text-primary" : ""}
+                />
+                {show.favorite ? "Favorited" : "Favorite"}
+              </Button>
+            </form>
+          ) : (
+            <Button variant="outline" size="sm">
+              <Heart
+                className={show.favorite ? "fill-primary text-primary" : ""}
+              />
+              Favorite
+            </Button>
+          )}
+          <ShareButton />
+          {canEdit ? (
+            <details className="relative">
+              <summary
+                aria-label="More"
+                className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground [&::-webkit-details-marker]:hidden"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </summary>
+              <div className="absolute right-0 top-10 z-20 w-56 rounded-lg border border-border bg-popover p-1.5 shadow-xl">
+                <form action={removeShowAction}>
+                  <input type="hidden" name="showId" value={show.id} />
+                  <button
+                    type="submit"
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-destructive transition-colors hover:bg-accent"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remove from my archive
+                  </button>
+                </form>
+                <p className="px-2.5 pb-1 pt-0.5 text-[11px] text-muted-foreground">
+                  Deletes your notes, photos, and ephemera for this show.
+                  Posters are kept.
+                </p>
+              </div>
+            </details>
+          ) : null}
         </div>
       </div>
 
@@ -136,6 +194,8 @@ export default async function ShowDetailPage({
         tour={tour}
         setlist={setlist}
         poster={poster}
+        ticketDetail={ticketDetail}
+        canEdit={canEdit}
       />
 
       {/* Main content + right rail */}
@@ -157,7 +217,7 @@ export default async function ShowDetailPage({
 
             <TabsContent value="overview" className="space-y-5">
               <div className="grid gap-5 lg:grid-cols-2">
-                <PosterDetailsCard poster={poster} addHref={`/add/poster?show=${show.id}`} />
+                <PosterDetailsCard poster={poster} addHref={`/add/poster?show=${show.id}`} canEdit={canEdit} />
                 <section>
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-base font-semibold">
@@ -167,7 +227,7 @@ export default async function ShowDetailPage({
                       <span className="text-xs text-primary">View all</span>
                     ) : null}
                   </div>
-                  <PhotoGrid photos={photos} limit={4} addHref={`/add/photo?show=${show.id}`} />
+                  <PhotoGrid photos={photos} limit={4} addHref={`/add/photo?show=${show.id}`} canEdit={canEdit} />
                 </section>
               </div>
               <TourCarousel items={carouselItems} />
@@ -182,13 +242,14 @@ export default async function ShowDetailPage({
             </TabsContent>
 
             <TabsContent value="poster">
-              <PosterDetailsCard poster={poster} addHref={`/add/poster?show=${show.id}`} />
+              <PosterDetailsCard poster={poster} addHref={`/add/poster?show=${show.id}`} canEdit={canEdit} />
             </TabsContent>
 
             <TabsContent value="photos">
               <PhotoGrid
                 photos={photos}
                 addHref={`/add/photo?show=${show.id}`}
+                canEdit={canEdit}
                 className="sm:grid-cols-2 md:grid-cols-3"
               />
             </TabsContent>
@@ -203,7 +264,7 @@ export default async function ShowDetailPage({
 
         {/* Right rail — stacks below main content under xl */}
         <aside className="min-w-0 space-y-5">
-          <EphemeraGrid items={ephemeraItems} addHref={`/add/ephemera?show=${show.id}`} />
+          <EphemeraGrid items={ephemeraItems} addHref={`/add/ephemera?show=${show.id}`} canEdit={canEdit} />
           {memoryPanel}
           <MediaLinksCard links={links} />
         </aside>

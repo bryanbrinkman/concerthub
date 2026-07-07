@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CalendarDays, Heart, MapPin } from "lucide-react";
 
 import type { Artist, Show, Tour, Venue } from "@/lib/types";
-import { formatShortDate, formatShowDate } from "@/lib/utils";
+import { formatShortDate, formatShowDate, parseTicketStub } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PosterArt } from "@/components/gradient-art";
 import { TicketArt } from "@/components/ticket-art";
@@ -13,10 +13,20 @@ interface ShowCardProps {
   venue?: Venue;
   tour?: Tour;
   posterImage?: string;
+  /** Ticket ephemera detail line — real seats print on the stub art. */
+  ticketDetail?: string;
 }
 
 /** Poster-forward card linking to a show detail page. */
-export function ShowCard({ show, artist, venue, tour, posterImage }: ShowCardProps) {
+export function ShowCard({
+  show,
+  artist,
+  venue,
+  tour,
+  posterImage,
+  ticketDetail,
+}: ShowCardProps) {
+  const stub = parseTicketStub(ticketDetail);
   return (
     <Link
       href={`/shows/${show.id}`}
@@ -44,6 +54,10 @@ export function ShowCard({ show, artist, venue, tour, posterImage }: ShowCardPro
             dateLine={formatShowDate(show.date)}
             timeLine={show.showTime}
             tourLine={tour?.name}
+            sec={stub.sec}
+            row={stub.row}
+            seat={stub.seat}
+            price={stub.price}
             className="transition-transform duration-300 group-hover:scale-[1.015]"
           />
         )}

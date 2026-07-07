@@ -6,6 +6,7 @@ import { and, eq } from "drizzle-orm";
 import { currentUserId } from "@/auth";
 import { getDb } from "@/lib/db";
 import * as t from "@/lib/db/schema";
+import { sendEmail } from "@/lib/email";
 
 /**
  * Toggle "I'm interested" on another collector's print. Expressing interest
@@ -21,7 +22,7 @@ export async function toggleInterestAction(formData: FormData) {
   if (!userId || !db) return;
 
   const poster = await db
-    .select({ ownerId: t.posters.userId })
+    .select({ ownerId: t.posters.userId, title: t.posters.title })
     .from(t.posters)
     .where(eq(t.posters.id, posterId));
   // No self-interest: owners already have the print.
@@ -46,6 +47,23 @@ export async function toggleInterestAction(formData: FormData) {
       .insert(t.posterInterests)
       .values({ posterId, userId })
       .onConflictDoNothing();
+
+    // Notify the owner (no-op unless RESEND_API_KEY is configured).
+    const [owner] = await db
+      .select({ email: t.users.email, name: t.users.name })
+      .from(t.users)
+      .where(eq(t.users.id, poster[0].ownerId));
+    const [interested] = await db
+      .select({ email: t.users.email, name: t.users.name })
+      .from(t.users)
+      .where(eq(t.users.id, userId));
+    if (owner?.email) {
+      await sendEmail({
+        to: owner.email,
+        subject: `Someone's interested in your "${poster[0].title}" print`,
+        html: `<p>${interested?.name ?? "A collector"} raised a hand on your <strong>${poster[0].title}</strong> print on Concert Collect.</p><p>Reply to them at ${interested?.email ?? "(no email on file)"} to work out a sale or trade — Concert Collect doesn't handle payments.</p><p><a href="https://concertcollect.com/prints">See your prints on the Trading Post</a></p>`,
+      });
+    }
   }
 
   revalidatePath("/prints");

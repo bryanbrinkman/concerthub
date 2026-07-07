@@ -223,9 +223,12 @@ function SidebarBody({
               onNavigate={onNavigate}
             />
           ))}
-          {/* TODO: wire up global search (cmd-k palette) */}
           <button
             type="button"
+            onClick={() => {
+              onNavigate?.();
+              window.dispatchEvent(new CustomEvent("cc-open-search"));
+            }}
             className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground"
           >
             <Search className="h-4 w-4 shrink-0" />

@@ -10,7 +10,8 @@ import {
 
 import type { Artist, Setlist, Show, Tour, Venue } from "@/lib/types";
 import type { EnrichedPoster } from "@/lib/expressobeans";
-import { formatShowDate } from "@/lib/utils";
+import { formatShowDate, parseTicketStub } from "@/lib/utils";
+import { toggleAttendedAction } from "@/app/show-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PosterImage } from "@/components/poster-image";
@@ -25,10 +26,24 @@ interface ShowHeroProps {
   setlist?: Setlist;
   /** The show's poster, if cataloged — real EB artwork renders when available. */
   poster?: EnrichedPoster;
+  /** Ticket ephemera detail — real seats print on the stub art. */
+  ticketDetail?: string;
+  /** Viewer owns this archive: "I was there" becomes a real toggle. */
+  canEdit?: boolean;
 }
 
 /** Hero band: poster, title block, meta, CTAs, and (on wide screens) the setlist. */
-export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHeroProps) {
+export function ShowHero({
+  show,
+  artist,
+  venue,
+  tour,
+  setlist,
+  poster,
+  ticketDetail,
+  canEdit,
+}: ShowHeroProps) {
+  const stub = parseTicketStub(ticketDetail);
   return (
     <section className="relative overflow-hidden rounded-xl border border-border bg-card">
       <div className="relative grid gap-5 p-4 sm:p-5 lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_350px]">
@@ -54,6 +69,10 @@ export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHer
             dateLine={formatShowDate(show.date)}
             timeLine={show.showTime}
             tourLine={tour?.name}
+            sec={stub.sec}
+            row={stub.row}
+            seat={stub.seat}
+            price={stub.price}
             className="mx-auto w-full max-w-[250px] self-start shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)] lg:mx-0"
           />
         )}
@@ -129,10 +148,20 @@ export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHer
 
           <div className="flex flex-wrap gap-2 pt-1">
             {!show.attended ? (
-              <Button>
-                <BadgeCheck />
-                I was there
-              </Button>
+              canEdit ? (
+                <form action={toggleAttendedAction}>
+                  <input type="hidden" name="showId" value={show.id} />
+                  <Button type="submit">
+                    <BadgeCheck />
+                    I was there
+                  </Button>
+                </form>
+              ) : (
+                <Button>
+                  <BadgeCheck />
+                  I was there
+                </Button>
+              )
             ) : null}
             <Button variant={show.attended ? "default" : "secondary"}>
               <NotebookPen />
