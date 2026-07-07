@@ -33,8 +33,10 @@ Google and get their own archive backed by Postgres.
 
 1. **Postgres (Neon)** — create a free database at
    [neon.tech](https://neon.tech) (or via the Vercel Marketplace), put its
-   connection string in `.env.local` as `DATABASE_URL`, then create the
-   tables: `npm run db:push`
+   pooled connection string in `.env.local` as `DATABASE_URL`, then create
+   the tables — either `npm run db:push`, or paste
+   `drizzle/0000_init.sql` into the Neon console's SQL Editor and run it
+   (no local tooling needed; the file is idempotent).
 2. **Google OAuth** — create a Web application client at
    [console.cloud.google.com](https://console.cloud.google.com/apis/credentials)
    with redirect URI `http://localhost:3000/api/auth/callback/google` (and
