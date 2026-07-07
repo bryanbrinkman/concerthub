@@ -4,6 +4,7 @@ import "./globals.css";
 import { auth, authEnabled, missingAuthEnv } from "@/auth";
 import { archiveCounts, getArchive } from "@/lib/archive";
 import { Sidebar } from "@/components/sidebar";
+import { Onboarding } from "@/components/onboarding";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://concertcollect.com"),
@@ -56,6 +57,8 @@ export default async function RootLayout({
             {children}
           </div>
         </main>
+        {/* First-run welcome for signed-in users with an empty archive */}
+        <Onboarding enabled={!archive.demo && archive.shows.length === 0} />
       </body>
     </html>
   );
