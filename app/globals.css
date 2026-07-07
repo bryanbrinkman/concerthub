@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/* Encore Archive — dark, archival, collector-focused theme            */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --background: #0a0b12;
+  --foreground: #e7e9f2;
+  --card: #10121d;
+  --card-foreground: #e7e9f2;
+  --popover: #12141f;
+  --popover-foreground: #e7e9f2;
+  --primary: #8b5cf6;
+  --primary-foreground: #f5f3ff;
+  --secondary: #1a1d2d;
+  --secondary-foreground: #c9cde0;
+  --muted: #161927;
+  --muted-foreground: #8a91ad;
+  --accent: #1e2136;
+  --accent-foreground: #e7e9f2;
+  --destructive: #f87171;
+  --destructive-foreground: #fef2f2;
+  --border: rgba(147, 158, 205, 0.14);
+  --input: rgba(147, 158, 205, 0.2);
+  --ring: rgba(139, 92, 246, 0.6);
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  /* Faint archival wash so large surfaces are never flat black */
+  background-image:
+    radial-gradient(
+      1100px 500px at 15% -10%,
+      rgba(139, 92, 246, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 420px at 110% 10%,
+      rgba(56, 89, 199, 0.07),
+      transparent 55%
+    );
+  background-attachment: fixed;
+}
+
+* {
+  border-color: var(--border);
+  outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+}
+
+/* Thin scrollbars for the carousel + sidebar */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

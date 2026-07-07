@@ -1,0 +1,168 @@
+/**
+ * Encore Archive — core data model.
+ *
+ * These types are designed to be future-ready: today they are populated from
+ * local seed data in `lib/data.ts`, but the shapes mirror what we expect to
+ * receive from external sources (setlist.fm for setlists, Expresso Beans for
+ * poster/print market data) so swapping in real APIs later is low-friction.
+ */
+
+/** Named gradient used for generated placeholder artwork (see components/gradient-art.tsx). */
+export type GradientKey =
+  | "aurora"
+  | "dusk"
+  | "ember"
+  | "ocean"
+  | "jade"
+  | "gold"
+  | "midnight"
+  | "neon";
+
+export interface Artist {
+  id: string;
+  name: string;
+  genres: string[];
+  hometown?: string;
+  /** Placeholder art until real artist imagery exists. */
+  gradient: GradientKey;
+  // TODO(api): add `setlistFmMbid` (MusicBrainz id) for setlist.fm lookups.
+}
+
+export interface Venue {
+  id: string;
+  name: string;
+  city: string;
+  region?: string; // state / province
+  country: string;
+  capacity?: number;
+  gradient: GradientKey;
+  // TODO(api): add `setlistFmVenueId` for setlist.fm venue matching.
+}
+
+export interface Tour {
+  id: string;
+  artistId: string;
+  name: string;
+  years: string; // e.g. "2022–2023"
+}
+
+export interface Song {
+  title: string;
+  /** Cover of another artist's song. */
+  coverOf?: string;
+  /** Anything notable — guest, debut, tease, etc. */
+  note?: string;
+}
+
+export interface SetlistSet {
+  /** e.g. "Set 1", "Encore" */
+  name: string;
+  songs: Song[];
+}
+
+export interface Setlist {
+  id: string;
+  showId: string;
+  sets: SetlistSet[];
+  source: "user" | "setlist.fm";
+  sourceUrl?: string;
+  // TODO(api): hydrate from the setlist.fm REST API
+  // (GET /rest/1.0/setlist/{setlistId}) and store the raw payload alongside.
+}
+
+/** A single print run / variant of a poster (regular, foil, AP, etc.). */
+export interface Edition {
+  id: string;
+  name: string; // e.g. "Regular", "Foil Variant", "Artist Proof"
+  runSize?: number;
+  /** The collector's copy number within the run, if owned. */
+  copyNumber?: number;
+  technique?: string; // e.g. "6-color screen print"
+  dimensions?: string; // e.g. "18\" x 24\""
+  markings?: string; // e.g. "Signed & numbered in pencil"
+}
+
+export interface Poster {
+  id: string;
+  showId?: string;
+  tourId?: string;
+  title: string;
+  /** The print artist / designer, not the band. */
+  designer: string;
+  year: number;
+  editions: Edition[];
+  notes?: string;
+  gradient: GradientKey;
+  owned: boolean;
+  // TODO(api): add `expressoBeansId` + market data (avg sale, last sale)
+  // pulled from Expresso Beans / EB Nation.
+}
+
+export type EphemeraKind =
+  | "ticket"
+  | "laminate"
+  | "wristband"
+  | "poster"
+  | "apparel"
+  | "other";
+
+export interface EphemeraItem {
+  id: string;
+  showId: string;
+  kind: EphemeraKind;
+  title: string;
+  /** Dense collector metadata, e.g. "Sec 110 · Row 18 · Seat 7". */
+  detail?: string;
+  gradient: GradientKey;
+}
+
+export interface UserMemory {
+  id: string;
+  showId: string;
+  text: string;
+  /** ISO date the memory was written. */
+  createdAt: string;
+  attendedWith?: string[];
+}
+
+export type MediaLinkKind =
+  | "setlistfm"
+  | "expressobeans"
+  | "audio"
+  | "video"
+  | "photos"
+  | "streaming";
+
+export interface MediaLink {
+  id: string;
+  showId: string;
+  kind: MediaLinkKind;
+  label: string;
+  sublabel?: string; // e.g. "YouTube", "by tapername"
+  duration?: string; // e.g. "1:45:21"
+  url: string;
+}
+
+export interface Show {
+  id: string;
+  artistId: string;
+  venueId: string;
+  tourId?: string;
+  /** ISO date, local to the venue. */
+  date: string;
+  showTime?: string; // e.g. "7:30 PM"
+  attended: boolean;
+  favorite: boolean;
+  /** Others in the user's circle who were there (mock for now). */
+  attendeeCount?: number;
+  gradient: GradientKey;
+}
+
+/** A user-curated grouping of shows/items — binders, wishlists, tour runs. */
+export interface Collection {
+  id: string;
+  name: string;
+  description: string;
+  itemCount: number;
+  gradient: GradientKey;
+}
