@@ -35,9 +35,11 @@ export default async function ShowsPage() {
                 Import from setlist.fm
               </Link>
             </Button>
-            <Button>
-              <Plus />
-              Add show
+            <Button asChild>
+              <Link href="/add/show">
+                <Plus />
+                Add show
+              </Link>
             </Button>
           </>
         }

@@ -2,12 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { currentUserId } from "@/auth";
 import { getDb, type Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { gradientFor } from "@/lib/archive";
+import { upsertArtist, upsertTour, upsertVenue } from "@/lib/upserts";
 import { fetchAttendedShows, type ImportedShow } from "@/lib/setlistfm";
 
 /**
@@ -22,76 +23,6 @@ const PAGE_DELAY_MS = 400;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function upsertArtist(db: Db, name: string): Promise<string> {
-  const existing = await db
-    .select({ id: t.artists.id })
-    .from(t.artists)
-    .where(eq(t.artists.name, name));
-  if (existing[0]) return existing[0].id;
-  const inserted = await db
-    .insert(t.artists)
-    .values({ name, gradient: gradientFor(name) })
-    .onConflictDoNothing()
-    .returning({ id: t.artists.id });
-  if (inserted[0]) return inserted[0].id;
-  // Lost a race with a concurrent insert — read it back.
-  const again = await db
-    .select({ id: t.artists.id })
-    .from(t.artists)
-    .where(eq(t.artists.name, name));
-  return again[0].id;
-}
-
-async function upsertVenue(db: Db, item: ImportedShow): Promise<string> {
-  const { venueName: name, city } = item;
-  const existing = await db
-    .select({ id: t.venues.id })
-    .from(t.venues)
-    .where(and(eq(t.venues.name, name), eq(t.venues.city, city)));
-  if (existing[0]) return existing[0].id;
-  const inserted = await db
-    .insert(t.venues)
-    .values({
-      name,
-      city,
-      region: item.region,
-      country: item.country,
-      gradient: gradientFor(name + city),
-    })
-    .onConflictDoNothing()
-    .returning({ id: t.venues.id });
-  if (inserted[0]) return inserted[0].id;
-  const again = await db
-    .select({ id: t.venues.id })
-    .from(t.venues)
-    .where(and(eq(t.venues.name, name), eq(t.venues.city, city)));
-  return again[0].id;
-}
-
-async function upsertTour(
-  db: Db,
-  artistId: string,
-  name: string,
-  year: string,
-): Promise<string> {
-  const existing = await db
-    .select({ id: t.tours.id })
-    .from(t.tours)
-    .where(and(eq(t.tours.artistId, artistId), eq(t.tours.name, name)));
-  if (existing[0]) return existing[0].id;
-  const inserted = await db
-    .insert(t.tours)
-    .values({ artistId, name, years: year })
-    .onConflictDoNothing()
-    .returning({ id: t.tours.id });
-  if (inserted[0]) return inserted[0].id;
-  const again = await db
-    .select({ id: t.tours.id })
-    .from(t.tours)
-    .where(and(eq(t.tours.artistId, artistId), eq(t.tours.name, name)));
-  return again[0].id;
-}
-
 async function upsertShow(db: Db, item: ImportedShow): Promise<string> {
   const existing = await db
     .select({ id: t.shows.id })
@@ -100,7 +31,13 @@ async function upsertShow(db: Db, item: ImportedShow): Promise<string> {
   if (existing[0]) return existing[0].id;
 
   const artistId = await upsertArtist(db, item.artistName);
-  const venueId = await upsertVenue(db, item);
+  const venueId = await upsertVenue(
+    db,
+    item.venueName,
+    item.city,
+    item.region,
+    item.country,
+  );
   const tourId = item.tourName
     ? await upsertTour(db, artistId, item.tourName, item.date.slice(0, 4))
     : undefined;

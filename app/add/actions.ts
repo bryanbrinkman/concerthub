@@ -8,6 +8,7 @@ import { currentUserId } from "@/auth";
 import { getDb, type Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { gradientFor } from "@/lib/archive";
+import { upsertArtist, upsertTour, upsertVenue } from "@/lib/upserts";
 import type { Edition, EphemeraKind } from "@/lib/types";
 
 /** Server actions behind the add-item forms (/add/...). */
@@ -35,6 +36,68 @@ const str = (formData: FormData, key: string): string =>
 
 const optional = (value: string): string | undefined =>
   value.length > 0 ? value : undefined;
+
+export async function addShowAction(formData: FormData) {
+  const { userId, db } = await requireUserDb();
+  const artistName = str(formData, "artistName");
+  const venueName = str(formData, "venueName");
+  const city = str(formData, "city");
+  const date = str(formData, "date"); // yyyy-mm-dd from <input type="date">
+  if (!artistName || !venueName || !date) return;
+
+  const artistId = await upsertArtist(db, artistName);
+  const venueId = await upsertVenue(
+    db,
+    venueName,
+    city,
+    optional(str(formData, "region")),
+    optional(str(formData, "country")),
+  );
+  const tourName = optional(str(formData, "tourName"));
+  const tourId = tourName
+    ? await upsertTour(db, artistId, tourName, date.slice(0, 4))
+    : undefined;
+
+  // Reuse an identical canonical show if one already exists.
+  const existing = await db
+    .select({ id: t.shows.id })
+    .from(t.shows)
+    .where(
+      and(
+        eq(t.shows.artistId, artistId),
+        eq(t.shows.venueId, venueId),
+        eq(t.shows.date, date),
+      ),
+    );
+  let showId = existing[0]?.id;
+  if (!showId) {
+    const inserted = await db
+      .insert(t.shows)
+      .values({
+        artistId,
+        venueId,
+        tourId,
+        date,
+        showTime: optional(str(formData, "showTime")),
+        gradient: gradientFor(artistName + date),
+      })
+      .returning({ id: t.shows.id });
+    showId = inserted[0].id;
+  }
+
+  await db
+    .insert(t.userShows)
+    .values({
+      userId,
+      showId,
+      attended: true,
+      favorite: formData.get("favorite") !== null,
+    })
+    .onConflictDoNothing();
+
+  revalidatePath("/", "layout");
+  redirect(`/shows/${showId}`);
+}
 
 export async function addEphemeraAction(formData: FormData) {
   const { userId, db } = await requireUserDb();
