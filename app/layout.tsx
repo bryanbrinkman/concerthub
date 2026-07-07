@@ -4,12 +4,27 @@ import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://concertcollect.com"),
   title: {
     default: "Concert Collect",
     template: "%s · Concert Collect",
   },
   description:
     "Your shows. Your story. A personal archive for live music memories — setlists, posters, ticket stubs, and everything you kept.",
+  openGraph: {
+    title: "Concert Collect",
+    description:
+      "Your shows. Your story. A personal archive for live music memories.",
+    url: "https://concertcollect.com",
+    siteName: "Concert Collect",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Concert Collect",
+    description:
+      "Your shows. Your story. A personal archive for live music memories.",
+  },
 };
 
 export default function RootLayout({
