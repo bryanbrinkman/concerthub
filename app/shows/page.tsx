@@ -1,4 +1,5 @@
-import { Plus } from "lucide-react";
+import Link from "next/link";
+import { Download, Plus } from "lucide-react";
 
 import { getAllShows } from "@/lib/data";
 import { Button } from "@/components/ui/button";
@@ -16,10 +17,18 @@ export default function ShowsPage() {
         title="All Shows"
         subtitle={`${allShows.length} shows in your archive — attended and tracked.`}
         actions={
-          <Button>
-            <Plus />
-            Add show
-          </Button>
+          <>
+            <Button variant="outline" asChild>
+              <Link href="/import">
+                <Download />
+                Import from setlist.fm
+              </Link>
+            </Button>
+            <Button>
+              <Plus />
+              Add show
+            </Button>
+          </>
         }
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

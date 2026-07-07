@@ -33,16 +33,32 @@ interface SfmSet {
   song?: SfmSong[];
 }
 
+interface SfmCity {
+  name?: string;
+  state?: string;
+  stateCode?: string;
+  country?: { code?: string; name?: string };
+}
+
 interface SfmSetlist {
   id: string;
   eventDate: string; // "14-09-2022"
   url?: string;
-  venue?: { name?: string; city?: { name?: string } };
+  artist?: { name?: string; mbid?: string };
+  venue?: { name?: string; city?: SfmCity };
+  tour?: { name?: string };
   sets?: { set?: SfmSet[] };
 }
 
 interface SfmSearchResponse {
   setlist?: SfmSetlist[];
+}
+
+interface SfmAttendedResponse {
+  setlist?: SfmSetlist[];
+  total?: number;
+  page?: number;
+  itemsPerPage?: number;
 }
 
 /* ---- Helpers ---- */
@@ -51,6 +67,12 @@ interface SfmSearchResponse {
 function toSetlistFmDate(isoDate: string): string {
   const [year, month, day] = isoDate.split("-");
   return `${day}-${month}-${year}`;
+}
+
+/** "14-09-2022" (setlist.fm) -> "2022-09-14" (ours). */
+function fromSetlistFmDate(eventDate: string): string {
+  const [day, month, year] = eventDate.split("-");
+  return `${year}-${month}-${day}`;
 }
 
 function normalizeSets(raw: SfmSet[]): SetlistSet[] {
@@ -121,6 +143,114 @@ async function searchSetlists(
 
   const data = (await res.json()) as SfmSearchResponse;
   return data.setlist ?? [];
+}
+
+/* ---- Profile import (attended shows) ---- */
+
+/** A show pulled from a setlist.fm user's attendance history. */
+export interface ImportedShow {
+  /** setlist.fm setlist id — stable key for dedupe on import. */
+  setlistFmId: string;
+  artistName: string;
+  venueName: string;
+  city: string;
+  region?: string;
+  country?: string;
+  /** ISO date. */
+  date: string;
+  tourName?: string;
+  songCount: number;
+  url?: string;
+}
+
+export type AttendedResult =
+  | {
+      ok: true;
+      shows: ImportedShow[];
+      total: number;
+      page: number;
+      itemsPerPage: number;
+    }
+  | { ok: false; error: string };
+
+function normalizeImportedShow(raw: SfmSetlist): ImportedShow {
+  const city = raw.venue?.city;
+  return {
+    setlistFmId: raw.id,
+    artistName: raw.artist?.name ?? "Unknown artist",
+    venueName: raw.venue?.name ?? "Unknown venue",
+    city: city?.name ?? "",
+    region: city?.stateCode ?? city?.state,
+    country: city?.country?.name,
+    date: fromSetlistFmDate(raw.eventDate),
+    tourName: raw.tour?.name,
+    songCount: (raw.sets?.set ?? []).reduce(
+      (n, set) => n + (set.song?.length ?? 0),
+      0,
+    ),
+    url: raw.url,
+  };
+}
+
+/**
+ * Fetch a page of shows a setlist.fm user has marked as attended
+ * (GET /rest/1.0/user/{userId}/attended).
+ *
+ * TODO(persistence): once real storage exists, map these into Show /
+ * Artist / Venue rows (keyed by setlistFmId for dedupe) instead of only
+ * previewing them — see app/import/page.tsx.
+ */
+export async function fetchAttendedShows(
+  userId: string,
+  page = 1,
+): Promise<AttendedResult> {
+  const apiKey = process.env.SETLISTFM_API_KEY;
+  if (!apiKey) {
+    return {
+      ok: false,
+      error:
+        "SETLISTFM_API_KEY is not configured. Add it to .env.local (and your Vercel environment variables) to enable imports.",
+    };
+  }
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/user/${encodeURIComponent(userId)}/attended?p=${page}`,
+      {
+        headers: { "x-api-key": apiKey, Accept: "application/json" },
+        // Personal, frequently-changing data — don't cache.
+        cache: "no-store",
+      },
+    );
+
+    if (res.status === 404) {
+      return {
+        ok: false,
+        error: `No setlist.fm user "${userId}" found (or they have no attended shows).`,
+      };
+    }
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `setlist.fm returned HTTP ${res.status}. Try again in a moment.`,
+      };
+    }
+
+    const data = (await res.json()) as SfmAttendedResponse;
+    return {
+      ok: true,
+      shows: (data.setlist ?? []).map(normalizeImportedShow),
+      total: data.total ?? data.setlist?.length ?? 0,
+      page: data.page ?? page,
+      itemsPerPage: data.itemsPerPage ?? 20,
+    };
+  } catch (error) {
+    console.warn(`[setlistfm] attended fetch failed for ${userId}:`, error);
+    return {
+      ok: false,
+      error: "Couldn't reach setlist.fm. Check your connection and try again.",
+    };
+  }
 }
 
 /**

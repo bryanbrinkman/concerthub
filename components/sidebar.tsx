@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
+  Download,
   Heart,
   Home,
   Image as ImageIcon,
@@ -40,6 +41,7 @@ const MAIN_NAV: NavItem[] = [
   { label: "Venues", href: "/venues", icon: MapPin },
   { label: "Collections", href: "/collections", icon: Library },
   { label: "Memories", href: "/memories", icon: StickyNote },
+  { label: "Import", href: "/import", icon: Download },
 ];
 
 const COLLECTION_NAV: NavItem[] = [

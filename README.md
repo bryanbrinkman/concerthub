@@ -101,6 +101,12 @@ page. Setup:
 No key (or no match) = the seeded setlists in `lib/data.ts` render instead.
 Responses are cached for 24h via `next: { revalidate }`.
 
+**Profile import** (`/import`): enter a setlist.fm username and the app pulls
+their attended-shows history live from the API (`user/{id}/attended`), with
+pagination. Today it's a preview; the "Import all" button activates once
+accounts + storage exist (see `TODO(persistence)` in `lib/setlistfm.ts` and
+`app/import/page.tsx` — imports dedupe on setlist.fm's setlist id).
+
 ### Expresso Beans imagery (`lib/expressobeans.ts`)
 
 Expresso Beans has no public API, so this is a light server-side read of an

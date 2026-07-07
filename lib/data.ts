@@ -36,6 +36,29 @@ export const artists: Artist[] = [
     hometown: "Los Angeles, CA",
     gradient: "ember",
   },
+  {
+    // Billed as "Jeff Lynne's ELO" — matching setlist.fm's artist name so
+    // the live setlist lookup resolves.
+    id: "jeff-lynnes-elo",
+    name: "Jeff Lynne's ELO",
+    genres: ["Symphonic Rock", "Classic Pop"],
+    hometown: "Birmingham, UK",
+    gradient: "neon",
+  },
+  {
+    id: "slightly-stoopid",
+    name: "Slightly Stoopid",
+    genres: ["Reggae Rock", "Dub"],
+    hometown: "San Diego, CA",
+    gradient: "jade",
+  },
+  {
+    id: "franz-ferdinand",
+    name: "Franz Ferdinand",
+    genres: ["Indie Rock", "Post-Punk Revival"],
+    hometown: "Glasgow, Scotland",
+    gradient: "gold",
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -52,6 +75,33 @@ export const venues: Venue[] = [
     capacity: 1800,
     gradient: "dusk",
   },
+  {
+    id: "msg",
+    name: "Madison Square Garden",
+    city: "New York",
+    region: "NY",
+    country: "USA",
+    capacity: 20789,
+    gradient: "midnight",
+  },
+  {
+    id: "greek-theatre-berkeley",
+    name: "Greek Theatre",
+    city: "Berkeley",
+    region: "CA",
+    country: "USA",
+    capacity: 8500,
+    gradient: "gold",
+  },
+  {
+    id: "brooklyn-paramount",
+    name: "Brooklyn Paramount",
+    city: "Brooklyn",
+    region: "NY",
+    country: "USA",
+    capacity: 2700,
+    gradient: "dusk",
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -63,6 +113,24 @@ export const tours: Tour[] = [
     id: "rk-2025-tour",
     artistId: "rilo-kiley",
     name: "Sometimes When You're On You're Really F**king On Tour",
+    years: "2025",
+  },
+  {
+    id: "elo-2018-na-tour",
+    artistId: "jeff-lynnes-elo",
+    name: "2018 North American Tour",
+    years: "2018",
+  },
+  {
+    id: "stoopid-summer-2018",
+    artistId: "slightly-stoopid",
+    name: "School's Out for Summer 2018",
+    years: "2018",
+  },
+  {
+    id: "ff-human-fear-tour",
+    artistId: "franz-ferdinand",
+    name: "The Human Fear Tour",
     years: "2025",
   },
 ];
@@ -82,6 +150,37 @@ export const shows: Show[] = [
     attended: true,
     favorite: true,
     gradient: "ember",
+  },
+  {
+    id: "elo-msg-2018",
+    artistId: "jeff-lynnes-elo",
+    venueId: "msg",
+    tourId: "elo-2018-na-tour",
+    date: "2018-08-21",
+    attended: true,
+    favorite: false,
+    gradient: "neon",
+  },
+  {
+    id: "slightly-stoopid-greek-2018",
+    artistId: "slightly-stoopid",
+    venueId: "greek-theatre-berkeley",
+    tourId: "stoopid-summer-2018",
+    date: "2018-06-17",
+    attended: true,
+    favorite: false,
+    gradient: "jade",
+  },
+  {
+    id: "franz-ferdinand-paramount-2025",
+    artistId: "franz-ferdinand",
+    venueId: "brooklyn-paramount",
+    tourId: "ff-human-fear-tour",
+    date: "2025-04-10",
+    showTime: "9:00 PM",
+    attended: true,
+    favorite: false,
+    gradient: "gold",
   },
 ];
 
@@ -160,6 +259,48 @@ export const posters: Poster[] = [
       },
     ],
   },
+  {
+    id: "poster-elo-msg-2018",
+    showId: "elo-msg-2018",
+    tourId: "elo-2018-na-tour",
+    title: "Madison Square Garden",
+    designer: "Unknown",
+    year: 2018,
+    notes: "Show poster — New York, Aug 21, 2018",
+    gradient: "neon",
+    owned: true,
+    imageUrl:
+      "https://res.cloudinary.com/dto3ky70u/image/upload/v1783451869/s-l1200_ckxnpx.png",
+    editions: [{ id: "ed-elo-msg-reg", name: "Regular" }],
+  },
+  {
+    id: "poster-stoopid-greek-2018",
+    showId: "slightly-stoopid-greek-2018",
+    tourId: "stoopid-summer-2018",
+    title: "Greek Theatre, Berkeley",
+    designer: "Killer Acid",
+    year: 2018,
+    notes: "Show poster — Berkeley, Jun 17, 2018",
+    gradient: "jade",
+    owned: true,
+    imageUrl:
+      "https://res.cloudinary.com/dto3ky70u/image/upload/v1783452053/kastoo_yyesuq.jpg",
+    editions: [{ id: "ed-stoopid-greek-reg", name: "Regular" }],
+  },
+  {
+    id: "poster-ff-paramount-2025",
+    showId: "franz-ferdinand-paramount-2025",
+    tourId: "ff-human-fear-tour",
+    title: "Brooklyn Paramount",
+    designer: "Unknown",
+    year: 2025,
+    notes: "Show poster — Brooklyn, Apr 10, 2025",
+    gradient: "gold",
+    owned: true,
+    imageUrl:
+      "https://res.cloudinary.com/dto3ky70u/image/upload/v1783452068/fraz_ldpedg.jpg",
+    editions: [{ id: "ed-ff-paramount-reg", name: "Regular" }],
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -197,6 +338,22 @@ export const mediaLinks: MediaLink[] = [
     sublabel: "YouTube",
     url: "https://www.youtube.com/watch?v=EAl7E9PPRxY",
   },
+  {
+    id: "ml-elo-setlistfm",
+    showId: "elo-msg-2018",
+    kind: "setlistfm",
+    label: "View on setlist.fm",
+    sublabel: "Full setlist",
+    url: "https://www.setlist.fm/setlist/jeff-lynnes-elo/2018/madison-square-garden-new-york-ny-53e8e389.html",
+  },
+  {
+    id: "ml-ff-setlistfm",
+    showId: "franz-ferdinand-paramount-2025",
+    kind: "setlistfm",
+    label: "View on setlist.fm",
+    sublabel: "Full setlist",
+    url: "https://www.setlist.fm/setlist/franz-ferdinand/2025/brooklyn-paramount-brooklyn-ny-635d8ebf.html",
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -207,16 +364,23 @@ export const collections: Collection[] = [
   {
     id: "col-2025-shows",
     name: "2025 Shows",
-    description: "The year Rilo Kiley came back.",
-    itemCount: 1,
+    description: "Rilo Kiley's return and Franz Ferdinand's Human Fear run.",
+    itemCount: 2,
     gradient: "ember",
   },
   {
     id: "col-poster-wall",
     name: "Poster Wall",
-    description: "Prints from shows worth framing.",
-    itemCount: 1,
+    description: "Prints from shows worth framing — Killer Acid included.",
+    itemCount: 4,
     gradient: "dusk",
+  },
+  {
+    id: "col-2018-summer",
+    name: "Summer 2018",
+    description: "ELO at the Garden and Stoopid at the Greek.",
+    itemCount: 2,
+    gradient: "gold",
   },
 ];
 
