@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { Field, inputClass, selectClass } from "@/components/form-controls";
-import { ImageField } from "@/components/image-field";
+import { MultiImageField } from "@/components/multi-image-field";
 import { addPosterAction } from "../actions";
 
 export const metadata = { title: "Add poster" };
@@ -146,8 +146,11 @@ export default async function AddPosterPage({
                 className={inputClass}
               />
             </Field>
-            <Field label="Artwork (optional)">
-              <ImageField />
+            <Field
+              label="Artwork (optional)"
+              hint="First image is the cover. Add close-ups of the numbering, signature, foil, or condition — collectors love the details."
+            >
+              <MultiImageField />
             </Field>
             <label className="flex items-center gap-2 text-sm">
               <input

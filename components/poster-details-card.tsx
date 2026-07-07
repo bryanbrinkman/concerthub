@@ -6,6 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PosterImage } from "@/components/poster-image";
+import { PosterGallery } from "@/components/poster-gallery";
 import { EmptyState } from "@/components/empty-state";
 
 /** Collector metadata for the show's poster/print. */
@@ -34,6 +35,12 @@ export function PosterDetailsCard({
 
   // Show the primary (first) edition's specs in the metadata table.
   const edition = poster.editions[0];
+
+  // Cover + detail shots; the gallery expands them into a lightbox.
+  const galleryImages = [
+    ...(poster.resolvedImageUrl ? [poster.resolvedImageUrl] : []),
+    ...(poster.imageUrls ?? []),
+  ];
 
   const rows: Array<[string, string]> = [
     ["Artist", poster.designer],
@@ -67,14 +74,22 @@ export function PosterDetailsCard({
         </a>
       </CardHeader>
       <CardContent className="flex flex-col gap-5 sm:flex-row">
-        <PosterImage
-          imageUrl={poster.resolvedImageUrl}
-          gradient={poster.gradient}
-          title={poster.title}
-          subtitle={poster.designer}
-          footer={String(poster.year)}
-          className="w-36 shrink-0 self-center sm:self-start"
-        />
+        {galleryImages.length > 0 ? (
+          <PosterGallery
+            images={galleryImages}
+            title={poster.title}
+            className="w-36 shrink-0 self-center sm:self-start"
+          />
+        ) : (
+          <PosterImage
+            imageUrl={undefined}
+            gradient={poster.gradient}
+            title={poster.title}
+            subtitle={poster.designer}
+            footer={String(poster.year)}
+            className="w-36 shrink-0 self-center sm:self-start"
+          />
+        )}
         <dl className="min-w-0 flex-1 space-y-2 text-sm">
           {rows.map(([label, value]) => (
             <div key={label} className="flex gap-3">

@@ -106,6 +106,8 @@ export interface Poster {
   expressoBeansId?: number;
   /** Hand-curated artwork URL; takes precedence over EB-scraped imagery. */
   imageUrl?: string;
+  /** Additional detail shots — numbering, signature, foil, condition. */
+  imageUrls?: string[];
   // TODO(api): add market data (avg sale, last sale, have/want counts)
   // from Expresso Beans once that's worth scraping too.
 }

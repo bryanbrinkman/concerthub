@@ -211,6 +211,8 @@ export const posters = pgTable("poster", {
   gradient: text("gradient").notNull().default("midnight"),
   owned: boolean("owned").notNull().default(true),
   imageUrl: text("image_url"),
+  /** Additional detail shots (numbering, signature, foil, condition). */
+  imageUrls: text("image_urls").array(),
   expressoBeansId: integer("expresso_beans_id"),
   editions: jsonb("editions").$type<Edition[]>(),
 });

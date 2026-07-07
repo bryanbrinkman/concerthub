@@ -174,6 +174,7 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
       gradient: g(row.gradient),
       owned: row.owned,
       imageUrl: row.imageUrl ?? undefined,
+      imageUrls: row.imageUrls ?? undefined,
       expressoBeansId: row.expressoBeansId ?? undefined,
       editions: row.editions ?? [],
     })),

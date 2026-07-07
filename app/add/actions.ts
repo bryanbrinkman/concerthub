@@ -143,6 +143,13 @@ export async function addPosterAction(formData: FormData) {
     markings: optional(str(formData, "markings")),
   };
 
+  // First image is the cover; the rest are detail shots.
+  const imageUrls = formData
+    .getAll("imageUrls")
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+  const cover = imageUrls[0] ?? optional(str(formData, "imageUrl"));
+
   await db.insert(t.posters).values({
     userId,
     showId,
@@ -151,7 +158,8 @@ export async function addPosterAction(formData: FormData) {
     year,
     notes: optional(str(formData, "notes")),
     owned: formData.get("owned") !== null,
-    imageUrl: optional(str(formData, "imageUrl")),
+    imageUrl: cover,
+    imageUrls: imageUrls.length > 1 ? imageUrls.slice(1) : undefined,
     gradient: gradientFor(title),
     editions: [edition],
   });
