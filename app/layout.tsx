@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import "./globals.css";
-import { auth, authEnabled } from "@/auth";
+import { auth, authEnabled, missingAuthEnv } from "@/auth";
 import { archiveCounts, getArchive } from "@/lib/archive";
 import { Sidebar } from "@/components/sidebar";
 
@@ -44,6 +44,7 @@ export default async function RootLayout({
         <Sidebar
           counts={counts}
           authEnabled={authEnabled}
+          missingEnv={authEnabled ? [] : missingAuthEnv()}
           user={
             session?.user
               ? { name: session.user.name, image: session.user.image }

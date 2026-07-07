@@ -22,6 +22,17 @@ export const authEnabled = Boolean(
     process.env.AUTH_GOOGLE_SECRET,
 );
 
+/** Names (never values) of required env vars absent at runtime — surfaced
+ * in the sidebar while auth is unconfigured to make setup debuggable. */
+export function missingAuthEnv(): string[] {
+  return [
+    "DATABASE_URL",
+    "AUTH_SECRET",
+    "AUTH_GOOGLE_ID",
+    "AUTH_GOOGLE_SECRET",
+  ].filter((name) => !process.env[name]);
+}
+
 const db = getDb();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({

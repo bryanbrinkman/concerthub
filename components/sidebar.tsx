@@ -36,6 +36,8 @@ interface SidebarProps {
   counts: ArchiveCounts;
   user: SidebarUser | null;
   authEnabled: boolean;
+  /** Names of unset auth env vars, shown while auth is unconfigured. */
+  missingEnv?: string[];
 }
 
 interface NavItem {
@@ -123,7 +125,15 @@ function Brand() {
   );
 }
 
-function UserFooter({ user, authEnabled }: { user: SidebarUser | null; authEnabled: boolean }) {
+function UserFooter({
+  user,
+  authEnabled,
+  missingEnv,
+}: {
+  user: SidebarUser | null;
+  authEnabled: boolean;
+  missingEnv?: string[];
+}) {
   if (user) {
     const initial = (user.name ?? "?").charAt(0).toUpperCase();
     return (
@@ -173,9 +183,16 @@ function UserFooter({ user, authEnabled }: { user: SidebarUser | null; authEnabl
   }
 
   return (
-    <p className="px-1 text-xs text-muted-foreground">
-      Demo archive — configure auth to start yours.
-    </p>
+    <div className="space-y-1 px-1">
+      <p className="text-xs text-muted-foreground">
+        Demo archive — configure auth to start yours.
+      </p>
+      {missingEnv && missingEnv.length > 0 ? (
+        <p className="text-[11px] leading-relaxed text-amber-400/90">
+          Missing env vars: {missingEnv.join(", ")}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -183,6 +200,7 @@ function SidebarBody({
   counts,
   user,
   authEnabled,
+  missingEnv,
   onNavigate,
 }: SidebarProps & { onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -234,7 +252,7 @@ function SidebarBody({
       </nav>
 
       <div className="border-t border-border px-4 py-4">
-        <UserFooter user={user} authEnabled={authEnabled} />
+        <UserFooter user={user} authEnabled={authEnabled} missingEnv={missingEnv} />
       </div>
     </div>
   );
