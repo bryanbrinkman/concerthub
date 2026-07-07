@@ -1,6 +1,6 @@
 import { Library, Plus } from "lucide-react";
 
-import { collections } from "@/lib/data";
+import { getArchive } from "@/lib/archive";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,8 @@ import { EmptyState } from "@/components/empty-state";
 
 export const metadata = { title: "Collections" };
 
-export default function CollectionsPage() {
+export default async function CollectionsPage() {
+  const { collections } = await getArchive();
   return (
     <div>
       <PageHeader

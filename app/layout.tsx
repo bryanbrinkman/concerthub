@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import "./globals.css";
+import { auth, authEnabled } from "@/auth";
+import { archiveCounts, getArchive } from "@/lib/archive";
 import { Sidebar } from "@/components/sidebar";
 
 export const metadata: Metadata = {
@@ -27,15 +29,27 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const archive = await getArchive();
+  const counts = archiveCounts(archive);
+  const session = authEnabled ? await auth() : null;
+
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
-        <Sidebar />
+        <Sidebar
+          counts={counts}
+          authEnabled={authEnabled}
+          user={
+            session?.user
+              ? { name: session.user.name, image: session.user.image }
+              : null
+          }
+        />
         <main className="min-h-screen lg:pl-56">
           <div className="mx-auto w-full max-w-[1400px] px-4 py-5 sm:px-5 lg:px-6">
             {children}

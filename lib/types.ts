@@ -172,6 +172,15 @@ export interface Show {
   gradient: GradientKey;
 }
 
+/** A photo from a show night. */
+export interface ShowPhoto {
+  id: string;
+  showId: string;
+  caption: string;
+  gradient: GradientKey;
+  imageUrl?: string;
+}
+
 /** A user-curated grouping of shows/items — binders, wishlists, tour runs. */
 export interface Collection {
   id: string;

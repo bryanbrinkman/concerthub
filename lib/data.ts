@@ -19,6 +19,7 @@ import type {
   Poster,
   Setlist,
   Show,
+  ShowPhoto,
   Tour,
   UserMemory,
   Venue,
@@ -388,14 +389,8 @@ export const collections: Collection[] = [
 /* Photos                                                              */
 /* ------------------------------------------------------------------ */
 
-/** Photos from the night — real shots, layered over a gradient fallback. */
-export interface ShowPhoto {
-  id: string;
-  showId: string;
-  caption: string;
-  gradient: GradientKey;
-  imageUrl?: string;
-}
+// ShowPhoto now lives in lib/types.ts; re-exported for existing imports.
+export type { ShowPhoto } from "./types";
 
 export const showPhotos: ShowPhoto[] = [
   {

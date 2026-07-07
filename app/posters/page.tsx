@@ -1,6 +1,6 @@
 import { ExternalLink, Frame, Plus } from "lucide-react";
 
-import { getArtist, getShow, posters } from "@/lib/data";
+import { findArtist, findShow, getArchive } from "@/lib/archive";
 import { enrichPosters } from "@/lib/expressobeans";
 import { formatShortDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,14 +11,15 @@ import { EmptyState } from "@/components/empty-state";
 export const metadata = { title: "Posters" };
 
 export default async function PostersPage() {
+  const archive = await getArchive();
   // Pull real artwork from Expresso Beans for any poster with an id set;
   // the rest keep their seeded imagery / gradient art.
-  const enriched = await enrichPosters(posters);
+  const enriched = await enrichPosters(archive.posters);
 
   // Flatten to serializable props for the client-side rack.
   const rackPosters: RackPoster[] = enriched.map((poster) => {
-    const show = poster.showId ? getShow(poster.showId) : undefined;
-    const artist = show ? getArtist(show.artistId) : undefined;
+    const show = poster.showId ? findShow(archive, poster.showId) : undefined;
+    const artist = show ? findArtist(archive, show.artistId) : undefined;
     const edition = poster.editions[0];
     return {
       id: poster.id,

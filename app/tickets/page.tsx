@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Ticket, Upload } from "lucide-react";
 
-import { ephemera, getArtist, getShow, getVenue } from "@/lib/data";
+import { findArtist, findShow, findVenue, getArchive } from "@/lib/archive";
 import { formatShortDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -10,8 +10,9 @@ import { EmptyState } from "@/components/empty-state";
 
 export const metadata = { title: "Tickets" };
 
-export default function TicketsPage() {
-  const tickets = ephemera.filter((e) => e.kind === "ticket");
+export default async function TicketsPage() {
+  const archive = await getArchive();
+  const tickets = archive.ephemera.filter((e) => e.kind === "ticket");
 
   return (
     <div>
@@ -35,9 +36,9 @@ export default function TicketsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {tickets.map((ticket) => {
-            const show = getShow(ticket.showId);
-            const artist = show ? getArtist(show.artistId) : undefined;
-            const venue = show ? getVenue(show.venueId) : undefined;
+            const show = findShow(archive, ticket.showId);
+            const artist = show ? findArtist(archive, show.artistId) : undefined;
+            const venue = show ? findVenue(archive, show.venueId) : undefined;
             return (
               <Link
                 key={ticket.id}

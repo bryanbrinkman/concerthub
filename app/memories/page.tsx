@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, NotebookPen } from "lucide-react";
 
-import { getArtist, getShow, getVenue, memories } from "@/lib/data";
+import { findArtist, findShow, findVenue, getArchive } from "@/lib/archive";
 import { formatShortDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -10,8 +10,9 @@ import { EmptyState } from "@/components/empty-state";
 
 export const metadata = { title: "Memories" };
 
-export default function MemoriesPage() {
-  const sorted = [...memories].sort((a, b) =>
+export default async function MemoriesPage() {
+  const archive = await getArchive();
+  const sorted = [...archive.memories].sort((a, b) =>
     b.createdAt.localeCompare(a.createdAt),
   );
 
@@ -37,9 +38,9 @@ export default function MemoriesPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {sorted.map((memory) => {
-            const show = getShow(memory.showId);
-            const artist = show ? getArtist(show.artistId) : undefined;
-            const venue = show ? getVenue(show.venueId) : undefined;
+            const show = findShow(archive, memory.showId);
+            const artist = show ? findArtist(archive, show.artistId) : undefined;
+            const venue = show ? findVenue(archive, show.venueId) : undefined;
             return (
               <div key={memory.id} className="space-y-2">
                 {show ? (

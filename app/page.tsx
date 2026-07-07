@@ -1,31 +1,44 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, Image as ImageIcon, Ticket, Users } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarDays,
+  Download,
+  Image as ImageIcon,
+  Ticket,
+  Users,
+} from "lucide-react";
 
 import {
-  artists,
-  getAllShows,
-  getArchiveCounts,
-  getArtist,
-  getVenue,
-  memories,
-} from "@/lib/data";
+  allShows,
+  archiveCounts,
+  findArtist,
+  findShow,
+  findTour,
+  findVenue,
+  getArchive,
+  postersForShow,
+} from "@/lib/archive";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { ShowCard } from "@/components/show-card";
 import { MemoryCard } from "@/components/memory-card";
+import { EmptyState } from "@/components/empty-state";
 
-export default function DashboardPage() {
-  const counts = getArchiveCounts();
-  const recentShows = getAllShows().filter((s) => s.attended).slice(0, 4);
-  const latestMemory = memories[0];
+export default async function DashboardPage() {
+  const archive = await getArchive();
+  const counts = archiveCounts(archive);
+  const recentShows = allShows(archive).filter((s) => s.attended).slice(0, 4);
+  const latestMemory = [...archive.memories].sort((a, b) =>
+    b.createdAt.localeCompare(a.createdAt),
+  )[0];
   const latestMemoryShow = latestMemory
-    ? getAllShows().find((s) => s.id === latestMemory.showId)
+    ? findShow(archive, latestMemory.showId)
     : undefined;
 
   const stats = [
     { label: "Shows attended", value: counts.shows, icon: CalendarDays },
-    { label: "Artists seen", value: artists.length, icon: Users },
+    { label: "Artists seen", value: archive.artists.length, icon: Users },
     { label: "Posters archived", value: counts.posters, icon: ImageIcon },
     { label: "Ticket stubs", value: counts.tickets, icon: Ticket },
   ];
@@ -33,8 +46,12 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Welcome back, Bryan"
-        subtitle="Your live music archive — every show, stub, and story in one place."
+        title={archive.demo ? "Welcome to Concert Collect" : "Welcome back"}
+        subtitle={
+          archive.demo
+            ? "A live music archive — every show, stub, and story in one place. Sign in to start yours."
+            : "Your live music archive — every show, stub, and story in one place."
+        }
         actions={
           <Button asChild>
             <Link href="/shows">
@@ -49,7 +66,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.label}>
-            <CardContent className="flex items-center gap-4 p-5">
+            <CardContent className="flex items-center gap-4 p-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
                 <stat.icon className="h-5 w-5" />
               </div>
@@ -73,11 +90,27 @@ export default function DashboardPage() {
             View all
           </Link>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {recentShows.map((show) => (
-            <ShowCard key={show.id} show={show} />
-          ))}
-        </div>
+        {recentShows.length === 0 ? (
+          <EmptyState
+            icon={Download}
+            title="Your archive is empty"
+            description="Import your setlist.fm history to fill it in one click, or add shows by hand."
+            actionLabel="Import from setlist.fm"
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {recentShows.map((show) => (
+              <ShowCard
+                key={show.id}
+                show={show}
+                artist={findArtist(archive, show.artistId)}
+                venue={findVenue(archive, show.venueId)}
+                tour={show.tourId ? findTour(archive, show.tourId) : undefined}
+                posterImage={postersForShow(archive, show.id)[0]?.imageUrl}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Latest memory */}
@@ -87,8 +120,8 @@ export default function DashboardPage() {
             <h2 className="mb-4 text-lg font-semibold">Latest memory</h2>
             <MemoryCard
               memory={latestMemory}
-              title={`${getArtist(latestMemoryShow.artistId)?.name ?? "Show"} · ${
-                getVenue(latestMemoryShow.venueId)?.name ?? ""
+              title={`${findArtist(archive, latestMemoryShow.artistId)?.name ?? "Show"} · ${
+                findVenue(archive, latestMemoryShow.venueId)?.name ?? ""
               }`}
             />
           </div>

@@ -1,5 +1,6 @@
-import { CalendarDays, Download, ExternalLink, ListMusic, MapPin } from "lucide-react";
+import { CalendarDays, CheckCircle2, Download, ExternalLink, ListMusic, MapPin } from "lucide-react";
 
+import { authEnabled, currentUserId } from "@/auth";
 import { fetchAttendedShows } from "@/lib/setlistfm";
 import { formatShortDate } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,26 +8,33 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { importAttendedAction } from "./actions";
 
 export const metadata = { title: "Import from setlist.fm" };
+// Import walks the whole attended history — allow up to a minute.
+export const maxDuration = 60;
 
 /**
- * Import a setlist.fm profile's attendance history.
- *
- * Today this is a live preview: it pulls the user's attended shows straight
- * from the setlist.fm API and lists them ready for import.
- * TODO(persistence): when real storage lands (accounts + DB), "Import all"
- * writes these into Show/Artist/Venue records, deduped by setlistFmId, and
- * each show gets its setlist resolved via lib/setlistfm.ts.
+ * Import a setlist.fm profile's attendance history. Signed-in users get a
+ * real "Import all" that upserts shows into their archive (deduped on the
+ * setlist.fm id, so re-imports are safe); signed-out visitors get a preview.
  */
 export default async function ImportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ user?: string; p?: string }>;
+  searchParams: Promise<{
+    user?: string;
+    p?: string;
+    done?: string;
+    total?: string;
+    partial?: string;
+    error?: string;
+  }>;
 }) {
-  const { user, p } = await searchParams;
+  const { user, p, done, total, partial, error } = await searchParams;
   const username = user?.trim();
   const page = Math.max(1, Number(p) || 1);
+  const signedIn = authEnabled && Boolean(await currentUserId());
   const result = username ? await fetchAttendedShows(username, page) : undefined;
 
   return (
@@ -50,6 +58,29 @@ export default async function ImportPage({
           Fetch shows
         </Button>
       </form>
+
+      {done ? (
+        <div className="mb-5 flex items-start gap-2.5 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+          <p>
+            Imported <span className="font-medium">{done}</span>
+            {total ? ` of ${total}` : ""} shows into your archive.
+            {partial
+              ? " That was the first chunk of a very large history — run the import again to continue where it left off."
+              : ""}{" "}
+            <a href="/shows" className="text-primary hover:underline">
+              View your shows →
+            </a>
+          </p>
+        </div>
+      ) : null}
+      {error ? (
+        <div className="mb-5 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm">
+          {error === "signin"
+            ? "You need to sign in before importing."
+            : "The database isn't configured, so imports can't be saved yet."}
+        </div>
+      ) : null}
 
       {!username ? (
         <EmptyState
@@ -78,11 +109,27 @@ export default async function ImportPage({
               <span className="font-medium text-foreground">{username}</span>
               &apos;s profile
             </p>
-            {/* TODO(persistence): enable once imports can be saved. */}
-            <Button disabled title="Saving imports arrives with accounts + storage">
-              <Download />
-              Import all (coming soon)
-            </Button>
+            {signedIn ? (
+              <form action={importAttendedAction}>
+                <input type="hidden" name="username" value={username} />
+                <Button type="submit">
+                  <Download />
+                  Import all {result.total} shows
+                </Button>
+              </form>
+            ) : (
+              <Button
+                disabled
+                title={
+                  authEnabled
+                    ? "Sign in to save these shows to your archive"
+                    : "Configure auth + database to enable imports"
+                }
+              >
+                <Download />
+                Sign in to import
+              </Button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">

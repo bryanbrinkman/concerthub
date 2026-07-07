@@ -24,8 +24,31 @@ The seeded show page is
 concert photos, the show poster, and a YouTube link. Ephemera and memory are
 intentionally empty so their upload/add empty states show.
 
-No auth, no database — everything renders from local seed data (plus the
-live setlist.fm lookup described below).
+Out of the box (no env vars) the app runs in **demo mode**: a read-only
+archive rendered from local seed data, plus the live setlist.fm lookup
+described below. With auth + database configured, visitors sign in with
+Google and get their own archive backed by Postgres.
+
+## Accounts + database setup
+
+1. **Postgres (Neon)** — create a free database at
+   [neon.tech](https://neon.tech) (or via the Vercel Marketplace), put its
+   connection string in `.env.local` as `DATABASE_URL`, then create the
+   tables: `npm run db:push`
+2. **Google OAuth** — create a Web application client at
+   [console.cloud.google.com](https://console.cloud.google.com/apis/credentials)
+   with redirect URI `http://localhost:3000/api/auth/callback/google` (and
+   the production equivalent). Set `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`.
+3. **Auth secret** — `npx auth secret` (or `openssl rand -base64 32`) into
+   `AUTH_SECRET`.
+4. Add the same four variables in Vercel (Production + Preview) and
+   redeploy.
+
+Once signed in: every page reads your own rows (`lib/archive.ts`), the
+`/import` page really imports your setlist.fm attendance history, and the
+show page's memory card becomes an editable form. New accounts start empty —
+import is the fastest way to fill them. To copy the demo archive into your
+account: `npm run db:seed-demo -- you@example.com` (after signing in once).
 
 ## Pages
 
@@ -103,9 +126,10 @@ Responses are cached for 24h via `next: { revalidate }`.
 
 **Profile import** (`/import`): enter a setlist.fm username and the app pulls
 their attended-shows history live from the API (`user/{id}/attended`), with
-pagination. Today it's a preview; the "Import all" button activates once
-accounts + storage exist (see `TODO(persistence)` in `lib/setlistfm.ts` and
-`app/import/page.tsx` — imports dedupe on setlist.fm's setlist id).
+pagination. Signed-in users get a real "Import all" that upserts canonical
+artist/venue/show rows and attendance records into Postgres — deduped on
+setlist.fm's setlist id, so re-running an import is always safe. Very large
+histories import in chunks (~400 shows per run).
 
 ### Expresso Beans imagery (`lib/expressobeans.ts`)
 

@@ -10,10 +10,11 @@ import {
   Home,
   Image as ImageIcon,
   Library,
+  LogIn,
+  LogOut,
   MapPin,
   Menu,
   Search,
-  Settings,
   Shirt,
   StickyNote,
   Ticket,
@@ -23,7 +24,19 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { getArchiveCounts } from "@/lib/data";
+import type { ArchiveCounts } from "@/lib/archive";
+import { signInAction, signOutAction } from "@/app/auth-actions";
+
+interface SidebarUser {
+  name?: string | null;
+  image?: string | null;
+}
+
+interface SidebarProps {
+  counts: ArchiveCounts;
+  user: SidebarUser | null;
+  authEnabled: boolean;
+}
 
 interface NavItem {
   label: string;
@@ -31,8 +44,6 @@ interface NavItem {
   icon: LucideIcon;
   count?: number;
 }
-
-const counts = getArchiveCounts();
 
 const MAIN_NAV: NavItem[] = [
   { label: "Home", href: "/", icon: Home },
@@ -44,14 +55,16 @@ const MAIN_NAV: NavItem[] = [
   { label: "Import", href: "/import", icon: Download },
 ];
 
-const COLLECTION_NAV: NavItem[] = [
-  { label: "All Shows", href: "/shows", icon: CalendarDays, count: counts.shows },
-  { label: "Wishlist", href: "/collections", icon: Heart, count: counts.wishlist },
-  { label: "Posters", href: "/posters", icon: ImageIcon, count: counts.posters },
-  { label: "Tickets", href: "/tickets", icon: Ticket, count: counts.tickets },
-  { label: "Merch", href: "/merch", icon: Shirt, count: counts.merch },
-  { label: "Favorites", href: "/collections", icon: Heart, count: counts.favorites },
-];
+function collectionNav(counts: ArchiveCounts): NavItem[] {
+  return [
+    { label: "All Shows", href: "/shows", icon: CalendarDays, count: counts.shows },
+    { label: "Wishlist", href: "/collections", icon: Heart, count: counts.wishlist },
+    { label: "Posters", href: "/posters", icon: ImageIcon, count: counts.posters },
+    { label: "Tickets", href: "/tickets", icon: Ticket, count: counts.tickets },
+    { label: "Merch", href: "/merch", icon: Shirt, count: counts.merch },
+    { label: "Favorites", href: "/collections", icon: Heart, count: counts.favorites },
+  ];
+}
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
@@ -110,7 +123,68 @@ function Brand() {
   );
 }
 
-function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
+function UserFooter({ user, authEnabled }: { user: SidebarUser | null; authEnabled: boolean }) {
+  if (user) {
+    const initial = (user.name ?? "?").charAt(0).toUpperCase();
+    return (
+      <div className="flex items-center gap-3">
+        {user.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={user.image}
+            alt=""
+            className="h-9 w-9 shrink-0 rounded-full border border-border object-cover"
+          />
+        ) : (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 text-sm font-semibold text-white">
+            {initial}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{user.name ?? "You"}</p>
+          <p className="truncate text-xs text-muted-foreground">Your archive</p>
+        </div>
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            aria-label="Sign out"
+            title="Sign out"
+            className="cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  if (authEnabled) {
+    return (
+      <form action={signInAction}>
+        <button
+          type="submit"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-white/[0.06] px-3 py-2 text-sm font-medium transition-colors hover:bg-white/[0.12]"
+        >
+          <LogIn className="h-4 w-4" />
+          Sign in with Google
+        </button>
+      </form>
+    );
+  }
+
+  return (
+    <p className="px-1 text-xs text-muted-foreground">
+      Demo archive — configure auth to start yours.
+    </p>
+  );
+}
+
+function SidebarBody({
+  counts,
+  user,
+  authEnabled,
+  onNavigate,
+}: SidebarProps & { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
@@ -147,7 +221,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
             Collections
           </p>
           <div className="space-y-0.5">
-            {COLLECTION_NAV.map((item) => (
+            {collectionNav(counts).map((item) => (
               <NavLink
                 key={item.label}
                 item={item}
@@ -160,24 +234,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="border-t border-border px-4 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 text-sm font-semibold text-white">
-            B
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">bryan</p>
-            <p className="truncate text-xs text-muted-foreground">
-              Member since 2024
-            </p>
-          </div>
-          <button
-            type="button"
-            aria-label="Settings"
-            className="cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            <Settings className="h-4 w-4" />
-          </button>
-        </div>
+        <UserFooter user={user} authEnabled={authEnabled} />
       </div>
     </div>
   );
@@ -185,17 +242,17 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
 
 /**
  * App navigation.
- * - Desktop (lg+): fixed 16rem left rail.
+ * - Desktop (lg+): fixed left rail.
  * - Mobile/tablet: sticky top bar with a slide-down menu.
  */
-export function Sidebar() {
+export function Sidebar(props: SidebarProps) {
   const [open, setOpen] = React.useState(false);
 
   return (
     <>
       {/* Desktop rail */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-56 border-r border-border bg-[#0e0e11] lg:block">
-        <SidebarBody />
+        <SidebarBody {...props} />
       </aside>
 
       {/* Mobile top bar */}
@@ -216,7 +273,7 @@ export function Sidebar() {
       {/* Mobile menu overlay */}
       {open ? (
         <div className="fixed inset-0 top-[57px] z-30 overflow-y-auto bg-background/95 backdrop-blur lg:hidden">
-          <SidebarBody onNavigate={() => setOpen(false)} />
+          <SidebarBody {...props} onNavigate={() => setOpen(false)} />
         </div>
       ) : null}
     </>

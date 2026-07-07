@@ -3,18 +3,19 @@ import { notFound } from "next/navigation";
 import { ChevronLeft, Heart, MoreHorizontal, Share2 } from "lucide-react";
 
 import {
-  getArtist,
-  getEphemeraForShow,
-  getMediaLinksForShow,
-  getMemoryForShow,
-  getPhotosForShow,
-  getPostersForShow,
-  getShow,
-  getShowsForTour,
-  getTour,
-  getVenue,
-  shows,
-} from "@/lib/data";
+  ephemeraForShow,
+  findArtist,
+  findShow,
+  findTour,
+  findVenue,
+  getArchive,
+  mediaLinksForShow,
+  memoryForShow,
+  photosForShow,
+  postersForShow,
+  showsForTour,
+} from "@/lib/archive";
+import { getSetlistForShow } from "@/lib/data";
 import { resolveSetlist } from "@/lib/setlistfm";
 import { enrichPoster } from "@/lib/expressobeans";
 import { formatShortDate } from "@/lib/utils";
@@ -26,12 +27,9 @@ import { EphemeraGrid } from "@/components/ephemera-grid";
 import { PosterDetailsCard } from "@/components/poster-details-card";
 import { PhotoGrid } from "@/components/photo-grid";
 import { MemoryCard } from "@/components/memory-card";
-import { TourCarousel } from "@/components/tour-carousel";
+import { MemoryForm } from "@/components/memory-form";
+import { TourCarousel, type TourCarouselItem } from "@/components/tour-carousel";
 import { MediaLinksCard } from "@/components/media-links-card";
-
-export function generateStaticParams() {
-  return shows.map((show) => ({ id: show.id }));
-}
 
 export async function generateMetadata({
   params,
@@ -39,9 +37,10 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const show = getShow(id);
+  const archive = await getArchive();
+  const show = findShow(archive, id);
   if (!show) return { title: "Show not found" };
-  const artist = getArtist(show.artistId);
+  const artist = findArtist(archive, show.artistId);
   return {
     title: `${artist?.name ?? "Show"} · ${formatShortDate(show.date)}`,
   };
@@ -53,26 +52,56 @@ export default async function ShowDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const show = getShow(id);
+  const archive = await getArchive();
+  const show = findShow(archive, id);
   if (!show) notFound();
 
-  const artist = getArtist(show.artistId);
-  const venue = getVenue(show.venueId);
-  const tour = show.tourId ? getTour(show.tourId) : undefined;
-  // Live data: setlist.fm setlist + Expresso Beans poster imagery, each
-  // falling back to seed data / gradient art when unavailable.
+  const artist = findArtist(archive, show.artistId);
+  const venue = findVenue(archive, show.venueId);
+  const tour = show.tourId ? findTour(archive, show.tourId) : undefined;
+
+  // Live data: setlist.fm setlist + poster imagery. Demo mode gets the
+  // seeded setlist as offline fallback; user archives fall back to the
+  // empty state.
+  const seededSetlist = archive.demo ? getSetlistForShow(show.id) : undefined;
   const [setlist, poster] = await Promise.all([
-    resolveSetlist(show),
-    enrichPoster(getPostersForShow(show.id)[0]),
+    resolveSetlist(show, artist?.name, seededSetlist),
+    enrichPoster(postersForShow(archive, show.id)[0]),
   ]);
-  const ephemeraItems = getEphemeraForShow(show.id);
-  const memory = getMemoryForShow(show.id);
-  const links = getMediaLinksForShow(show.id);
-  const photos = getPhotosForShow(show.id);
-  const tourShows = show.tourId ? getShowsForTour(show.tourId) : [];
+
+  const ephemeraItems = ephemeraForShow(archive, show.id);
+  const memory = memoryForShow(archive, show.id);
+  const links = mediaLinksForShow(archive, show.id);
+  const photos = photosForShow(archive, show.id);
   const mediaCount = links.filter(
     (l) => l.kind === "audio" || l.kind === "video" || l.kind === "streaming",
   ).length;
+
+  const tourShows = show.tourId ? showsForTour(archive, show.tourId) : [];
+  const carouselItems: TourCarouselItem[] = tourShows.map((s) => {
+    const v = findVenue(archive, s.venueId);
+    const a = findArtist(archive, s.artistId);
+    return {
+      id: s.id,
+      href: `/shows/${s.id}`,
+      dateLabel: formatShortDate(s.date),
+      cityLabel: v ? `${v.city}${v.region ? `, ${v.region}` : ""}` : "",
+      venueName: v?.name ?? "",
+      gradient: s.gradient,
+      imageUrl: postersForShow(archive, s.id)[0]?.imageUrl,
+      artistShort: (a?.name ?? "····").slice(0, 4),
+      current: s.id === show.id,
+    };
+  });
+
+  // Signed-in users get a real write path for their memory.
+  const memoryPanel = memory ? (
+    <MemoryCard memory={memory} />
+  ) : archive.demo ? (
+    <MemoryCard memory={undefined} />
+  ) : (
+    <MemoryForm showId={show.id} />
+  );
 
   return (
     <div className="space-y-5">
@@ -141,9 +170,7 @@ export default async function ShowDetailPage({
                   <PhotoGrid photos={photos} limit={4} />
                 </section>
               </div>
-              {tourShows.length > 1 ? (
-                <TourCarousel shows={tourShows} currentShowId={show.id} />
-              ) : null}
+              <TourCarousel items={carouselItems} />
             </TabsContent>
 
             <TabsContent value="setlist">
@@ -165,16 +192,14 @@ export default async function ShowDetailPage({
               <MediaLinksCard links={links} />
             </TabsContent>
 
-            <TabsContent value="notes">
-              <MemoryCard memory={memory} />
-            </TabsContent>
+            <TabsContent value="notes">{memoryPanel}</TabsContent>
           </Tabs>
         </div>
 
         {/* Right rail — stacks below main content under xl */}
         <aside className="min-w-0 space-y-5">
           <EphemeraGrid items={ephemeraItems} />
-          <MemoryCard memory={memory} />
+          {memoryPanel}
           <MediaLinksCard links={links} />
         </aside>
       </div>

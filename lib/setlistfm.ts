@@ -13,7 +13,6 @@
  */
 
 import type { Setlist, SetlistSet, Show } from "./types";
-import { getArtist, getSetlistForShow } from "./data";
 
 const API_BASE = "https://api.setlist.fm/rest/1.0";
 /** Re-fetch from setlist.fm at most once a day; setlists rarely change. */
@@ -255,15 +254,18 @@ export async function fetchAttendedShows(
 
 /**
  * The setlist a show page should render: the live setlist.fm version when
- * available, otherwise whatever is seeded locally.
+ * available, otherwise the provided fallback (a seeded setlist in demo mode,
+ * undefined for user archives — which renders the empty state).
  */
-export async function resolveSetlist(show: Show): Promise<Setlist | undefined> {
-  const seeded = getSetlistForShow(show.id);
-  const artist = getArtist(show.artistId);
-  if (!artist) return seeded;
+export async function resolveSetlist(
+  show: Show,
+  artistName: string | undefined,
+  fallback?: Setlist,
+): Promise<Setlist | undefined> {
+  if (!artistName) return fallback;
 
   try {
-    const results = await searchSetlists(artist.name, show.date);
+    const results = await searchSetlists(artistName, show.date);
     for (const raw of results) {
       const normalized = normalizeSetlist(raw, show.id);
       if (normalized) return normalized;
@@ -271,5 +273,5 @@ export async function resolveSetlist(show: Show): Promise<Setlist | undefined> {
   } catch (error) {
     console.warn(`[setlistfm] lookup failed for show ${show.id}:`, error);
   }
-  return seeded;
+  return fallback;
 }

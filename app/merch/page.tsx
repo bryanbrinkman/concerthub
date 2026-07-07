@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Shirt, Upload } from "lucide-react";
 
-import { ephemera, getArtist, getShow } from "@/lib/data";
+import { findArtist, findShow, getArchive } from "@/lib/archive";
 import { formatShortDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -10,8 +10,9 @@ import { EmptyState } from "@/components/empty-state";
 
 export const metadata = { title: "Merch" };
 
-export default function MerchPage() {
-  const merch = ephemera.filter(
+export default async function MerchPage() {
+  const archive = await getArchive();
+  const merch = archive.ephemera.filter(
     (e) => e.kind === "apparel" || e.kind === "other",
   );
 
@@ -37,8 +38,8 @@ export default function MerchPage() {
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {merch.map((item) => {
-            const show = getShow(item.showId);
-            const artist = show ? getArtist(show.artistId) : undefined;
+            const show = findShow(archive, item.showId);
+            const artist = show ? findArtist(archive, show.artistId) : undefined;
             return (
               <Link
                 key={item.id}

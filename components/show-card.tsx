@@ -1,19 +1,21 @@
 import Link from "next/link";
 import { CalendarDays, Heart, MapPin } from "lucide-react";
 
-import type { Show } from "@/lib/types";
-import { getArtist, getPostersForShow, getTour, getVenue } from "@/lib/data";
+import type { Artist, Show, Tour, Venue } from "@/lib/types";
 import { formatShortDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PosterArt } from "@/components/gradient-art";
 
-/** Poster-forward card linking to a show detail page. */
-export function ShowCard({ show }: { show: Show }) {
-  const artist = getArtist(show.artistId);
-  const venue = getVenue(show.venueId);
-  const tour = show.tourId ? getTour(show.tourId) : undefined;
-  const posterImage = getPostersForShow(show.id)[0]?.imageUrl;
+interface ShowCardProps {
+  show: Show;
+  artist?: Artist;
+  venue?: Venue;
+  tour?: Tour;
+  posterImage?: string;
+}
 
+/** Poster-forward card linking to a show detail page. */
+export function ShowCard({ show, artist, venue, tour, posterImage }: ShowCardProps) {
   return (
     <Link
       href={`/shows/${show.id}`}
@@ -57,7 +59,7 @@ export function ShowCard({ show }: { show: Show }) {
           {show.attended ? (
             <Badge variant="success">I was there</Badge>
           ) : (
-            <Badge variant="outline">On the tour</Badge>
+            <Badge variant="outline">Tracked</Badge>
           )}
           {tour ? <Badge variant="secondary">{tour.name}</Badge> : null}
         </div>
