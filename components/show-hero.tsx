@@ -14,6 +14,7 @@ import { formatShowDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PosterImage } from "@/components/poster-image";
+import { TicketArt } from "@/components/ticket-art";
 import { SetlistCard } from "@/components/setlist-card";
 
 interface ShowHeroProps {
@@ -31,19 +32,31 @@ export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHer
   return (
     <section className="relative overflow-hidden rounded-xl border border-border bg-card">
       <div className="relative grid gap-5 p-4 sm:p-5 lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_350px]">
-        {/* Poster — pinned top-left */}
-        <PosterImage
-          imageUrl={poster?.resolvedImageUrl}
-          gradient={show.gradient}
-          title={artist?.name ?? "Unknown artist"}
-          subtitle={tour?.name}
-          footer={
-            venue
-              ? `${venue.name} · ${formatShowDate(show.date)}`
-              : formatShowDate(show.date)
-          }
-          className="mx-auto w-full max-w-[250px] self-start shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)] lg:mx-0"
-        />
+        {/* Poster — pinned top-left; ticket-stub art when no print exists */}
+        {poster?.resolvedImageUrl ? (
+          <PosterImage
+            imageUrl={poster.resolvedImageUrl}
+            gradient={show.gradient}
+            title={artist?.name ?? "Unknown artist"}
+            className="mx-auto w-full max-w-[250px] self-start shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)] lg:mx-0"
+          />
+        ) : (
+          <TicketArt
+            seedId={show.id}
+            gradient={show.gradient}
+            artist={artist?.name ?? "Unknown artist"}
+            venue={venue?.name}
+            cityLine={
+              venue
+                ? `${venue.city}${venue.region ? `, ${venue.region}` : ""}${venue.country ? `, ${venue.country}` : ""}`
+                : undefined
+            }
+            dateLine={formatShowDate(show.date)}
+            timeLine={show.showTime}
+            tourLine={tour?.name}
+            className="mx-auto w-full max-w-[250px] self-start shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)] lg:mx-0"
+          />
+        )}
 
         {/* Title + meta + CTAs — top-aligned with the poster, even when the
             setlist column is much taller */}

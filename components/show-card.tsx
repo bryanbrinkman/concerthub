@@ -2,9 +2,10 @@ import Link from "next/link";
 import { CalendarDays, Heart, MapPin } from "lucide-react";
 
 import type { Artist, Show, Tour, Venue } from "@/lib/types";
-import { formatShortDate } from "@/lib/utils";
+import { formatShortDate, formatShowDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PosterArt } from "@/components/gradient-art";
+import { TicketArt } from "@/components/ticket-art";
 
 interface ShowCardProps {
   show: Show;
@@ -22,16 +23,30 @@ export function ShowCard({ show, artist, venue, tour, posterImage }: ShowCardPro
       className="group block overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-white/20"
     >
       <div className="p-2.5 pb-0">
-        <PosterArt
-          gradient={show.gradient}
-          imageUrl={posterImage}
-          title={artist?.name ?? "Unknown artist"}
-          subtitle={tour?.name}
-          footer={
-            venue ? `${venue.city}${venue.region ? `, ${venue.region}` : ""}` : undefined
-          }
-          className="transition-transform duration-300 group-hover:scale-[1.015]"
-        />
+        {posterImage ? (
+          <PosterArt
+            gradient={show.gradient}
+            imageUrl={posterImage}
+            title={artist?.name ?? "Unknown artist"}
+            className="transition-transform duration-300 group-hover:scale-[1.015]"
+          />
+        ) : (
+          <TicketArt
+            seedId={show.id}
+            gradient={show.gradient}
+            artist={artist?.name ?? "Unknown artist"}
+            venue={venue?.name}
+            cityLine={
+              venue
+                ? `${venue.city}${venue.region ? `, ${venue.region}` : ""}`
+                : undefined
+            }
+            dateLine={formatShowDate(show.date)}
+            timeLine={show.showTime}
+            tourLine={tour?.name}
+            className="transition-transform duration-300 group-hover:scale-[1.015]"
+          />
+        )}
       </div>
       <div className="space-y-1.5 p-3">
         <div className="flex items-start justify-between gap-2">
