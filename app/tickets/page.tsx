@@ -20,9 +20,11 @@ export default async function TicketsPage() {
         title="Tickets"
         subtitle="The stub shoebox — every torn corner tells a story."
         actions={
-          <Button>
-            <Upload />
-            Upload ticket
+          <Button asChild>
+            <Link href="/add/ephemera?kind=ticket">
+              <Upload />
+              Upload ticket
+            </Link>
           </Button>
         }
       />
@@ -32,6 +34,7 @@ export default async function TicketsPage() {
           title="No ticket stubs yet"
           description="Scan or photograph your stubs to pin them to their shows."
           actionLabel="Upload ticket"
+          actionHref="/add/ephemera?kind=ticket"
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

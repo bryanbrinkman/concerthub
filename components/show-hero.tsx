@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   BadgeCheck,
   CalendarDays,
@@ -128,9 +129,11 @@ export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHer
               <FolderPlus />
               Add to collection
             </Button>
-            <Button variant="outline">
-              <Upload />
-              Upload ephemera
+            <Button variant="outline" asChild>
+              <Link href={`/add/ephemera?show=${show.id}`}>
+                <Upload />
+                Upload ephemera
+              </Link>
             </Button>
           </div>
         </div>

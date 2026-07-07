@@ -8,7 +8,14 @@ import { PosterImage } from "@/components/poster-image";
 import { EmptyState } from "@/components/empty-state";
 
 /** Collector metadata for the show's poster/print. */
-export function PosterDetailsCard({ poster }: { poster?: EnrichedPoster }) {
+export function PosterDetailsCard({
+  poster,
+  addHref,
+}: {
+  poster?: EnrichedPoster;
+  /** Link to the add-poster form; when unset the CTA is decorative. */
+  addHref?: string;
+}) {
   if (!poster) {
     return (
       <EmptyState
@@ -16,6 +23,7 @@ export function PosterDetailsCard({ poster }: { poster?: EnrichedPoster }) {
         title="No poster cataloged"
         description="Add the show print — designer, edition size, technique, and your copy number."
         actionLabel="Add poster"
+        actionHref={addHref}
       />
     );
   }

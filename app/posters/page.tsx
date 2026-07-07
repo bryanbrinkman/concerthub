@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ExternalLink, Frame, Plus } from "lucide-react";
 
 import { findArtist, findShow, getArchive } from "@/lib/archive";
@@ -48,9 +49,11 @@ export default async function PostersPage() {
         title="Posters"
         subtitle="Your flat file — fan through the collection like a poster rack."
         actions={
-          <Button>
-            <Plus />
-            Add poster
+          <Button asChild>
+            <Link href="/add/poster">
+              <Plus />
+              Add poster
+            </Link>
           </Button>
         }
       />
@@ -60,6 +63,7 @@ export default async function PostersPage() {
           title="No posters cataloged"
           description="Add show prints with designer, edition, and technique details."
           actionLabel="Add poster"
+          actionHref="/add/poster"
         />
       ) : (
         <PosterRack posters={rackPosters} />

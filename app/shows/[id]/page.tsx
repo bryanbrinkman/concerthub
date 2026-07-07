@@ -157,7 +157,7 @@ export default async function ShowDetailPage({
 
             <TabsContent value="overview" className="space-y-5">
               <div className="grid gap-5 lg:grid-cols-2">
-                <PosterDetailsCard poster={poster} />
+                <PosterDetailsCard poster={poster} addHref={`/add/poster?show=${show.id}`} />
                 <section>
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-base font-semibold">
@@ -167,7 +167,7 @@ export default async function ShowDetailPage({
                       <span className="text-xs text-primary">View all</span>
                     ) : null}
                   </div>
-                  <PhotoGrid photos={photos} limit={4} />
+                  <PhotoGrid photos={photos} limit={4} addHref={`/add/photo?show=${show.id}`} />
                 </section>
               </div>
               <TourCarousel items={carouselItems} />
@@ -178,12 +178,13 @@ export default async function ShowDetailPage({
             </TabsContent>
 
             <TabsContent value="poster">
-              <PosterDetailsCard poster={poster} />
+              <PosterDetailsCard poster={poster} addHref={`/add/poster?show=${show.id}`} />
             </TabsContent>
 
             <TabsContent value="photos">
               <PhotoGrid
                 photos={photos}
+                addHref={`/add/photo?show=${show.id}`}
                 className="sm:grid-cols-2 md:grid-cols-3"
               />
             </TabsContent>
@@ -198,7 +199,7 @@ export default async function ShowDetailPage({
 
         {/* Right rail — stacks below main content under xl */}
         <aside className="min-w-0 space-y-5">
-          <EphemeraGrid items={ephemeraItems} />
+          <EphemeraGrid items={ephemeraItems} addHref={`/add/ephemera?show=${show.id}`} />
           {memoryPanel}
           <MediaLinksCard links={links} />
         </aside>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   CreditCard,
   Image as ImageIcon,
@@ -26,7 +27,14 @@ const KIND_ICONS: Record<EphemeraKind, LucideIcon> = {
 };
 
 /** "My Ephemera" — the physical stuff saved from a show. */
-export function EphemeraGrid({ items }: { items: EphemeraItem[] }) {
+export function EphemeraGrid({
+  items,
+  addHref,
+}: {
+  items: EphemeraItem[];
+  /** Link to the add-ephemera form; when unset the CTA is decorative. */
+  addHref?: string;
+}) {
   if (items.length === 0) {
     return (
       <EmptyState
@@ -34,6 +42,7 @@ export function EphemeraGrid({ items }: { items: EphemeraItem[] }) {
         title="No ephemera yet"
         description="Ticket stubs, wristbands, laminates, posters — scan or photograph what you kept."
         actionLabel="Upload ephemera"
+        actionHref={addHref}
       />
     );
   }
@@ -78,13 +87,23 @@ export function EphemeraGrid({ items }: { items: EphemeraItem[] }) {
           );
         })}
         {/* upload slot */}
-        <button
-          type="button"
-          className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground"
-        >
-          <Plus className="h-5 w-5" />
-          <span className="px-2 text-center text-[11px]">Upload ephemera</span>
-        </button>
+        {addHref ? (
+          <Link
+            href={addHref}
+            className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground"
+          >
+            <Plus className="h-5 w-5" />
+            <span className="px-2 text-center text-[11px]">Upload ephemera</span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground"
+          >
+            <Plus className="h-5 w-5" />
+            <span className="px-2 text-center text-[11px]">Upload ephemera</span>
+          </button>
+        )}
       </CardContent>
     </Card>
   );

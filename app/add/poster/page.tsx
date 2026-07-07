@@ -1,0 +1,170 @@
+import { Frame, LogIn } from "lucide-react";
+
+import {
+  allShows,
+  findArtist,
+  findVenue,
+  getArchive,
+} from "@/lib/archive";
+import { formatShortDate } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { Field, inputClass, selectClass } from "@/components/form-controls";
+import { ImageField } from "@/components/image-field";
+import { addPosterAction } from "../actions";
+
+export const metadata = { title: "Add poster" };
+
+export default async function AddPosterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ show?: string }>;
+}) {
+  const { show: preselectedShow } = await searchParams;
+  const archive = await getArchive();
+
+  if (archive.demo) {
+    return (
+      <EmptyState
+        icon={LogIn}
+        title="Sign in to add posters"
+        description="Prints are saved to your own archive — sign in with Google from the sidebar first."
+      />
+    );
+  }
+
+  const shows = allShows(archive);
+
+  return (
+    <div className="mx-auto max-w-xl">
+      <PageHeader
+        title="Add poster"
+        subtitle="Catalog a print — designer, edition, technique, and your copy number."
+      />
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle>New print</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={addPosterAction} className="space-y-4">
+            <Field label="Show (optional)">
+              <select
+                name="showId"
+                defaultValue={preselectedShow ?? ""}
+                className={selectClass}
+              >
+                <option value="">Not tied to a show</option>
+                {shows.map((show) => (
+                  <option key={show.id} value={show.id}>
+                    {findArtist(archive, show.artistId)?.name ?? "Unknown"} —{" "}
+                    {findVenue(archive, show.venueId)?.name ?? ""} (
+                    {formatShortDate(show.date)})
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Title">
+                <input
+                  name="title"
+                  required
+                  placeholder="e.g. The Capitol Theatre"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Designer / print artist">
+                <input
+                  name="designer"
+                  placeholder="e.g. Killer Acid"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Year">
+                <input
+                  name="year"
+                  required
+                  type="number"
+                  min={1950}
+                  max={2100}
+                  placeholder="2025"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Edition name">
+                <input
+                  name="editionName"
+                  placeholder="Regular / Foil / AP"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Edition size">
+                <input
+                  name="runSize"
+                  type="number"
+                  min={1}
+                  placeholder="300"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Your copy #">
+                <input
+                  name="copyNumber"
+                  type="number"
+                  min={1}
+                  placeholder="137"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Technique">
+                <input
+                  name="technique"
+                  placeholder="6-color screen print"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Dimensions">
+                <input
+                  name="dimensions"
+                  placeholder={'18" x 24"'}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+            <Field label="Markings (optional)">
+              <input
+                name="markings"
+                placeholder="Signed & numbered in pencil"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Notes (optional)">
+              <input
+                name="notes"
+                placeholder="Official show poster"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Artwork (optional)">
+              <ImageField />
+            </Field>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="owned"
+                defaultChecked
+                className="h-4 w-4 accent-[#8b5cf6]"
+              />
+              I own this print (uncheck for wishlist)
+            </label>
+            <Button type="submit">
+              <Frame />
+              Save to archive
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

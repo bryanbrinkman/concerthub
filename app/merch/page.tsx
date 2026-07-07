@@ -22,9 +22,11 @@ export default async function MerchPage() {
         title="Merch"
         subtitle="Tees, hats, and the rest of the merch-table damage."
         actions={
-          <Button>
-            <Upload />
-            Add merch
+          <Button asChild>
+            <Link href="/add/ephemera?kind=apparel">
+              <Upload />
+              Add merch
+            </Link>
           </Button>
         }
       />
@@ -34,6 +36,7 @@ export default async function MerchPage() {
           title="No merch archived"
           description="Add the tour tee before it fades — size, print, and which show it came from."
           actionLabel="Add merch"
+          actionHref="/add/ephemera?kind=apparel"
         />
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

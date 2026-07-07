@@ -47,10 +47,18 @@ Google and get their own archive backed by Postgres.
    redeploy.
 
 Once signed in: every page reads your own rows (`lib/archive.ts`), the
-`/import` page really imports your setlist.fm attendance history, and the
-show page's memory card becomes an editable form. New accounts start empty —
-import is the fastest way to fill them. To copy the demo archive into your
-account: `npm run db:seed-demo -- you@example.com` (after signing in once).
+`/import` page really imports your setlist.fm attendance history, the show
+page's memory card becomes an editable form, and the add forms
+(`/add/poster`, `/add/ephemera`, `/add/photo`) save posters, ticket stubs,
+merch, and photos to your archive. New accounts start empty — import is the
+fastest way to fill them, or use the dashboard's "Copy the demo shows"
+button.
+
+**Image uploads (optional):** set `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` and
+`NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` (an *unsigned* preset — Cloudinary →
+Settings → Upload → Add upload preset → Signing mode: Unsigned) to enable
+in-browser file uploads on the add forms. Without them, pasting an image URL
+still works.
 
 ## Pages
 

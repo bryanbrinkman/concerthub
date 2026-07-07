@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -8,6 +9,8 @@ interface EmptyStateProps {
   title: string;
   description: string;
   actionLabel?: string;
+  /** When set, the action button becomes a real link. */
+  actionHref?: string;
   className?: string;
 }
 
@@ -17,6 +20,7 @@ export function EmptyState({
   title,
   description,
   actionLabel,
+  actionHref,
   className,
 }: EmptyStateProps) {
   return (
@@ -32,9 +36,15 @@ export function EmptyState({
       <p className="text-sm font-medium">{title}</p>
       <p className="mt-1 max-w-xs text-xs text-muted-foreground">{description}</p>
       {actionLabel ? (
-        <Button variant="outline" size="sm" className="mt-4">
-          {actionLabel}
-        </Button>
+        actionHref ? (
+          <Button variant="outline" size="sm" className="mt-4" asChild>
+            <Link href={actionHref}>{actionLabel}</Link>
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" className="mt-4">
+            {actionLabel}
+          </Button>
+        )
       ) : null}
     </div>
   );

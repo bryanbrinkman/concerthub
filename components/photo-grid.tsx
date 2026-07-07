@@ -9,11 +9,13 @@ interface PhotoGridProps {
   photos: ShowPhoto[];
   /** Cap the number shown (Overview tab shows a taste; Photos tab shows all). */
   limit?: number;
+  /** Link to the add-photo form; when unset the CTA is decorative. */
+  addHref?: string;
   className?: string;
 }
 
 /** "Photos from the night" — gradient placeholders until real uploads exist. */
-export function PhotoGrid({ photos, limit, className }: PhotoGridProps) {
+export function PhotoGrid({ photos, limit, addHref, className }: PhotoGridProps) {
   if (photos.length === 0) {
     return (
       <EmptyState
@@ -21,6 +23,7 @@ export function PhotoGrid({ photos, limit, className }: PhotoGridProps) {
         title="No photos yet"
         description="Add the blurry lasers, the marquee, the confetti — they all count."
         actionLabel="Upload photos"
+        actionHref={addHref}
         className={className}
       />
     );
