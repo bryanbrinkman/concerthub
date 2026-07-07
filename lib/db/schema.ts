@@ -243,6 +243,31 @@ export const showPhotos = pgTable("show_photo", {
   imageUrl: text("image_url"),
 });
 
+/**
+ * A collector raising their hand on someone else's print. Concert Collect
+ * doesn't broker sales — the owner sees the interested user's name/email
+ * and they work it out off-site.
+ */
+export const posterInterests = pgTable(
+  "poster_interest",
+  {
+    id: text("id").primaryKey().$defaultFn(uuid),
+    posterId: text("poster_id")
+      .notNull()
+      .references(() => posters.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    note: text("note"),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("poster_interest_unique_idx").on(t.posterId, t.userId),
+  ],
+);
+
 export const collections = pgTable("collection", {
   id: text("id").primaryKey().$defaultFn(uuid),
   userId: text("user_id")

@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ArrowLeftRight,
   CalendarDays,
   Download,
   Heart,
@@ -54,6 +55,7 @@ const MAIN_NAV: NavItem[] = [
   { label: "Venues", href: "/venues", icon: MapPin },
   { label: "Collections", href: "/collections", icon: Library },
   { label: "Memories", href: "/memories", icon: StickyNote },
+  { label: "Trading Post", href: "/prints", icon: ArrowLeftRight },
   { label: "Import", href: "/import", icon: Download },
 ];
 

@@ -74,6 +74,7 @@ still works.
 | `/tickets` | Ticket stub shoebox |
 | `/merch` | Apparel + other merch |
 | `/memories` | All written memories |
+| `/prints` | Trading Post — every collector's prints; express interest, owners get contact info to sell/trade off-site |
 
 ## Structure
 
