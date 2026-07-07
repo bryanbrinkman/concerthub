@@ -24,39 +24,56 @@ export default async function PrintsPage() {
   const db = getDb();
   const viewerId = await currentUserId();
 
+  // Guarded so a missing table (migration not yet applied) degrades to an
+  // empty gallery instead of a crash.
+  async function safely<T>(query: PromiseLike<T>, fallback: T): Promise<T> {
+    try {
+      return await query;
+    } catch (error) {
+      console.warn("[prints] query failed:", error);
+      return fallback;
+    }
+  }
+
   const posterRows = db
-    ? await db
-        .select({
-          id: t.posters.id,
-          title: t.posters.title,
-          designer: t.posters.designer,
-          year: t.posters.year,
-          imageUrl: t.posters.imageUrl,
-          gradient: t.posters.gradient,
-          ownerId: t.posters.userId,
-          ownerName: t.users.name,
-          showDate: t.shows.date,
-          artistName: t.artists.name,
-          venueName: t.venues.name,
-        })
-        .from(t.posters)
-        .innerJoin(t.users, eq(t.posters.userId, t.users.id))
-        .leftJoin(t.shows, eq(t.posters.showId, t.shows.id))
-        .leftJoin(t.artists, eq(t.shows.artistId, t.artists.id))
-        .leftJoin(t.venues, eq(t.shows.venueId, t.venues.id))
-        .where(eq(t.posters.owned, true))
+    ? await safely(
+        db
+          .select({
+            id: t.posters.id,
+            title: t.posters.title,
+            designer: t.posters.designer,
+            year: t.posters.year,
+            imageUrl: t.posters.imageUrl,
+            gradient: t.posters.gradient,
+            ownerId: t.posters.userId,
+            ownerName: t.users.name,
+            showDate: t.shows.date,
+            artistName: t.artists.name,
+            venueName: t.venues.name,
+          })
+          .from(t.posters)
+          .innerJoin(t.users, eq(t.posters.userId, t.users.id))
+          .leftJoin(t.shows, eq(t.posters.showId, t.shows.id))
+          .leftJoin(t.artists, eq(t.shows.artistId, t.artists.id))
+          .leftJoin(t.venues, eq(t.shows.venueId, t.venues.id))
+          .where(eq(t.posters.owned, true)),
+        [],
+      )
     : [];
 
   const interestRows = db
-    ? await db
-        .select({
-          posterId: t.posterInterests.posterId,
-          userId: t.posterInterests.userId,
-          name: t.users.name,
-          email: t.users.email,
-        })
-        .from(t.posterInterests)
-        .innerJoin(t.users, eq(t.posterInterests.userId, t.users.id))
+    ? await safely(
+        db
+          .select({
+            posterId: t.posterInterests.posterId,
+            userId: t.posterInterests.userId,
+            name: t.users.name,
+            email: t.users.email,
+          })
+          .from(t.posterInterests)
+          .innerJoin(t.users, eq(t.posterInterests.userId, t.users.id)),
+        [],
+      )
     : [];
 
   const interestByPoster = new Map<string, typeof interestRows>();
