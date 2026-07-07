@@ -1,15 +1,13 @@
 /**
  * Concert Collect — local seed data.
  *
- * Everything here is mock data so the app works with no backend and no auth.
+ * Seeded with real shows from the user's archive. Setlists resolve live from
+ * setlist.fm at runtime (lib/setlistfm.ts) — the setlist here is only the
+ * offline fallback. Poster imagery can also resolve from Expresso Beans
+ * (lib/expressobeans.ts) once an item id is set.
  *
- * TODO(api): This module is the seam for future integrations.
- *  - setlist.fm: replace `setlists` with a fetch against the setlist.fm REST
- *    API (https://api.setlist.fm/rest/1.0/) keyed by artist MBID + show date.
- *  - Expresso Beans: replace poster/edition metadata + market values with
- *    lookups against Expresso Beans (expressobeans.com) item pages.
- *  - Keep the helper functions below as the public interface so pages and
- *    components don't need to change when real data sources arrive.
+ * The helper functions at the bottom are the read API the UI is built
+ * against — swap seed arrays for real storage without touching pages.
  */
 
 import type {
@@ -26,60 +24,17 @@ import type {
   Venue,
 } from "./types";
 
-/**
- * Freely-licensed Unsplash photos used as stand-in imagery until real
- * uploads / API art exists. Rendered as background layers over gradients,
- * so a missing image degrades to the gradient, never a broken icon.
- */
-const unsplash = (id: string) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=80`;
-
 /* ------------------------------------------------------------------ */
 /* Artists                                                             */
 /* ------------------------------------------------------------------ */
 
 export const artists: Artist[] = [
   {
-    id: "tame-impala",
-    name: "Tame Impala",
-    genres: ["Psych Rock", "Synth Pop"],
-    hometown: "Perth, Australia",
-    gradient: "aurora",
-  },
-  {
-    id: "lcd-soundsystem",
-    name: "LCD Soundsystem",
-    genres: ["Dance-Punk", "Electronic"],
-    hometown: "Brooklyn, NY",
-    gradient: "midnight",
-  },
-  {
-    id: "khruangbin",
-    name: "Khruangbin",
-    genres: ["Psych Funk", "Global Groove"],
-    hometown: "Houston, TX",
-    gradient: "jade",
-  },
-  {
-    id: "war-on-drugs",
-    name: "The War on Drugs",
-    genres: ["Heartland Rock", "Indie"],
-    hometown: "Philadelphia, PA",
+    id: "rilo-kiley",
+    name: "Rilo Kiley",
+    genres: ["Indie Rock", "Indie Pop"],
+    hometown: "Los Angeles, CA",
     gradient: "ember",
-  },
-  {
-    id: "king-gizzard",
-    name: "King Gizzard & The Lizard Wizard",
-    genres: ["Psych Rock", "Everything"],
-    hometown: "Melbourne, Australia",
-    gradient: "gold",
-  },
-  {
-    id: "fleet-foxes",
-    name: "Fleet Foxes",
-    genres: ["Indie Folk"],
-    hometown: "Seattle, WA",
-    gradient: "ocean",
   },
 ];
 
@@ -89,76 +44,13 @@ export const artists: Artist[] = [
 
 export const venues: Venue[] = [
   {
-    id: "msg",
-    name: "Madison Square Garden",
-    city: "New York",
-    region: "NY",
-    country: "USA",
-    capacity: 20789,
-    gradient: "neon",
-  },
-  {
-    id: "td-garden",
-    name: "TD Garden",
-    city: "Boston",
-    region: "MA",
-    country: "USA",
-    capacity: 19580,
-    gradient: "ocean",
-  },
-  {
-    id: "wells-fargo-center",
-    name: "Wells Fargo Center",
-    city: "Philadelphia",
-    region: "PA",
-    country: "USA",
-    capacity: 21000,
-    gradient: "dusk",
-  },
-  {
-    id: "scotiabank-arena",
-    name: "Scotiabank Arena",
-    city: "Toronto",
-    region: "ON",
-    country: "Canada",
-    capacity: 19800,
-    gradient: "ember",
-  },
-  {
-    id: "united-center",
-    name: "United Center",
-    city: "Chicago",
-    region: "IL",
-    country: "USA",
-    capacity: 23500,
-    gradient: "gold",
-  },
-  {
-    id: "brooklyn-steel",
-    name: "Brooklyn Steel",
-    city: "Brooklyn",
+    id: "capitol-theatre",
+    name: "The Capitol Theatre",
+    city: "Port Chester",
     region: "NY",
     country: "USA",
     capacity: 1800,
-    gradient: "midnight",
-  },
-  {
-    id: "red-rocks",
-    name: "Red Rocks Amphitheatre",
-    city: "Morrison",
-    region: "CO",
-    country: "USA",
-    capacity: 9525,
-    gradient: "ember",
-  },
-  {
-    id: "forest-hills",
-    name: "Forest Hills Stadium",
-    city: "Queens",
-    region: "NY",
-    country: "USA",
-    capacity: 13000,
-    gradient: "jade",
+    gradient: "dusk",
   },
 ];
 
@@ -168,16 +60,10 @@ export const venues: Venue[] = [
 
 export const tours: Tour[] = [
   {
-    id: "slow-rush-tour",
-    artistId: "tame-impala",
-    name: "The Slow Rush Tour",
-    years: "2022",
-  },
-  {
-    id: "idtio-tour",
-    artistId: "war-on-drugs",
-    name: "I Don't Live Here Anymore Tour",
-    years: "2022",
+    id: "rk-2025-tour",
+    artistId: "rilo-kiley",
+    name: "Sometimes When You're On You're Really F**king On Tour",
+    years: "2025",
   },
 ];
 
@@ -186,121 +72,16 @@ export const tours: Tour[] = [
 /* ------------------------------------------------------------------ */
 
 export const shows: Show[] = [
-  // ---- The Slow Rush Tour, Sep 2022 run ----
   {
-    id: "tame-impala-msg-2022",
-    artistId: "tame-impala",
-    venueId: "msg",
-    tourId: "slow-rush-tour",
-    date: "2022-09-14",
-    showTime: "7:30 PM",
-    attended: true,
-    favorite: true,
-    attendeeCount: 47,
-    gradient: "aurora",
-  },
-  {
-    id: "tame-impala-boston-2022",
-    artistId: "tame-impala",
-    venueId: "td-garden",
-    tourId: "slow-rush-tour",
-    date: "2022-09-11",
-    showTime: "7:30 PM",
-    attended: false,
-    favorite: false,
-    gradient: "ocean",
-  },
-  {
-    id: "tame-impala-philly-2022",
-    artistId: "tame-impala",
-    venueId: "wells-fargo-center",
-    tourId: "slow-rush-tour",
-    date: "2022-09-12",
-    showTime: "7:30 PM",
-    attended: false,
-    favorite: false,
-    gradient: "dusk",
-  },
-  {
-    id: "tame-impala-toronto-2022",
-    artistId: "tame-impala",
-    venueId: "scotiabank-arena",
-    tourId: "slow-rush-tour",
-    date: "2022-09-16",
-    showTime: "7:30 PM",
-    attended: false,
-    favorite: false,
-    gradient: "ember",
-  },
-  {
-    id: "tame-impala-chicago-2022",
-    artistId: "tame-impala",
-    venueId: "united-center",
-    tourId: "slow-rush-tour",
-    date: "2022-09-18",
-    showTime: "7:30 PM",
-    attended: false,
-    favorite: false,
-    gradient: "gold",
-  },
-
-  // ---- Other archive entries ----
-  {
-    // Intentionally sparse: no poster, no ephemera, no memory, no media —
-    // exercises every empty state on the show detail page.
-    id: "lcd-brooklyn-2021",
-    artistId: "lcd-soundsystem",
-    venueId: "brooklyn-steel",
-    date: "2021-12-08",
+    id: "rilo-kiley-capitol-2025",
+    artistId: "rilo-kiley",
+    venueId: "capitol-theatre",
+    tourId: "rk-2025-tour",
+    date: "2025-08-31",
     showTime: "8:00 PM",
     attended: true,
-    favorite: false,
-    attendeeCount: 3,
-    gradient: "midnight",
-  },
-  {
-    id: "khruangbin-red-rocks-2023",
-    artistId: "khruangbin",
-    venueId: "red-rocks",
-    date: "2023-08-22",
-    showTime: "7:00 PM",
-    attended: true,
     favorite: true,
-    attendeeCount: 12,
-    gradient: "jade",
-  },
-  {
-    id: "wod-msg-2022",
-    artistId: "war-on-drugs",
-    venueId: "msg",
-    tourId: "idtio-tour",
-    date: "2022-01-29",
-    showTime: "8:00 PM",
-    attended: true,
-    favorite: false,
-    attendeeCount: 8,
     gradient: "ember",
-  },
-  {
-    id: "king-gizzard-forest-hills-2023",
-    artistId: "king-gizzard",
-    venueId: "forest-hills",
-    date: "2023-06-16",
-    showTime: "6:30 PM",
-    attended: true,
-    favorite: false,
-    attendeeCount: 5,
-    gradient: "gold",
-  },
-  {
-    id: "fleet-foxes-forest-hills-2021",
-    artistId: "fleet-foxes",
-    venueId: "forest-hills",
-    date: "2021-09-25",
-    showTime: "7:00 PM",
-    attended: true,
-    favorite: false,
-    gradient: "ocean",
   },
 ];
 
@@ -308,61 +89,45 @@ export const shows: Show[] = [
 /* Setlists                                                            */
 /* ------------------------------------------------------------------ */
 
-// These are the OFFLINE FALLBACKS. When SETLISTFM_API_KEY is set, show pages
-// resolve live setlists via lib/setlistfm.ts (artist name + date search) and
-// only fall back to these seeds when the API has no match.
+// OFFLINE FALLBACK ONLY — approximated from 2025 reunion-tour setlists.
+// With SETLISTFM_API_KEY set, lib/setlistfm.ts fetches the real setlist for
+// 2025-08-31 and this seed is never shown.
 export const setlists: Setlist[] = [
   {
-    id: "setlist-tame-msg-2022",
-    showId: "tame-impala-msg-2022",
+    id: "setlist-rk-capitol-2025",
+    showId: "rilo-kiley-capitol-2025",
     source: "setlist.fm",
-    sourceUrl: "https://www.setlist.fm/",
+    sourceUrl:
+      "https://www.setlist.fm/setlist/rilo-kiley/2025/capitol-theatre-port-chester-ny-2347a073.html",
     sets: [
       {
         name: "Main Set",
         songs: [
-          { title: "One More Year" },
-          { title: "Instant Destiny" },
-          { title: "Borderline" },
-          { title: "Posthumous Forgiveness" },
-          { title: "Breathe Deeper" },
-          { title: "Tomorrow's Dust" },
-          { title: "On Track" },
-          { title: "Lost in Yesterday" },
-          { title: "Is It True" },
-          { title: "It Might Be Time" },
-          { title: "Eventually", note: "extended outro, confetti" },
-          { title: "The Less I Know the Better" },
-          { title: "Nangs" },
-          { title: "New Person, Same Old Mistakes" },
+          { title: "It's a Hit" },
+          { title: "Close Call" },
+          { title: "Paint's Peeling" },
+          { title: "The Execution of All Things" },
+          { title: "Dreamworld" },
+          { title: "Ripchord" },
+          { title: "The Good That Won't Come Out" },
+          { title: "Glendora" },
+          { title: "A Man/Me/Then Jim" },
+          { title: "Wires and Waves" },
+          { title: "I Never" },
+          { title: "Silver Lining" },
+          { title: "Breakin' Up" },
+          { title: "The Moneymaker" },
+          { title: "Portions for Foxes" },
+          { title: "Spectacular Views" },
         ],
       },
       {
         name: "Encore",
-        songs: [{ title: "Let It Happen", note: "laser tunnel finale" }],
-      },
-    ],
-  },
-  {
-    id: "setlist-khruangbin-rr-2023",
-    showId: "khruangbin-red-rocks-2023",
-    source: "user",
-    sets: [
-      {
-        name: "Main Set",
         songs: [
-          { title: "First Class" },
-          { title: "August 10" },
-          { title: "Ali", note: "with Vieux Farka Touré" },
-          { title: "Maria También" },
-          { title: "Pelota" },
-          { title: "Evan Finds the Third Room" },
-          { title: "Time (You and I)" },
+          { title: "A Better Son/Daughter" },
+          { title: "Does He Love You?" },
+          { title: "With Arms Outstretched" },
         ],
-      },
-      {
-        name: "Encore",
-        songs: [{ title: "People Everywhere (Still Alive)" }],
       },
     ],
   },
@@ -372,86 +137,26 @@ export const setlists: Setlist[] = [
 /* Posters                                                             */
 /* ------------------------------------------------------------------ */
 
-// To pull real poster imagery from Expresso Beans, set `expressoBeansId` to
-// the number from the item page URL (expressobeans.com/public/detail.php/<id>)
-// — lib/expressobeans.ts fetches the image and deep link, and the UI falls
-// back to gradient art when the id is unset or the fetch fails.
-// TODO(api): also pull market data (avg sale, last sale, have/want counts).
+// To pull imagery/deep links from Expresso Beans instead, set
+// `expressoBeansId` from the item page URL
+// (expressobeans.com/public/detail.php/<id>) — a hand-set imageUrl wins.
 export const posters: Poster[] = [
   {
-    id: "poster-tame-msg-2022",
-    showId: "tame-impala-msg-2022",
-    tourId: "slow-rush-tour",
-    title: "Madison Square Garden",
-    designer: "Status Serigraph",
-    year: 2022,
-    notes: "Official show poster",
-    gradient: "aurora",
-    owned: true,
-    // expressoBeansId: 123456, // <- paste the real EB item id to activate
-    // Stand-in abstract art (EB imagery replaces this once an id is set
-    // and this line is removed — hand-set imageUrl wins over scraped).
-    imageUrl: unsplash("photo-1579546929518-9e396f3cc809"),
-    editions: [
-      {
-        id: "ed-tame-msg-reg",
-        name: "Regular",
-        runSize: 300,
-        copyNumber: 137,
-        technique: "6-color screen print",
-        dimensions: '18" x 24"',
-        markings: "Numbered in pencil, bottom right",
-      },
-      {
-        id: "ed-tame-msg-foil",
-        name: "Rainbow Foil Variant",
-        runSize: 60,
-        technique: "6-color screen print on foil",
-        dimensions: '18" x 24"',
-        markings: "Signed & numbered",
-      },
-    ],
-  },
-  {
-    id: "poster-khruangbin-rr-2023",
-    showId: "khruangbin-red-rocks-2023",
-    title: "Red Rocks Night Two",
-    designer: "Landland",
-    year: 2023,
-    notes: "Night-specific variant with moon phase",
-    gradient: "jade",
-    owned: true,
-    imageUrl: unsplash("photo-1541701494587-cb58502866ab"),
-    editions: [
-      {
-        id: "ed-khruangbin-rr-reg",
-        name: "Regular",
-        runSize: 450,
-        copyNumber: 88,
-        technique: "4-color screen print",
-        dimensions: '18" x 24"',
-        markings: "Numbered in pencil",
-      },
-    ],
-  },
-  {
-    id: "poster-wod-msg-2022",
-    showId: "wod-msg-2022",
-    tourId: "idtio-tour",
-    title: "MSG — I Don't Live Here Anymore",
-    designer: "Dan Grzeca",
-    year: 2022,
-    notes: "Wishlist — still hunting a copy",
+    id: "poster-rk-capitol-2025",
+    showId: "rilo-kiley-capitol-2025",
+    tourId: "rk-2025-tour",
+    title: "The Capitol Theatre",
+    designer: "Unknown",
+    year: 2025,
+    notes: "Show poster — Port Chester, Aug 31, 2025",
     gradient: "ember",
-    owned: false,
-    imageUrl: unsplash("photo-1550684376-efcbd6e3f031"),
+    owned: true,
+    imageUrl:
+      "https://res.cloudinary.com/dto3ky70u/image/upload/v1783451871/images_hid8br.jpg",
     editions: [
       {
-        id: "ed-wod-msg-reg",
+        id: "ed-rk-capitol-reg",
         name: "Regular",
-        runSize: 250,
-        technique: "5-color screen print",
-        dimensions: '18" x 24"',
       },
     ],
   },
@@ -461,180 +166,36 @@ export const posters: Poster[] = [
 /* Ephemera                                                            */
 /* ------------------------------------------------------------------ */
 
-export const ephemera: EphemeraItem[] = [
-  // Tame Impala @ MSG — the fully-stocked archive entry
-  {
-    id: "eph-tame-ticket",
-    showId: "tame-impala-msg-2022",
-    kind: "ticket",
-    title: "Ticket Stub",
-    detail: "Sec 110 · Row 18 · Seat 7 · $89.50",
-    gradient: "dusk",
-  },
-  {
-    id: "eph-tame-laminate",
-    showId: "tame-impala-msg-2022",
-    kind: "laminate",
-    title: "VIP Laminate",
-    detail: "The Slow Rush Tour · MSG",
-    gradient: "neon",
-  },
-  {
-    id: "eph-tame-wristband",
-    showId: "tame-impala-msg-2022",
-    kind: "wristband",
-    title: "Wristband",
-    detail: "9.14.22 · MSG · Floor",
-    gradient: "ember",
-  },
-  {
-    id: "eph-tame-poster",
-    showId: "tame-impala-msg-2022",
-    kind: "poster",
-    title: "Tour Poster",
-    detail: "Limited edition of 300",
-    gradient: "aurora",
-  },
-  {
-    id: "eph-tame-hat",
-    showId: "tame-impala-msg-2022",
-    kind: "apparel",
-    title: "Hat",
-    detail: "Embroidered logo snapback",
-    gradient: "midnight",
-    imageUrl: unsplash("photo-1521369909029-2afed882baee"),
-  },
-  {
-    id: "eph-tame-tee",
-    showId: "tame-impala-msg-2022",
-    kind: "apparel",
-    title: "Tour Tee",
-    detail: "Slow Rush dateback · L",
-    gradient: "gold",
-    imageUrl: unsplash("photo-1521572163474-6864f9cf17ab"),
-  },
-
-  // Khruangbin @ Red Rocks
-  {
-    id: "eph-khruangbin-ticket",
-    showId: "khruangbin-red-rocks-2023",
-    kind: "ticket",
-    title: "Ticket Stub",
-    detail: "GA · Row 28",
-    gradient: "jade",
-  },
-  {
-    id: "eph-khruangbin-poster",
-    showId: "khruangbin-red-rocks-2023",
-    kind: "poster",
-    title: "Show Poster",
-    detail: "Landland · #88/450",
-    gradient: "ocean",
-  },
-
-  // The War on Drugs @ MSG
-  {
-    id: "eph-wod-ticket",
-    showId: "wod-msg-2022",
-    kind: "ticket",
-    title: "Ticket Stub",
-    detail: "Sec 213 · Row 4 · Seat 12",
-    gradient: "ember",
-  },
-  {
-    id: "eph-gizz-tee",
-    showId: "king-gizzard-forest-hills-2023",
-    kind: "apparel",
-    title: "Gator Tee",
-    detail: "Tour dateback · M",
-    gradient: "gold",
-  },
-];
+// Nothing scanned in yet — the show page shows the upload empty state.
+export const ephemera: EphemeraItem[] = [];
 
 /* ------------------------------------------------------------------ */
 /* Memories                                                            */
 /* ------------------------------------------------------------------ */
 
-export const memories: UserMemory[] = [
-  {
-    id: "mem-tame-msg",
-    showId: "tame-impala-msg-2022",
-    text: "Incredible night. The entire arena was floating. “Eventually” hit so hard live. One of the best shows I've ever been to.",
-    createdAt: "2022-09-15",
-    attendedWith: ["Alex", "Sam"],
-  },
-  {
-    id: "mem-khruangbin-rr",
-    showId: "khruangbin-red-rocks-2023",
-    text: "Golden hour set under the rocks. The whole crowd swayed through “Time (You and I)” — felt like one long exhale.",
-    createdAt: "2023-08-23",
-    attendedWith: ["Jordan"],
-  },
-  {
-    id: "mem-wod-msg",
-    showId: "wod-msg-2022",
-    text: "“Under the Pressure” opener nearly took the roof off. Adam's solos echoed around the Garden forever.",
-    createdAt: "2022-01-30",
-  },
-];
+// None written yet — memory cards render their "Add memory" empty state.
+export const memories: UserMemory[] = [];
 
 /* ------------------------------------------------------------------ */
 /* Media links                                                         */
 /* ------------------------------------------------------------------ */
 
-// TODO(api): the setlist.fm and Expresso Beans URLs below are placeholders —
-// deep-link to the exact setlist / poster item pages once the integrations
-// can resolve real ids.
 export const mediaLinks: MediaLink[] = [
   {
-    id: "ml-tame-setlistfm",
-    showId: "tame-impala-msg-2022",
+    id: "ml-rk-setlistfm",
+    showId: "rilo-kiley-capitol-2025",
     kind: "setlistfm",
     label: "View on setlist.fm",
     sublabel: "Full setlist & tour stats",
-    url: "https://www.setlist.fm/",
+    url: "https://www.setlist.fm/setlist/rilo-kiley/2025/capitol-theatre-port-chester-ny-2347a073.html",
   },
   {
-    id: "ml-tame-eb",
-    showId: "tame-impala-msg-2022",
-    kind: "expressobeans",
-    label: "View on Expresso Beans",
-    sublabel: "Poster market history",
-    url: "https://www.expressobeans.com/",
-  },
-  {
-    id: "ml-tame-aud",
-    showId: "tame-impala-msg-2022",
-    kind: "audio",
-    label: "Full Show Recording (AUD)",
-    sublabel: "by tapername",
-    duration: "1:45:21",
-    url: "https://archive.org/",
-  },
-  {
-    id: "ml-tame-yt",
-    showId: "tame-impala-msg-2022",
+    id: "ml-rk-youtube",
+    showId: "rilo-kiley-capitol-2025",
     kind: "video",
-    label: "The Less I Know the Better (Live)",
+    label: "Concert video from the night",
     sublabel: "YouTube",
-    duration: "4:48",
-    url: "https://www.youtube.com/",
-  },
-  {
-    id: "ml-tame-photos",
-    showId: "tame-impala-msg-2022",
-    kind: "photos",
-    label: "Photos from the show",
-    sublabel: "Google Photos album",
-    url: "https://photos.google.com/",
-  },
-  {
-    id: "ml-khruangbin-setlistfm",
-    showId: "khruangbin-red-rocks-2023",
-    kind: "setlistfm",
-    label: "View on setlist.fm",
-    sublabel: "Full setlist",
-    url: "https://www.setlist.fm/",
+    url: "https://www.youtube.com/watch?v=EAl7E9PPRxY",
   },
 ];
 
@@ -644,44 +205,26 @@ export const mediaLinks: MediaLink[] = [
 
 export const collections: Collection[] = [
   {
-    id: "col-2022-arena-run",
-    name: "2022 Arena Run",
-    description: "Every big-room show from the year live music came back.",
-    itemCount: 4,
-    gradient: "aurora",
-  },
-  {
-    id: "col-screen-print-binder",
-    name: "Screen Print Binder",
-    description: "Flat-file favorites — numbered runs and variants.",
-    itemCount: 3,
-    gradient: "neon",
-  },
-  {
-    id: "col-ticket-stub-shoebox",
-    name: "Ticket Stub Shoebox",
-    description: "Every stub that survived the wash.",
-    itemCount: 3,
-    gradient: "dusk",
-  },
-  {
-    id: "col-wishlist",
-    name: "Wishlist",
-    description: "Grails and gaps — posters and stubs still being hunted.",
+    id: "col-2025-shows",
+    name: "2025 Shows",
+    description: "The year Rilo Kiley came back.",
     itemCount: 1,
     gradient: "ember",
+  },
+  {
+    id: "col-poster-wall",
+    name: "Poster Wall",
+    description: "Prints from shows worth framing.",
+    itemCount: 1,
+    gradient: "dusk",
   },
 ];
 
 /* ------------------------------------------------------------------ */
-/* Photo placeholders                                                  */
+/* Photos                                                              */
 /* ------------------------------------------------------------------ */
 
-/**
- * Mock "photos from the night". The imageUrls are freely-licensed Unsplash
- * concert photography standing in for the user's own uploads — the gradient
- * still renders underneath, so a failed image degrades gracefully.
- */
+/** Photos from the night — real shots, layered over a gradient fallback. */
 export interface ShowPhoto {
   id: string;
   showId: string;
@@ -691,14 +234,38 @@ export interface ShowPhoto {
 }
 
 export const showPhotos: ShowPhoto[] = [
-  { id: "ph-1", showId: "tame-impala-msg-2022", caption: "Lasers over the floor", gradient: "neon", imageUrl: unsplash("photo-1470229722913-7c0e2dbbafd3") },
-  { id: "ph-2", showId: "tame-impala-msg-2022", caption: "Stage from the boards", gradient: "midnight", imageUrl: unsplash("photo-1493225457124-a3eb161ffa5f") },
-  { id: "ph-3", showId: "tame-impala-msg-2022", caption: "The big red sun", gradient: "ember", imageUrl: unsplash("photo-1516450360452-9312f5e86fc7") },
-  { id: "ph-4", showId: "tame-impala-msg-2022", caption: "Confetti during Eventually", gradient: "gold", imageUrl: unsplash("photo-1533174072545-7a4b6ad7a6c3") },
-  { id: "ph-5", showId: "tame-impala-msg-2022", caption: "Crowd at the encore", gradient: "aurora", imageUrl: unsplash("photo-1501386761578-eac5c94b800a") },
-  { id: "ph-6", showId: "tame-impala-msg-2022", caption: "View from Sec 110", gradient: "dusk", imageUrl: unsplash("photo-1459749411175-04bf5292ceea") },
-  { id: "ph-7", showId: "khruangbin-red-rocks-2023", caption: "Golden hour at the rocks", gradient: "gold", imageUrl: unsplash("photo-1506157786151-b8491531f063") },
-  { id: "ph-8", showId: "khruangbin-red-rocks-2023", caption: "Lights over the stage", gradient: "midnight", imageUrl: unsplash("photo-1540039155733-5bb30b53aa14") },
+  {
+    id: "ph-rk-1",
+    showId: "rilo-kiley-capitol-2025",
+    caption: "The Capitol stage",
+    gradient: "ember",
+    imageUrl:
+      "https://res.cloudinary.com/dto3ky70u/image/upload/v1783452222/IMG_0277_sieqeu.jpg",
+  },
+  {
+    id: "ph-rk-2",
+    showId: "rilo-kiley-capitol-2025",
+    caption: "Mid-set",
+    gradient: "dusk",
+    imageUrl:
+      "https://res.cloudinary.com/dto3ky70u/image/upload/v1783452222/IMG_0273_j959nu.jpg",
+  },
+  {
+    id: "ph-rk-3",
+    showId: "rilo-kiley-capitol-2025",
+    caption: "From the floor",
+    gradient: "midnight",
+    imageUrl:
+      "https://res.cloudinary.com/dto3ky70u/image/upload/v1783452222/IMG_0269_mxh6xg.jpg",
+  },
+  {
+    id: "ph-rk-4",
+    showId: "rilo-kiley-capitol-2025",
+    caption: "House lights up",
+    gradient: "gold",
+    imageUrl:
+      "https://res.cloudinary.com/dto3ky70u/image/upload/v1783452287/IMG_0270_rcu3th.jpg",
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -778,9 +345,12 @@ export function getArchiveCounts() {
   return {
     shows: shows.filter((s) => s.attended).length,
     wishlist: posters.filter((p) => !p.owned).length,
-    posters: posters.filter((p) => p.owned).length + ephemera.filter((e) => e.kind === "poster").length,
+    posters:
+      posters.filter((p) => p.owned).length +
+      ephemera.filter((e) => e.kind === "poster").length,
     tickets: ephemera.filter((e) => e.kind === "ticket").length,
-    merch: ephemera.filter((e) => e.kind === "apparel" || e.kind === "other").length,
+    merch: ephemera.filter((e) => e.kind === "apparel" || e.kind === "other")
+      .length,
     favorites: shows.filter((s) => s.favorite).length,
   };
 }

@@ -18,13 +18,14 @@ npm run dev
 
 Then open [http://localhost:3000](http://localhost:3000).
 
-The seeded showcase page is
-[`/shows/tame-impala-msg-2022`](http://localhost:3000/shows/tame-impala-msg-2022)
-— Tame Impala, The Slow Rush Tour, Madison Square Garden, Sep 14 2022.
-For the full set of empty states (no poster, no ephemera, no memory, no media),
-see [`/shows/lcd-brooklyn-2021`](http://localhost:3000/shows/lcd-brooklyn-2021).
+The seeded show page is
+[`/shows/rilo-kiley-capitol-2025`](http://localhost:3000/shows/rilo-kiley-capitol-2025)
+— Rilo Kiley at The Capitol Theatre, Port Chester NY, Aug 31 2025, with real
+concert photos, the show poster, and a YouTube link. Ephemera and memory are
+intentionally empty so their upload/add empty states show.
 
-No auth, no database — everything renders from local seed data.
+No auth, no database — everything renders from local seed data (plus the
+live setlist.fm lookup described below).
 
 ## Pages
 
@@ -72,14 +73,13 @@ lib/
   content; setlist lives in its tab.
 - **Mobile**: sidebar collapses into a sticky top bar with a slide-down menu.
 
-### Placeholder artwork
+### Artwork & imagery
 
-No copyrighted poster/photo assets are included. Visuals are freely-licensed
-Unsplash photos (concert shots for photo grids, abstract art standing in for
-posters) layered over muted duotone gradients in
-`components/gradient-art.tsx` — if an image URL ever fails, the gradient
-shows instead of a broken image. Swap the `imageUrl` fields in `lib/data.ts`
-for real uploads or API-sourced art without touching layout.
+Seeded imagery (poster, concert photos) is the user's own, hosted on
+Cloudinary and referenced by `imageUrl` in `lib/data.ts`. Every image is
+layered over a muted duotone gradient (`components/gradient-art.tsx`) — if a
+URL ever fails, the gradient shows instead of a broken image, and anything
+without an `imageUrl` renders as a generated gradient placeholder.
 
 ## Live integrations
 
