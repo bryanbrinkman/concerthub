@@ -2,15 +2,20 @@ import Link from "next/link";
 import { ExternalLink, Frame, Plus } from "lucide-react";
 
 import { getShow, posters } from "@/lib/data";
+import { enrichPosters } from "@/lib/expressobeans";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
-import { PosterArt } from "@/components/gradient-art";
+import { PosterImage } from "@/components/poster-image";
 import { EmptyState } from "@/components/empty-state";
 
 export const metadata = { title: "Posters" };
 
-export default function PostersPage() {
+export default async function PostersPage() {
+  // Pull real artwork from Expresso Beans for any poster with an id set;
+  // the rest keep their generated gradient art.
+  const enriched = await enrichPosters(posters);
+
   return (
     <div>
       <PageHeader
@@ -23,7 +28,7 @@ export default function PostersPage() {
           </Button>
         }
       />
-      {posters.length === 0 ? (
+      {enriched.length === 0 ? (
         <EmptyState
           icon={Frame}
           title="No posters cataloged"
@@ -32,12 +37,13 @@ export default function PostersPage() {
         />
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-          {posters.map((poster) => {
+          {enriched.map((poster) => {
             const show = poster.showId ? getShow(poster.showId) : undefined;
             const primary = poster.editions[0];
             const card = (
               <div className="group h-full overflow-hidden rounded-2xl border border-border bg-card p-3 transition-colors hover:border-primary/40">
-                <PosterArt
+                <PosterImage
+                  imageUrl={poster.resolvedImageUrl}
                   gradient={poster.gradient}
                   title={poster.title}
                   subtitle={poster.designer}

@@ -8,10 +8,11 @@ import {
 } from "lucide-react";
 
 import type { Artist, Setlist, Show, Tour, Venue } from "@/lib/types";
+import type { EnrichedPoster } from "@/lib/expressobeans";
 import { formatShowDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PosterArt } from "@/components/gradient-art";
+import { PosterImage } from "@/components/poster-image";
 import { SetlistCard } from "@/components/setlist-card";
 
 interface ShowHeroProps {
@@ -20,10 +21,12 @@ interface ShowHeroProps {
   venue?: Venue;
   tour?: Tour;
   setlist?: Setlist;
+  /** The show's poster, if cataloged — real EB artwork renders when available. */
+  poster?: EnrichedPoster;
 }
 
 /** Hero band: poster, title block, meta, CTAs, and (on wide screens) the setlist. */
-export function ShowHero({ show, artist, venue, tour, setlist }: ShowHeroProps) {
+export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHeroProps) {
   return (
     <section className="relative overflow-hidden rounded-2xl border border-border bg-card">
       {/* soft purple wash behind the hero */}
@@ -31,7 +34,8 @@ export function ShowHero({ show, artist, venue, tour, setlist }: ShowHeroProps) 
 
       <div className="relative grid gap-6 p-5 sm:p-6 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_360px]">
         {/* Poster */}
-        <PosterArt
+        <PosterImage
+          imageUrl={poster?.resolvedImageUrl}
           gradient={show.gradient}
           title={artist?.name ?? "Unknown artist"}
           subtitle={tour?.name}

@@ -300,8 +300,9 @@ export const shows: Show[] = [
 /* Setlists                                                            */
 /* ------------------------------------------------------------------ */
 
-// TODO(api): source these from setlist.fm — GET /rest/1.0/search/setlists
-// ?artistMbid={mbid}&date={dd-MM-yyyy}, then normalize into `Setlist`.
+// These are the OFFLINE FALLBACKS. When SETLISTFM_API_KEY is set, show pages
+// resolve live setlists via lib/setlistfm.ts (artist name + date search) and
+// only fall back to these seeds when the API has no match.
 export const setlists: Setlist[] = [
   {
     id: "setlist-tame-msg-2022",
@@ -363,8 +364,11 @@ export const setlists: Setlist[] = [
 /* Posters                                                             */
 /* ------------------------------------------------------------------ */
 
-// TODO(api): enrich with Expresso Beans data (item id, average sale price,
-// last sale, want/have counts) once an integration exists.
+// To pull real poster imagery from Expresso Beans, set `expressoBeansId` to
+// the number from the item page URL (expressobeans.com/public/detail.php/<id>)
+// — lib/expressobeans.ts fetches the image and deep link, and the UI falls
+// back to gradient art when the id is unset or the fetch fails.
+// TODO(api): also pull market data (avg sale, last sale, have/want counts).
 export const posters: Poster[] = [
   {
     id: "poster-tame-msg-2022",
@@ -376,6 +380,7 @@ export const posters: Poster[] = [
     notes: "Official show poster",
     gradient: "aurora",
     owned: true,
+    // expressoBeansId: 123456, // <- paste the real EB item id to activate
     editions: [
       {
         id: "ed-tame-msg-reg",

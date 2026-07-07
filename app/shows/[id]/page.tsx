@@ -9,13 +9,14 @@ import {
   getMemoryForShow,
   getPhotosForShow,
   getPostersForShow,
-  getSetlistForShow,
   getShow,
   getShowsForTour,
   getTour,
   getVenue,
   shows,
 } from "@/lib/data";
+import { resolveSetlist } from "@/lib/setlistfm";
+import { enrichPoster } from "@/lib/expressobeans";
 import { formatShortDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,9 +59,12 @@ export default async function ShowDetailPage({
   const artist = getArtist(show.artistId);
   const venue = getVenue(show.venueId);
   const tour = show.tourId ? getTour(show.tourId) : undefined;
-  const setlist = getSetlistForShow(show.id);
-  const posters = getPostersForShow(show.id);
-  const poster = posters[0];
+  // Live data: setlist.fm setlist + Expresso Beans poster imagery, each
+  // falling back to seed data / gradient art when unavailable.
+  const [setlist, poster] = await Promise.all([
+    resolveSetlist(show),
+    enrichPoster(getPostersForShow(show.id)[0]),
+  ]);
   const ephemeraItems = getEphemeraForShow(show.id);
   const memory = getMemoryForShow(show.id);
   const links = getMediaLinksForShow(show.id);
@@ -102,6 +106,7 @@ export default async function ShowDetailPage({
         venue={venue}
         tour={tour}
         setlist={setlist}
+        poster={poster}
       />
 
       {/* Main content + right rail */}

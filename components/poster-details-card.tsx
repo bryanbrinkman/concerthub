@@ -1,14 +1,14 @@
 import { ExternalLink, FolderPlus, Frame } from "lucide-react";
 
-import type { Poster } from "@/lib/types";
+import type { EnrichedPoster } from "@/lib/expressobeans";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PosterArt } from "@/components/gradient-art";
+import { PosterImage } from "@/components/poster-image";
 import { EmptyState } from "@/components/empty-state";
 
 /** Collector metadata for the show's poster/print. */
-export function PosterDetailsCard({ poster }: { poster?: Poster }) {
+export function PosterDetailsCard({ poster }: { poster?: EnrichedPoster }) {
   if (!poster) {
     return (
       <EmptyState
@@ -45,9 +45,8 @@ export function PosterDetailsCard({ poster }: { poster?: Poster }) {
     <Card>
       <CardHeader className="flex-row items-baseline justify-between space-y-0 pb-4">
         <CardTitle>Poster / Print Details</CardTitle>
-        {/* TODO(api): resolve to the exact Expresso Beans item page. */}
         <a
-          href="https://www.expressobeans.com/"
+          href={poster.ebUrl}
           target="_blank"
           rel="noreferrer"
           className="text-xs text-muted-foreground transition-colors hover:text-primary"
@@ -56,7 +55,8 @@ export function PosterDetailsCard({ poster }: { poster?: Poster }) {
         </a>
       </CardHeader>
       <CardContent className="flex flex-col gap-5 sm:flex-row">
-        <PosterArt
+        <PosterImage
+          imageUrl={poster.resolvedImageUrl}
           gradient={poster.gradient}
           title={poster.title}
           subtitle={poster.designer}
@@ -89,11 +89,7 @@ export function PosterDetailsCard({ poster }: { poster?: Poster }) {
       </CardContent>
       <CardFooter className="flex-wrap gap-2">
         <Button variant="outline" size="sm" asChild>
-          <a
-            href="https://www.expressobeans.com/"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a href={poster.ebUrl} target="_blank" rel="noreferrer">
             <ExternalLink />
             View on Expresso Beans
           </a>

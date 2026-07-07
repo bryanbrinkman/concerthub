@@ -79,27 +79,39 @@ gradient card (`components/gradient-art.tsx`). When real uploads or
 API-sourced images exist, swap `GradientArt`/`PosterArt` for `next/image`
 without touching the surrounding layout.
 
-## Where future API integrations go
+## Live integrations
 
-All external data flows through `lib/data.ts` — the helper functions
-(`getSetlistForShow`, `getPostersForShow`, …) are the seam. Pages and
-components only call those helpers, so wiring real sources means replacing
-seed arrays with fetches, not rewriting UI. Look for `TODO(api)` comments:
+Both integrations are server-side only, cached, and fail soft — any error
+falls back to seed data / gradient art, so pages never break.
 
-- **setlist.fm** (`lib/data.ts`, `components/setlist-card.tsx`):
-  fetch setlists from the [setlist.fm REST API](https://api.setlist.fm/docs/1.0/index.html)
-  by artist MusicBrainz id + show date, normalize into the `Setlist` type,
-  and deep-link the "via setlist.fm" / "View on setlist.fm" buttons to the
-  real setlist page. Add `setlistFmMbid` to `Artist` when you do.
-  Put your API key in `.env.local` as `SETLISTFM_API_KEY` (copy
-  `.env.example`) and send it server-side as the `x-api-key` header —
-  never expose it with a `NEXT_PUBLIC_` prefix.
-- **Expresso Beans** (`lib/data.ts`, `components/poster-details-card.tsx`,
-  `app/posters/page.tsx`): resolve posters to Expresso Beans item pages for
-  market data (average/last sale, have/want counts) and link
-  "View on Expresso Beans" to the exact item.
-- **Search** (`components/sidebar.tsx`): the ⌘K entry is a stub awaiting a
-  command palette.
+### setlist.fm (`lib/setlistfm.ts`)
+
+Show pages resolve their setlist live from the
+[setlist.fm REST API](https://api.setlist.fm/docs/1.0/index.html), searching
+by artist name + show date and normalizing into the `Setlist` type. The
+"via setlist.fm" / "View on setlist.fm" links deep-link to the real setlist
+page. Setup:
+
+1. Copy `.env.example` to `.env.local` and set `SETLISTFM_API_KEY`.
+2. On Vercel: Project → Settings → Environment Variables → add the same key
+   for Production + Preview, then redeploy.
+
+No key (or no match) = the seeded setlists in `lib/data.ts` render instead.
+Responses are cached for 24h via `next: { revalidate }`.
+
+### Expresso Beans imagery (`lib/expressobeans.ts`)
+
+Expresso Beans has no public API, so this is a light server-side read of an
+item's public detail page that extracts the poster image (og:image) and the
+canonical item URL. To activate for a poster, set `expressoBeansId` in
+`lib/data.ts` to the number from the item page URL
+(`expressobeans.com/public/detail.php/<id>`). Real artwork then renders in
+the show hero, the Poster/Print Details card, and the Posters page; the
+"View on Expresso Beans" buttons deep-link to the item. Pages are cached for
+a week. A hand-set `imageUrl` on a poster always wins over scraped imagery.
+
+TODO(api): EB market data (avg/last sale, have/want counts); a ⌘K command
+palette for the sidebar Search stub.
 
 ## Roadmap notes
 

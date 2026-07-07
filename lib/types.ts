@@ -25,7 +25,11 @@ export interface Artist {
   hometown?: string;
   /** Placeholder art until real artist imagery exists. */
   gradient: GradientKey;
-  // TODO(api): add `setlistFmMbid` (MusicBrainz id) for setlist.fm lookups.
+  /**
+   * MusicBrainz id, for precise setlist.fm lookups. Optional — when unset,
+   * lib/setlistfm.ts searches by artist name instead.
+   */
+  setlistFmMbid?: string;
 }
 
 export interface Venue {
@@ -94,8 +98,16 @@ export interface Poster {
   notes?: string;
   gradient: GradientKey;
   owned: boolean;
-  // TODO(api): add `expressoBeansId` + market data (avg sale, last sale)
-  // pulled from Expresso Beans / EB Nation.
+  /**
+   * Numeric id from the Expresso Beans item page URL
+   * (expressobeans.com/public/detail.php/<id>). When set,
+   * lib/expressobeans.ts pulls the real poster image and deep link.
+   */
+  expressoBeansId?: number;
+  /** Hand-curated artwork URL; takes precedence over EB-scraped imagery. */
+  imageUrl?: string;
+  // TODO(api): add market data (avg sale, last sale, have/want counts)
+  // from Expresso Beans once that's worth scraping too.
 }
 
 export type EphemeraKind =
