@@ -153,7 +153,12 @@ export function ShowHero({ show, artist, venue, tour, setlist, poster }: ShowHer
 
         {/* Setlist preview — only at xl; smaller screens use the Setlist tab */}
         <div className="hidden xl:block">
-          <SetlistCard setlist={setlist} variant="preview" className="h-full" />
+          <SetlistCard
+            setlist={setlist}
+            artistName={artist?.name}
+            variant="preview"
+            className="h-full"
+          />
         </div>
       </div>
     </section>

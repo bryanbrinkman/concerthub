@@ -174,7 +174,11 @@ export default async function ShowDetailPage({
             </TabsContent>
 
             <TabsContent value="setlist">
-              <SetlistCard setlist={setlist} variant="full" />
+              <SetlistCard
+                setlist={setlist}
+                artistName={artist?.name}
+                variant="full"
+              />
             </TabsContent>
 
             <TabsContent value="poster">
