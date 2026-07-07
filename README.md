@@ -91,6 +91,9 @@ seed arrays with fetches, not rewriting UI. Look for `TODO(api)` comments:
   by artist MusicBrainz id + show date, normalize into the `Setlist` type,
   and deep-link the "via setlist.fm" / "View on setlist.fm" buttons to the
   real setlist page. Add `setlistFmMbid` to `Artist` when you do.
+  Put your API key in `.env.local` as `SETLISTFM_API_KEY` (copy
+  `.env.example`) and send it server-side as the `x-api-key` header —
+  never expose it with a `NEXT_PUBLIC_` prefix.
 - **Expresso Beans** (`lib/data.ts`, `components/poster-details-card.tsx`,
   `app/posters/page.tsx`): resolve posters to Expresso Beans item pages for
   market data (average/last sale, have/want counts) and link
