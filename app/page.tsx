@@ -4,9 +4,12 @@ import {
   CalendarDays,
   Download,
   Image as ImageIcon,
+  Sparkles,
   Ticket,
   Users,
 } from "lucide-react";
+
+import { seedDemoAction } from "@/app/seed-actions";
 
 import {
   allShows,
@@ -91,12 +94,29 @@ export default async function DashboardPage() {
           </Link>
         </div>
         {recentShows.length === 0 ? (
-          <EmptyState
-            icon={Download}
-            title="Your archive is empty"
-            description="Import your setlist.fm history to fill it in one click, or add shows by hand."
-            actionLabel="Import from setlist.fm"
-          />
+          <div className="space-y-4">
+            <EmptyState
+              icon={Download}
+              title="Your archive is empty"
+              description="Import your setlist.fm history to fill it in one click, or start with the demo shows."
+            />
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button asChild>
+                <Link href="/import">
+                  <Download />
+                  Import from setlist.fm
+                </Link>
+              </Button>
+              {!archive.demo ? (
+                <form action={seedDemoAction}>
+                  <Button variant="outline" type="submit">
+                    <Sparkles />
+                    Copy the demo shows into my archive
+                  </Button>
+                </form>
+              ) : null}
+            </div>
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {recentShows.map((show) => (

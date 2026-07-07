@@ -14,8 +14,10 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq } from "drizzle-orm";
 
-import * as t from "../lib/db/schema";
-import * as seed from "../lib/data";
+import * as schema from "../lib/db/schema";
+import { seedDemoForUser } from "../lib/demo-seed";
+
+const t = schema;
 
 function loadEnvLocal() {
   try {
@@ -34,7 +36,7 @@ async function main() {
   if (!email) throw new Error("Usage: npm run db:seed-demo -- you@example.com");
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 
-  const db = drizzle(neon(process.env.DATABASE_URL));
+  const db = drizzle(neon(process.env.DATABASE_URL), { schema });
 
   const userRows = await db
     .select({ id: t.users.id })
@@ -47,82 +49,8 @@ async function main() {
     );
   }
 
-  await db
-    .insert(t.artists)
-    .values(seed.artists.map((a) => ({ ...a })))
-    .onConflictDoNothing();
-  await db
-    .insert(t.venues)
-    .values(seed.venues.map((v) => ({ ...v })))
-    .onConflictDoNothing();
-  await db
-    .insert(t.tours)
-    .values(seed.tours.map((tour) => ({ ...tour })))
-    .onConflictDoNothing();
-  await db
-    .insert(t.shows)
-    .values(
-      seed.shows.map((s) => ({
-        id: s.id,
-        artistId: s.artistId,
-        venueId: s.venueId,
-        tourId: s.tourId,
-        date: s.date,
-        showTime: s.showTime,
-        gradient: s.gradient,
-      })),
-    )
-    .onConflictDoNothing();
-  await db
-    .insert(t.userShows)
-    .values(
-      seed.shows.map((s) => ({
-        userId: user.id,
-        showId: s.id,
-        attended: s.attended,
-        favorite: s.favorite,
-      })),
-    )
-    .onConflictDoNothing();
-  await db
-    .insert(t.posters)
-    .values(seed.posters.map((p) => ({ ...p, userId: user.id })))
-    .onConflictDoNothing();
-  if (seed.ephemera.length) {
-    await db
-      .insert(t.ephemeraItems)
-      .values(seed.ephemera.map((e) => ({ ...e, userId: user.id })))
-      .onConflictDoNothing();
-  }
-  if (seed.memories.length) {
-    await db
-      .insert(t.memories)
-      .values(
-        seed.memories.map((m) => ({
-          id: m.id,
-          userId: user.id,
-          showId: m.showId,
-          text: m.text,
-          attendedWith: m.attendedWith,
-          createdAt: new Date(m.createdAt),
-        })),
-      )
-      .onConflictDoNothing();
-  }
-  await db
-    .insert(t.mediaLinks)
-    .values(seed.mediaLinks.map((m) => ({ ...m, userId: user.id })))
-    .onConflictDoNothing();
-  await db
-    .insert(t.showPhotos)
-    .values(seed.showPhotos.map((p) => ({ ...p, userId: user.id })))
-    .onConflictDoNothing();
-  await db
-    .insert(t.collections)
-    .values(seed.collections.map((c) => ({ ...c, userId: user.id })))
-    .onConflictDoNothing();
-
-  console.log(`Seeded demo archive for ${email} (${seed.shows.length} shows).`);
+  await seedDemoForUser(db, user.id);
+  console.log(`Seeded demo archive for ${email}.`);
 }
 
 main().catch((error) => {
