@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink, Frame, Plus } from "lucide-react";
+import { Frame, Plus } from "lucide-react";
 
 import { findArtist, findShow, getArchive } from "@/lib/archive";
 import { enrichPosters } from "@/lib/expressobeans";
@@ -45,7 +45,6 @@ export default async function PostersPage({
           ? `${edition.name} · ed. ${edition.runSize}`
           : edition.name
         : undefined,
-      ebUrl: poster.ebUrl,
       showHref: show ? `/shows/${show.id}` : undefined,
       showLabel: show
         ? `${artist?.name ?? "Show"} · ${formatShortDate(show.date)}`
@@ -83,15 +82,6 @@ export default async function PostersPage({
       ) : (
         <PosterRack posters={rackPosters} />
       )}
-      <div className="mt-5">
-        {/* TODO(api): pull market data (avg sale, last sale) from Expresso Beans. */}
-        <Button variant="outline" size="sm" asChild>
-          <a href="https://www.expressobeans.com/" target="_blank" rel="noreferrer">
-            <ExternalLink />
-            Browse Expresso Beans
-          </a>
-        </Button>
-      </div>
     </div>
   );
 }

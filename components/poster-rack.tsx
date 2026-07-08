@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   FolderPlus,
   Pencil,
 } from "lucide-react";
@@ -27,7 +26,6 @@ export interface RackPoster {
   imageUrl?: string;
   owned: boolean;
   editionSummary?: string;
-  ebUrl: string;
   showHref?: string;
   showLabel?: string;
   /** Link to the edit form (archive owner only). */
@@ -316,12 +314,6 @@ export function PosterRack({ posters }: { posters: RackPoster[] }) {
             </Link>
           ) : null}
           <div className="flex flex-wrap gap-2 pt-1">
-            <Button variant="outline" size="sm" asChild>
-              <a href={poster.ebUrl} target="_blank" rel="noreferrer">
-                <ExternalLink />
-                View on Expresso Beans
-              </a>
-            </Button>
             <Button variant="secondary" size="sm">
               <FolderPlus />
               Add to collection

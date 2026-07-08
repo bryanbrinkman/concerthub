@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight, ChevronLeft, ExternalLink, Pencil } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, Pencil } from "lucide-react";
 import { and, eq, ne } from "drizzle-orm";
 
 import { currentUserId } from "@/auth";
@@ -344,17 +344,6 @@ export default async function PosterRecordPage({
                 ) : null}
               </dl>
               <div className="mt-4 flex flex-wrap gap-2">
-                {/* TODO(api): deep-link to the exact Expresso Beans item. */}
-                <Button variant="outline" size="sm" asChild>
-                  <a
-                    href="https://www.expressobeans.com/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <ExternalLink />
-                    Source: Expresso Beans
-                  </a>
-                </Button>
                 <Button variant="outline" size="sm" asChild>
                   <a href="mailto:hello@concertcollect.com?subject=Report%20a%20poster%20record">
                     Report an issue

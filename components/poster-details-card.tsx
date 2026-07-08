@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, ExternalLink, FolderPlus, Frame, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpRight, FolderPlus, Frame, Pencil, Trash2 } from "lucide-react";
 
 import type { EnrichedPoster } from "@/lib/expressobeans";
 import { deletePosterAction } from "@/app/manage-actions";
@@ -66,16 +66,8 @@ export function PosterDetailsCard({
 
   return (
     <Card>
-      <CardHeader className="flex-row items-baseline justify-between space-y-0 pb-4">
+      <CardHeader className="pb-4">
         <CardTitle>Poster / Print Details</CardTitle>
-        <a
-          href={poster.ebUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="text-xs text-muted-foreground transition-colors hover:text-primary"
-        >
-          via Expresso Beans
-        </a>
       </CardHeader>
       <CardContent className="flex flex-col gap-5 sm:flex-row">
         {galleryImages.length > 0 ? (
@@ -122,12 +114,6 @@ export function PosterDetailsCard({
             <ArrowUpRight />
             View poster record
           </Link>
-        </Button>
-        <Button variant="ghost" size="sm" asChild>
-          <a href={poster.ebUrl} target="_blank" rel="noreferrer">
-            <ExternalLink />
-            Expresso Beans
-          </a>
         </Button>
         <Button variant="secondary" size="sm">
           <FolderPlus />
