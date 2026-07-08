@@ -121,7 +121,7 @@ function Brand() {
       <img
         src="/logo.png"
         alt="Concert Collect — every show, everything it left behind"
-        className="w-16"
+        className="w-16 lg:w-28"
       />
     </Link>
   );
