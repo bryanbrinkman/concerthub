@@ -39,7 +39,7 @@ export default async function AddEphemeraPage({
       <EmptyState
         icon={LogIn}
         title="Sign in to add ephemera"
-        description="Items are saved to your own archive — sign in with Google from the sidebar first."
+        description="Items are saved to your own archive — sign in or create an account from the sidebar first."
       />
     );
   }

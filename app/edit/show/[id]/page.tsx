@@ -32,7 +32,7 @@ export default async function EditShowPage({
       <EmptyState
         icon={LogIn}
         title="Sign in to edit shows"
-        description="Shows live in your own archive — sign in with Google from the sidebar first."
+        description="Shows live in your own archive — sign in or create an account from the sidebar first."
       />
     );
   }

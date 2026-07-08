@@ -37,6 +37,8 @@ interface SidebarProps {
   counts: ArchiveCounts;
   user: SidebarUser | null;
   authEnabled: boolean;
+  /** Google OAuth configured — show the one-click Google button too. */
+  googleEnabled?: boolean;
   /** Names of unset auth env vars, shown while auth is unconfigured. */
   missingEnv?: string[];
 }
@@ -128,10 +130,12 @@ function Brand() {
 function UserFooter({
   user,
   authEnabled,
+  googleEnabled,
   missingEnv,
 }: {
   user: SidebarUser | null;
   authEnabled: boolean;
+  googleEnabled?: boolean;
   missingEnv?: string[];
 }) {
   if (user) {
@@ -170,15 +174,36 @@ function UserFooter({
 
   if (authEnabled) {
     return (
-      <form action={signInAction}>
-        <button
-          type="submit"
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-white/[0.06] px-3 py-2 text-sm font-medium transition-colors hover:bg-white/[0.12]"
+      <div className="space-y-2">
+        {googleEnabled ? (
+          <form action={signInAction}>
+            <button
+              type="submit"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-white/[0.06] px-3 py-2 text-sm font-medium transition-colors hover:bg-white/[0.12]"
+            >
+              <LogIn className="h-4 w-4" />
+              Sign in with Google
+            </button>
+          </form>
+        ) : null}
+        <Link
+          href="/login"
+          className={
+            googleEnabled
+              ? "block px-1 text-center text-xs text-muted-foreground transition-colors hover:text-foreground"
+              : "flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-white/[0.06] px-3 py-2 text-sm font-medium transition-colors hover:bg-white/[0.12]"
+          }
         >
-          <LogIn className="h-4 w-4" />
-          Sign in with Google
-        </button>
-      </form>
+          {googleEnabled ? (
+            "or use a username & password"
+          ) : (
+            <>
+              <LogIn className="h-4 w-4" />
+              Sign in / create account
+            </>
+          )}
+        </Link>
+      </div>
     );
   }
 
@@ -200,6 +225,7 @@ function SidebarBody({
   counts,
   user,
   authEnabled,
+  googleEnabled,
   missingEnv,
   onNavigate,
 }: SidebarProps & { onNavigate?: () => void }) {
@@ -255,7 +281,12 @@ function SidebarBody({
       </nav>
 
       <div className="space-y-3 border-t border-border px-4 py-4">
-        <UserFooter user={user} authEnabled={authEnabled} missingEnv={missingEnv} />
+        <UserFooter
+          user={user}
+          authEnabled={authEnabled}
+          googleEnabled={googleEnabled}
+          missingEnv={missingEnv}
+        />
         <Link
           href="/about"
           onClick={onNavigate}

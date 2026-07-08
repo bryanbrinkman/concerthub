@@ -30,7 +30,7 @@ export default async function AddPosterPage({
       <EmptyState
         icon={LogIn}
         title="Sign in to add posters"
-        description="Prints are saved to your own archive — sign in with Google from the sidebar first."
+        description="Prints are saved to your own archive — sign in or create an account from the sidebar first."
       />
     );
   }

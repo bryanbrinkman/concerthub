@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import "./globals.css";
-import { auth, authEnabled, missingAuthEnv } from "@/auth";
+import { auth, authEnabled, googleEnabled, missingAuthEnv } from "@/auth";
 import {
   archiveCounts,
   findArtist,
@@ -97,6 +97,7 @@ export default async function RootLayout({
         <Sidebar
           counts={counts}
           authEnabled={authEnabled}
+          googleEnabled={googleEnabled}
           missingEnv={authEnabled ? [] : missingAuthEnv()}
           user={
             session?.user
@@ -110,7 +111,11 @@ export default async function RootLayout({
           </div>
         </main>
         {/* First-visit splash (signed out) + first-run onboarding (signed in, empty archive) */}
-        <WelcomeSplash enabled={archive.demo} authEnabled={authEnabled} />
+        <WelcomeSplash
+          enabled={archive.demo}
+          authEnabled={authEnabled}
+          googleEnabled={googleEnabled}
+        />
         <Onboarding enabled={!archive.demo && archive.shows.length === 0} />
         {/* ⌘K search over the viewer's archive */}
         <SearchPalette items={searchItems} />

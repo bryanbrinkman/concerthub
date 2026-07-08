@@ -31,7 +31,7 @@ export default async function EditPosterPage({
       <EmptyState
         icon={LogIn}
         title="Sign in to edit posters"
-        description="Prints live in your own archive — sign in with Google from the sidebar first."
+        description="Prints live in your own archive — sign in or create an account from the sidebar first."
       />
     );
   }

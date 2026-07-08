@@ -30,7 +30,7 @@ export default async function AddPhotoPage({
       <EmptyState
         icon={LogIn}
         title="Sign in to add photos"
-        description="Photos are saved to your own archive — sign in with Google from the sidebar first."
+        description="Photos are saved to your own archive — sign in or create an account from the sidebar first."
       />
     );
   }

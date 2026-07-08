@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   ArrowLeftRight,
   Frame,
@@ -42,9 +43,11 @@ const POINTS = [
 export function WelcomeSplash({
   enabled,
   authEnabled,
+  googleEnabled,
 }: {
   enabled: boolean;
   authEnabled: boolean;
+  googleEnabled?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
 
@@ -99,13 +102,31 @@ export function WelcomeSplash({
         </div>
 
         <div className="mt-6 space-y-2">
-          {authEnabled ? (
+          {authEnabled && googleEnabled ? (
             <form action={signInAction}>
               <Button type="submit" className="w-full">
                 <LogIn />
                 Sign in with Google to start your archive
               </Button>
             </form>
+          ) : null}
+          {authEnabled ? (
+            <Button
+              variant={googleEnabled ? "secondary" : "default"}
+              className="w-full"
+              asChild
+            >
+              <Link href="/login?mode=signup" onClick={dismiss}>
+                {googleEnabled ? (
+                  "Or create an account with a username"
+                ) : (
+                  <>
+                    <LogIn />
+                    Create an account to start your archive
+                  </>
+                )}
+              </Link>
+            </Button>
           ) : null}
           <Button variant="outline" className="w-full" onClick={dismiss}>
             Look around first
