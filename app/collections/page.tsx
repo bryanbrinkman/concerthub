@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { ArrowLeftRight, Frame, Heart, Library, Plus, Tag } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Frame,
+  Heart,
+  Library,
+  LogIn,
+  Plus,
+  Tag,
+} from "lucide-react";
 
 import { posterState } from "@/lib/archive";
 
@@ -13,8 +21,20 @@ import { EmptyState } from "@/components/empty-state";
 
 export const metadata = { title: "Collections" };
 
+/** Personal page: the viewer's own smart groupings + custom binders. */
 export default async function CollectionsPage() {
   const archive = await getArchive();
+
+  if (archive.demo) {
+    return (
+      <EmptyState
+        icon={LogIn}
+        title="Sign in to build collections"
+        description="Collections are personal groupings of your own archive — binders, wishlists, tour runs. Sign in or create an account from the sidebar first."
+      />
+    );
+  }
+
   const { collections } = archive;
   const stateCount = (state: string) =>
     archive.posters.filter((p) => posterState(p) === state).length;

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   ArrowLeftRight,
   CalendarDays,
+  ChevronRight,
   Compass,
   Download,
   Heart,
@@ -51,14 +52,18 @@ interface NavItem {
   count?: number;
 }
 
+/** Poster-first public nav; everything else lives under "More". */
 const MAIN_NAV: NavItem[] = [
   { label: "Home", href: "/", icon: Home },
-  { label: "Explore", href: "/explore", icon: Compass },
-  { label: "Shows", href: "/shows", icon: CalendarDays },
   { label: "Posters", href: "/posters", icon: ImageIcon },
+  { label: "Explore", href: "/explore", icon: Compass },
+];
+
+/** Collapsed-by-default secondary browse nav. */
+const MORE_NAV: NavItem[] = [
+  { label: "Shows", href: "/shows", icon: CalendarDays },
   { label: "Artists", href: "/artists", icon: Users },
   { label: "Venues", href: "/venues", icon: MapPin },
-  { label: "Collections", href: "/collections", icon: Library },
   { label: "Trading Post", href: "/prints", icon: ArrowLeftRight },
   { label: "Import", href: "/import", icon: Download },
 ];
@@ -68,6 +73,7 @@ function collectionNav(counts: ArchiveCounts): NavItem[] {
     { label: "My Shows", href: "/my-shows", icon: CalendarDays, count: counts.shows },
     { label: "My Posters", href: "/my-posters", icon: ImageIcon, count: counts.posters },
     { label: "Wantlist", href: "/my-posters?state=want", icon: Heart, count: counts.wishlist },
+    { label: "Collections", href: "/collections", icon: Library, count: undefined },
     { label: "Tickets", href: "/tickets", icon: Ticket, count: counts.tickets },
     { label: "Merch", href: "/merch", icon: Shirt, count: counts.merch },
     { label: "Memories", href: "/memories", icon: StickyNote, count: undefined },
@@ -232,6 +238,14 @@ function SidebarBody({
   onNavigate,
 }: SidebarProps & { onNavigate?: () => void }) {
   const pathname = usePathname();
+  // "More" starts collapsed; opens itself when the current page lives
+  // inside it so the active item is never hidden.
+  const [moreOpen, setMoreOpen] = React.useState(false);
+  React.useEffect(() => {
+    if (MORE_NAV.some((item) => isActive(pathname, item.href))) {
+      setMoreOpen(true);
+    }
+  }, [pathname]);
 
   return (
     <div className="flex h-full flex-col">
@@ -251,18 +265,44 @@ function SidebarBody({
           ))}
           <button
             type="button"
-            onClick={() => {
-              onNavigate?.();
-              window.dispatchEvent(new CustomEvent("cc-open-search"));
-            }}
+            aria-expanded={moreOpen}
+            onClick={() => setMoreOpen((v) => !v)}
             className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground"
           >
-            <Search className="h-4 w-4 shrink-0" />
-            <span className="flex-1 truncate text-left">Search</span>
-            <kbd className="rounded border border-border bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-              ⌘K
-            </kbd>
+            <ChevronRight
+              className={cn(
+                "h-4 w-4 shrink-0 transition-transform",
+                moreOpen && "rotate-90",
+              )}
+            />
+            <span className="flex-1 truncate text-left">More</span>
           </button>
+          {moreOpen ? (
+            <div className="ml-4 space-y-0.5 border-l border-border pl-2">
+              {MORE_NAV.map((item) => (
+                <NavLink
+                  key={item.label}
+                  item={item}
+                  pathname={pathname}
+                  onNavigate={onNavigate}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  onNavigate?.();
+                  window.dispatchEvent(new CustomEvent("cc-open-search"));
+                }}
+                className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground"
+              >
+                <Search className="h-4 w-4 shrink-0" />
+                <span className="flex-1 truncate text-left">Search</span>
+                <kbd className="rounded border border-border bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  ⌘K
+                </kbd>
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <div>
