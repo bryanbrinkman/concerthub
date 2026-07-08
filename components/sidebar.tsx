@@ -114,13 +114,12 @@ function NavLink({
 
 function Brand() {
   return (
-    <Link href="/" className="block overflow-hidden">
-      {/* The source PNG has generous transparent padding — negative margins
-          trim it optically. eslint-disable-next-line @next/next/no-img-element */}
+    <Link href="/" className="block">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/logo.png"
         alt="Concert Collect — every show, everything it left behind"
-        className="-mx-6 -my-12 w-[calc(100%+3rem)] max-w-none"
+        className="w-full"
       />
     </Link>
   );
@@ -208,7 +207,7 @@ function SidebarBody({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="px-5 pb-1 pt-2">
+      <div className="px-5 pb-4 pt-5">
         <Brand />
       </div>
 
@@ -255,8 +254,15 @@ function SidebarBody({
         </div>
       </nav>
 
-      <div className="border-t border-border px-4 py-4">
+      <div className="space-y-3 border-t border-border px-4 py-4">
         <UserFooter user={user} authEnabled={authEnabled} missingEnv={missingEnv} />
+        <Link
+          href="/about"
+          onClick={onNavigate}
+          className="block px-1 text-[11px] text-muted-foreground/70 transition-colors hover:text-foreground"
+        >
+          About Concert Collect
+        </Link>
       </div>
     </div>
   );
@@ -284,7 +290,7 @@ export function Sidebar(props: SidebarProps) {
           <img
             src="/logo.png"
             alt="Concert Collect"
-            className="-my-7 h-20 w-auto"
+            className="h-9 w-auto"
           />
         </Link>
         <button

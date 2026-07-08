@@ -84,9 +84,9 @@ export function Onboarding({ enabled }: { enabled: boolean }) {
         <img
           src="/logo.png"
           alt="Concert Collect"
-          className="mx-auto -my-12 w-64 max-w-full"
+          className="mx-auto w-56 max-w-full"
         />
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-4 text-sm text-muted-foreground">
           Your shows. Your story. Let&apos;s get your archive started —
           pick whichever feels right:
         </p>

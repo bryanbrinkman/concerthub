@@ -82,7 +82,7 @@ export function WelcomeSplash({
         <img
           src="/logo.png"
           alt="Concert Collect — every show, everything it left behind"
-          className="mx-auto -my-12 w-72 max-w-full"
+          className="mx-auto w-64 max-w-full"
         />
 
         <div className="mt-5 space-y-3">
