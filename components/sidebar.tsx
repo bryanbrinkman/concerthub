@@ -9,6 +9,7 @@ import {
   Compass,
   Download,
   Heart,
+  Home,
   Image as ImageIcon,
   Library,
   LogIn,
@@ -51,7 +52,8 @@ interface NavItem {
 }
 
 const MAIN_NAV: NavItem[] = [
-  { label: "Explore", href: "/", icon: Compass },
+  { label: "Home", href: "/", icon: Home },
+  { label: "Explore", href: "/explore", icon: Compass },
   { label: "Shows", href: "/shows", icon: CalendarDays },
   { label: "Posters", href: "/posters", icon: ImageIcon },
   { label: "Artists", href: "/artists", icon: Users },

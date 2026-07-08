@@ -15,6 +15,7 @@ export interface ExplorePoster {
   imageUrl: string;
   artistName?: string;
   venueName?: string;
+  showDate?: string;
   year: number;
   designer: string;
   state: PosterState;
@@ -94,6 +95,7 @@ export async function getExploreData(): Promise<ExploreData | null> {
             artistId: t.shows.artistId,
             artistName: t.artists.name,
             venueName: t.venues.name,
+            showDate: t.shows.date,
           })
           .from(t.posters)
           .leftJoin(t.shows, eq(t.posters.showId, t.shows.id))
@@ -133,7 +135,7 @@ export async function getExploreData(): Promise<ExploreData | null> {
       postersByShow.set(p.showId, list);
     }
 
-    // Featured: image-dominant, shuffled per request.
+    // Poster wall: image-dominant, shuffled per request.
     const featured = posterRows
       .filter((p) => p.imageUrl)
       .map((p) => ({
@@ -141,12 +143,13 @@ export async function getExploreData(): Promise<ExploreData | null> {
         imageUrl: p.imageUrl as string,
         artistName: p.artistName ?? undefined,
         venueName: p.venueName ?? undefined,
+        showDate: p.showDate ?? undefined,
         year: p.year,
         designer: p.designer,
         state: state(p),
       }))
       .sort(() => Math.random() - 0.5)
-      .slice(0, 10);
+      .slice(0, 30);
 
     // Recently archived shows: newest shows that have any artifact.
     const recentShows: ExploreShow[] = showRows

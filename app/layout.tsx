@@ -82,6 +82,7 @@ export default async function RootLayout({
         group: "Posters",
       };
     }),
+    { label: "Explore the archive", href: "/explore", group: "Pages" },
     { label: "Poster rack", href: "/posters", group: "Pages" },
     { label: "Trading Post", href: "/prints", group: "Pages" },
     { label: "Import from setlist.fm", href: "/import", group: "Pages" },
