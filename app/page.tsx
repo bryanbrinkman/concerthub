@@ -23,13 +23,13 @@ import {
   postersForShow,
 } from "@/lib/archive";
 import { getExploreData } from "@/lib/explore";
-import type { GradientKey } from "@/lib/types";
-import { formatShortDate, formatShowDate } from "@/lib/utils";
+import { locate } from "@/lib/geo";
+import { formatShortDate } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PosterArt } from "@/components/gradient-art";
-import { TicketArt } from "@/components/ticket-art";
+import { WorldMap } from "@/components/world-map";
 import { MemoryCard } from "@/components/memory-card";
 import { StateBadge } from "@/components/state-badge";
 import { ShareButton } from "@/components/share-button";
@@ -79,7 +79,21 @@ export default async function ExplorePage() {
       const poster = postersForShow(archive, show.id).find((p) => p.imageUrl);
       return poster ? [{ show, poster }] : [];
     })
-    .slice(0, 8);
+    .slice(0, 10);
+
+  // Map dots for the recently archived shows (offline city lookup).
+  const recentMarkers = (explore?.recentShows ?? []).flatMap((show) => {
+    const point = locate(show.venueCity, show.venueRegion, show.venueCountry);
+    return point
+      ? [
+          {
+            id: show.id,
+            ...point,
+            label: `${show.artistName} — ${show.venueCity || show.venueName}`,
+          },
+        ]
+      : [];
+  });
 
   return (
     <div className="space-y-10">
@@ -116,7 +130,7 @@ export default async function ExplorePage() {
       {(explore?.featured.length ?? 0) > 0 ? (
         <section>
           <SectionHeading title="Featured Posters" href="/prints" linkLabel="Trading Post" />
-          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {explore!.featured.map((poster) => (
               <Link
                 key={poster.id}
@@ -143,7 +157,7 @@ export default async function ExplorePage() {
       ) : ownWall.length > 0 ? (
         <section>
           <SectionHeading title="The poster wall" href="/posters" linkLabel="Fan the rack" />
-          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {ownWall.map(({ show, poster }) => (
               <Link key={show.id} href={`/shows/${show.id}`} className="group block">
                 <PosterArt
@@ -162,50 +176,43 @@ export default async function ExplorePage() {
         </section>
       ) : null}
 
-      {/* Recently Archived Shows — ticket-stub cards */}
+      {/* Recently Archived Shows — list beside a world map of their venues */}
       {(explore?.recentShows.length ?? 0) > 0 ? (
         <section>
           <SectionHeading title="Recently Archived Shows" href="/shows" linkLabel="Show Database" />
-          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4">
-            {explore!.recentShows.map((show) => {
-              const href = myShowIds.has(show.id)
-                ? `/shows/${show.id}`
-                : show.posterId
-                  ? `/posters/${show.posterId}`
-                  : `/shows?q=${encodeURIComponent(show.artistName)}`;
-              return (
-                <Link key={show.id} href={href} className="group block">
-                  {show.posterImage ? (
-                    <PosterArt
-                      gradient={(show.gradient ?? "midnight") as GradientKey}
-                      imageUrl={show.posterImage}
-                      title={show.artistName}
-                      className="transition-transform duration-300 group-hover:scale-[1.02]"
-                    />
-                  ) : (
-                    <TicketArt
-                      seedId={show.id}
-                      gradient={(show.gradient ?? "midnight") as GradientKey}
-                      artist={show.artistName}
-                      venue={show.venueName}
-                      cityLine={show.venueCity}
-                      dateLine={formatShowDate(show.date)}
-                      tourLine="Archived Show"
-                    />
-                  )}
-                  <div className="mt-2 space-y-0.5 px-0.5">
-                    <p className="truncate text-sm font-medium">{show.artistName}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {show.venueName} · {show.venueCity} ·{" "}
-                      {formatShortDate(show.date)}
-                    </p>
-                    <Badge variant="outline">
-                      {show.artifacts} artifact{show.artifacts === 1 ? "" : "s"}
-                    </Badge>
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="grid items-center gap-6 rounded-xl border border-border bg-card p-4 sm:p-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <ol className="min-w-0 space-y-1">
+              {explore!.recentShows.map((show) => {
+                const href = myShowIds.has(show.id)
+                  ? `/shows/${show.id}`
+                  : show.posterId
+                    ? `/posters/${show.posterId}`
+                    : `/shows?q=${encodeURIComponent(show.artistName)}`;
+                return (
+                  <li key={show.id}>
+                    <Link
+                      href={href}
+                      className="group flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-accent"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium group-hover:text-primary">
+                          {show.artistName}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {show.venueName} · {show.venueCity} ·{" "}
+                          {formatShortDate(show.date)}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="shrink-0">
+                        {show.artifacts} artifact
+                        {show.artifacts === 1 ? "" : "s"}
+                      </Badge>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+            <WorldMap markers={recentMarkers} className="min-w-0" />
           </div>
         </section>
       ) : null}

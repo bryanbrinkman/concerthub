@@ -27,6 +27,8 @@ export interface ExploreShow {
   artistName: string;
   venueName: string;
   venueCity: string;
+  venueRegion?: string;
+  venueCountry?: string;
   posterImage?: string;
   posterId?: string;
   artifacts: number;
@@ -107,6 +109,8 @@ export async function getExploreData(): Promise<ExploreData | null> {
             venueId: t.shows.venueId,
             venueName: t.venues.name,
             venueCity: t.venues.city,
+            venueRegion: t.venues.region,
+            venueCountry: t.venues.country,
           })
           .from(t.shows)
           .innerJoin(t.artists, eq(t.shows.artistId, t.artists.id))
@@ -142,7 +146,7 @@ export async function getExploreData(): Promise<ExploreData | null> {
         state: state(p),
       }))
       .sort(() => Math.random() - 0.5)
-      .slice(0, 8);
+      .slice(0, 10);
 
     // Recently archived shows: newest shows that have any artifact.
     const recentShows: ExploreShow[] = showRows
@@ -161,13 +165,15 @@ export async function getExploreData(): Promise<ExploreData | null> {
           artistName: s.artistName,
           venueName: s.venueName,
           venueCity: s.venueCity,
+          venueRegion: s.venueRegion ?? undefined,
+          venueCountry: s.venueCountry ?? undefined,
           posterImage: withImage?.imageUrl ?? undefined,
           posterId: withImage?.id,
           artifacts,
         };
       })
       .filter((s) => s.artifacts > 0)
-      .slice(0, 4);
+      .slice(0, 5);
 
     // Posterographies: performers ranked by poster count.
     const byArtist = new Map<
