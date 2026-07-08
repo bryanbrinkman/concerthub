@@ -105,9 +105,61 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
   );
   const showIds = userShowRows.map((r) => r.showId);
 
-  const showRows = showIds.length
-    ? await db.select().from(t.shows).where(inArray(t.shows.id, showIds))
-    : [];
+  // Show rows: try the full schema first; if a column migration hasn't
+  // been applied yet, retry with the original column set so the archive
+  // NEVER demotes to demo just because a deploy is ahead of the DB.
+  interface ShowRow {
+    id: string;
+    artistId: string;
+    venueId: string;
+    tourId: string | null;
+    name: string | null;
+    date: string;
+    endDate: string | null;
+    eventType: string | null;
+    stage: string | null;
+    festivalId: string | null;
+    showTime: string | null;
+    gradient: string | null;
+    setlistFmId: string | null;
+    setlistFmUrl: string | null;
+  }
+  let showRows: ShowRow[] = [];
+  if (showIds.length) {
+    try {
+      showRows = await db
+        .select()
+        .from(t.shows)
+        .where(inArray(t.shows.id, showIds));
+    } catch (error) {
+      console.warn(
+        "[archive] full show query failed (migration pending?) — retrying with legacy columns:",
+        error,
+      );
+      const legacy = await db
+        .select({
+          id: t.shows.id,
+          artistId: t.shows.artistId,
+          venueId: t.shows.venueId,
+          tourId: t.shows.tourId,
+          date: t.shows.date,
+          showTime: t.shows.showTime,
+          gradient: t.shows.gradient,
+          setlistFmId: t.shows.setlistFmId,
+          setlistFmUrl: t.shows.setlistFmUrl,
+        })
+        .from(t.shows)
+        .where(inArray(t.shows.id, showIds));
+      showRows = legacy.map((row) => ({
+        ...row,
+        name: null,
+        endDate: null,
+        eventType: "concert",
+        stage: null,
+        festivalId: null,
+      }));
+    }
+  }
 
   // Lineups load before artists so every performer on a bill lands in the
   // artist list (and gets a page) alongside headliners.
