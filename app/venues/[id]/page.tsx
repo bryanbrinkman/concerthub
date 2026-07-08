@@ -15,6 +15,26 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { GradientArt } from "@/components/gradient-art";
 import { ShowCard } from "@/components/show-card";
+import { JsonLd } from "@/components/json-ld";
+import { PublicVenueView } from "@/components/public-venue-view";
+import { getPublicVenue } from "@/lib/public";
+import { breadcrumbJsonLd, locationLine, routeMetadata, venueJsonLd } from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const venue = await getPublicVenue(id);
+  if (!venue) return { title: "Venue" };
+  const where = locationLine(venue.city, venue.region, venue.country);
+  return routeMetadata({
+    title: `${venue.name} Concert History & Posters | Concert Collect`,
+    description: `Explore concert history and posters from ${venue.name}${where ? ` in ${where}` : ""} on Concert Collect.`,
+    path: `/venues/${id}`,
+  });
+}
 
 export default async function VenueDetailPage({
   params,
@@ -24,7 +44,11 @@ export default async function VenueDetailPage({
   const { id } = await params;
   const archive = await getArchive();
   const venue = findVenue(archive, id);
-  if (!venue) notFound();
+  if (!venue) {
+    const publicVenue = await getPublicVenue(id);
+    if (!publicVenue) notFound();
+    return <PublicVenueView venue={publicVenue} />;
+  }
 
   const shows = showsByVenue(archive, venue.id);
   const attended = shows.filter((s) => s.attended);
@@ -54,6 +78,21 @@ export default async function VenueDetailPage({
 
   return (
     <div className="space-y-6">
+      <JsonLd
+        data={[
+          venueJsonLd({
+            name: venue.name,
+            path: `/venues/${venue.id}`,
+            city: venue.city,
+            region: venue.region,
+            country: venue.country,
+          }),
+          breadcrumbJsonLd([
+            { name: "Venues", path: "/venues" },
+            { name: venue.name, path: `/venues/${venue.id}` },
+          ]),
+        ]}
+      />
       <Link
         href="/venues"
         className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"

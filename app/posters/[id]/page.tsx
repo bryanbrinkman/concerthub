@@ -14,8 +14,39 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { PosterGallery } from "@/components/poster-gallery";
 import { StateBadge } from "@/components/state-badge";
+import { JsonLd } from "@/components/json-ld";
+import { getPublicPoster } from "@/lib/public";
+import {
+  breadcrumbJsonLd,
+  posterJsonLd,
+  routeMetadata,
+} from "@/lib/seo";
 
-export const metadata = { title: "Poster record" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const poster = await getPublicPoster(id);
+  if (!poster) return { title: "Poster record" };
+
+  const subject = poster.artistName ?? poster.title;
+  const place = poster.venueName ? ` ${poster.venueName}` : "";
+  const title = `${subject}${place} ${poster.year} Concert Poster | Concert Collect`;
+  const by =
+    poster.designer && poster.designer !== "Unknown"
+      ? ` by ${poster.designer}`
+      : "";
+  const description = `View the ${poster.title} concert poster${by}${poster.showDate ? ` from ${formatShortDate(poster.showDate)}` : ` (${poster.year})`}, including print details, edition information, poster artist, and related show history.`;
+
+  return routeMetadata({
+    title,
+    description,
+    path: `/posters/${id}`,
+    image: poster.imageUrl,
+  });
+}
 
 interface PosterRecord {
   id: string;
@@ -247,6 +278,24 @@ export default async function PosterRecordPage({
 
   return (
     <div className="space-y-8">
+      <JsonLd
+        data={[
+          posterJsonLd({
+            title: record.title,
+            path: `/posters/${record.id}`,
+            designer: record.designer,
+            year: record.year,
+            image: record.images[0],
+            widthIn: edition?.widthIn,
+            heightIn: edition?.heightIn,
+            technique: edition?.technique,
+          }),
+          breadcrumbJsonLd([
+            { name: "Posters", path: "/posters" },
+            { name: record.title, path: `/posters/${record.id}` },
+          ]),
+        ]}
+      />
       <Link
         href="/posters"
         className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"

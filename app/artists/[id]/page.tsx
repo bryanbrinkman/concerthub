@@ -16,6 +16,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GradientArt } from "@/components/gradient-art";
 import { ShowCard } from "@/components/show-card";
+import { JsonLd } from "@/components/json-ld";
+import { PublicArtistView } from "@/components/public-artist-view";
+import { getPublicArtist } from "@/lib/public";
+import { breadcrumbJsonLd, musicGroupJsonLd, routeMetadata } from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const artist = await getPublicArtist(id);
+  if (!artist) return { title: "Artist" };
+  return routeMetadata({
+    title: `${artist.name} — Concerts, Posters & Show History | Concert Collect`,
+    description: `Explore ${artist.name}'s concert history, posters, and posterography${artist.hometown ? ` — from ${artist.hometown}` : ""} on Concert Collect.`,
+    path: `/artists/${id}`,
+  });
+}
 
 export default async function ArtistDetailPage({
   params,
@@ -25,7 +44,11 @@ export default async function ArtistDetailPage({
   const { id } = await params;
   const archive = await getArchive();
   const artist = findArtist(archive, id);
-  if (!artist) notFound();
+  if (!artist) {
+    const publicArtist = await getPublicArtist(id);
+    if (!publicArtist) notFound();
+    return <PublicArtistView artist={publicArtist} />;
+  }
 
   const shows = showsByArtist(archive, artist.id);
   const attended = shows.filter((s) => s.attended);
@@ -65,6 +88,15 @@ export default async function ArtistDetailPage({
 
   return (
     <div className="space-y-6">
+      <JsonLd
+        data={[
+          musicGroupJsonLd(artist.name, `/artists/${artist.id}`),
+          breadcrumbJsonLd([
+            { name: "Artists", path: "/artists" },
+            { name: artist.name, path: `/artists/${artist.id}` },
+          ]),
+        ]}
+      />
       <Link
         href="/artists"
         className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"

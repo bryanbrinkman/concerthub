@@ -48,6 +48,17 @@ import { MemoryForm } from "@/components/memory-form";
 import { TourCarousel, type TourCarouselItem } from "@/components/tour-carousel";
 import { MediaLinksCard } from "@/components/media-links-card";
 import { ShareButton } from "@/components/share-button";
+import { JsonLd } from "@/components/json-ld";
+import { PublicShowView } from "@/components/public-show-view";
+import { getPublicShow } from "@/lib/public";
+import { isFestival as isFestivalEvent } from "@/lib/billing";
+import {
+  breadcrumbJsonLd,
+  locationLine,
+  metaDatePhrase,
+  routeMetadata,
+  showJsonLd,
+} from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -55,12 +66,34 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const archive = await getArchive();
-  const show = findShow(archive, id);
+  const show = await getPublicShow(id);
   if (!show) return { title: "Show not found" };
-  return {
-    title: `${showTitleFor(archive, show)} · ${formatShortDate(show.date)}`,
-  };
+
+  const headliners = show.performers.filter(
+    (p) => p.billingRole === "headliner" || p.billingRole === "co_headliner",
+  );
+  const title =
+    show.name ??
+    (headliners.length > 0
+      ? headliners.map((p) => p.name).join(" + ")
+      : show.primaryArtistName);
+  const isFest = show.eventType === "festival" || show.eventType === "festival_day";
+  const where = locationLine(show.venueCity, show.venueRegion, show.venueCountry);
+  const when = metaDatePhrase(show.date, show.endDate);
+
+  const metaTitle = isFest
+    ? `${title} Lineup, Posters & Concert Archive`
+    : `${title} at ${show.venueName}, ${when}`;
+  const description = isFest
+    ? `Explore ${title} at ${show.venueName}${where ? ` in ${where}` : ""}, including the lineup, concert posters, performances, and artifacts from the festival.`
+    : `Explore ${title}'s ${when} concert at ${show.venueName}${where ? ` in ${where}` : ""}, including posters, setlist, and show artifacts.`;
+
+  return routeMetadata({
+    title: `${metaTitle} | Concert Collect`,
+    description,
+    path: `/shows/${id}`,
+    image: show.posterImage,
+  });
 }
 
 export default async function ShowDetailPage({
@@ -71,7 +104,13 @@ export default async function ShowDetailPage({
   const { id } = await params;
   const archive = await getArchive();
   const show = findShow(archive, id);
-  if (!show) notFound();
+  if (!show) {
+    // Not in the viewer's archive — serve the genuinely-public, fully
+    // server-rendered view (logged-out visitors, crawlers, other users).
+    const publicShow = await getPublicShow(id);
+    if (!publicShow) notFound();
+    return <PublicShowView show={publicShow} />;
+  }
 
   const artist = findArtist(archive, show.artistId);
   const venue = findVenue(archive, show.venueId);
@@ -170,6 +209,27 @@ export default async function ShowDetailPage({
 
   return (
     <div className="space-y-5">
+      <JsonLd
+        data={[
+          showJsonLd({
+            title: displayTitle,
+            path: `/shows/${show.id}`,
+            date: show.date,
+            endDate: show.endDate,
+            isFestival: isFestivalEvent(show),
+            performers: lineup.map((e) => e.artist.name),
+            venueName: venue?.name,
+            city: venue?.city,
+            region: venue?.region,
+            country: venue?.country,
+            image: showPosters[0]?.imageUrl,
+          }),
+          breadcrumbJsonLd([
+            { name: "Shows", path: "/shows" },
+            { name: displayTitle, path: `/shows/${show.id}` },
+          ]),
+        ]}
+      />
       {/* Top bar: back + quick actions */}
       <div className="flex items-center justify-between gap-3">
         <Link
