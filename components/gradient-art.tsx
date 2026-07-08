@@ -28,12 +28,19 @@ interface GradientArtProps extends React.HTMLAttributes<HTMLDivElement> {
   imageUrl?: string;
   /** Accessible description when imageUrl is set. */
   imageAlt?: string;
+  /**
+   * How the image fills the frame: "cover" crops to fill (photos),
+   * "contain" letterboxes so the full image is visible (poster art —
+   * never crop a print).
+   */
+  fit?: "cover" | "contain";
 }
 
 export function GradientArt({
   gradient,
   imageUrl,
   imageAlt,
+  fit = "cover",
   className,
   children,
   ...props
@@ -50,7 +57,10 @@ export function GradientArt({
     >
       {imageUrl ? (
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className={cn(
+            "absolute inset-0 bg-center bg-no-repeat",
+            fit === "contain" ? "bg-contain" : "bg-cover",
+          )}
           style={{ backgroundImage: `url("${imageUrl}")` }}
         />
       ) : null}
@@ -89,6 +99,7 @@ export function PosterArt({
         gradient={gradient}
         imageUrl={imageUrl}
         imageAlt={`Poster: ${title}`}
+        fit="contain"
         className={cn("aspect-[3/4] rounded-lg border border-white/10", className)}
       />
     );

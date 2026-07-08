@@ -129,7 +129,7 @@ export default async function ArtistDetailPage({
                     src={poster.imageUrl}
                     alt={poster.title}
                     loading="lazy"
-                    className="aspect-[3/4] w-full rounded-lg border border-white/10 object-cover transition-transform group-hover:scale-[1.02]"
+                    className="aspect-[3/4] w-full rounded-lg border border-white/10 bg-black/40 object-contain transition-transform group-hover:scale-[1.02]"
                   />
                 ) : (
                   <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-border bg-secondary p-2 text-center font-mono text-[10px] uppercase text-muted-foreground">
@@ -146,12 +146,18 @@ export default async function ArtistDetailPage({
       </section>
 
       <h2 className="text-lg font-semibold">Show history</h2>
+      {shows.some((s) => s.artistId !== artist.id) ? (
+        <p className="-mt-4 text-sm text-muted-foreground">
+          Includes shows where {artist.name} opened — the card shows the
+          headliner.
+        </p>
+      ) : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {shows.map((show) => (
           <ShowCard
             key={show.id}
             show={show}
-            artist={artist}
+            artist={findArtist(archive, show.artistId) ?? artist}
             venue={findVenue(archive, show.venueId)}
             tour={show.tourId ? findTour(archive, show.tourId) : undefined}
             posterImage={postersForShow(archive, show.id)[0]?.imageUrl}

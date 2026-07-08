@@ -106,6 +106,18 @@ function normalizeSetlist(raw: SfmSetlist, showId: string): Setlist | undefined 
   };
 }
 
+/**
+ * Extract the setlist id from a setlist.fm setlist URL, e.g.
+ * https://www.setlist.fm/setlist/rilo-kiley/2025/greek-theatre-berkeley-ca-63521c73.html
+ * -> "63521c73". Returns undefined for anything that doesn't look right.
+ */
+export function parseSetlistFmUrl(url: string): string | undefined {
+  const match = url
+    .trim()
+    .match(/setlist\.fm\/setlist\/.*-([0-9a-z]+)\.html(?:[?#].*)?$/i);
+  return match?.[1];
+}
+
 /* ---- Fetching ---- */
 
 async function searchSetlists(
@@ -142,6 +154,37 @@ async function searchSetlists(
 
   const data = (await res.json()) as SfmSearchResponse;
   return data.setlist ?? [];
+}
+
+/**
+ * Fetch one setlist by its setlist.fm id
+ * (GET /rest/1.0/setlist/{setlistId}) — used when a show has been
+ * explicitly linked to a setlist, which beats the name+date search.
+ */
+async function fetchSetlistById(
+  setlistFmId: string,
+  showId: string,
+): Promise<Setlist | undefined> {
+  const apiKey = process.env.SETLISTFM_API_KEY;
+  if (!apiKey) return undefined;
+
+  const res = await fetch(
+    `${API_BASE}/setlist/${encodeURIComponent(setlistFmId)}`,
+    {
+      headers: { "x-api-key": apiKey, Accept: "application/json" },
+      next: { revalidate: REVALIDATE_SECONDS },
+    },
+  );
+  if (!res.ok) {
+    if (res.status !== 404) {
+      console.warn(
+        `[setlistfm] setlist ${setlistFmId} fetch failed: HTTP ${res.status}`,
+      );
+    }
+    return undefined;
+  }
+  const raw = (await res.json()) as SfmSetlist;
+  return normalizeSetlist(raw, showId);
 }
 
 /* ---- Profile import (attended shows) ---- */
@@ -262,6 +305,16 @@ export async function resolveSetlist(
   artistName: string | undefined,
   fallback?: Setlist,
 ): Promise<Setlist | undefined> {
+  // An explicitly linked setlist (pasted URL on add/edit show) wins over
+  // the artist-name + date search.
+  if (show.setlistFmId) {
+    try {
+      const linked = await fetchSetlistById(show.setlistFmId, show.id);
+      if (linked) return linked;
+    } catch (error) {
+      console.warn(`[setlistfm] linked fetch failed for show ${show.id}:`, error);
+    }
+  }
   if (!artistName) return fallback;
 
   try {

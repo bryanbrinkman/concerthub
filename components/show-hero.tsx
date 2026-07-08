@@ -30,6 +30,8 @@ interface ShowHeroProps {
   posterVariants?: Array<{ id: string; imageUrl?: string; title: string }>;
   /** Ticket ephemera detail — real seats print on the stub art. */
   ticketDetail?: string;
+  /** Support acts on the bill, in billing order. */
+  openers?: Artist[];
   /** Viewer owns this archive: "I was there" becomes a real toggle. */
   canEdit?: boolean;
 }
@@ -44,6 +46,7 @@ export function ShowHero({
   poster,
   posterVariants = [],
   ticketDetail,
+  openers = [],
   canEdit,
 }: ShowHeroProps) {
   const stub = parseTicketStub(ticketDetail);
@@ -74,7 +77,7 @@ export function ShowHero({
                         src={variant.imageUrl}
                         alt={variant.title}
                         loading="lazy"
-                        className="h-14 w-11 object-cover"
+                        className="h-14 w-11 bg-black/40 object-contain"
                       />
                     ) : (
                       <span className="flex h-14 w-11 items-center justify-center bg-secondary font-mono text-[8px] uppercase text-muted-foreground">
@@ -132,6 +135,22 @@ export function ShowHero({
               <p className="mt-1 flex items-center gap-1.5 text-lg text-muted-foreground">
                 {tour.name}
                 <BadgeCheck className="h-4 w-4 text-primary" />
+              </p>
+            ) : null}
+            {openers.length > 0 ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                with{" "}
+                {openers.map((opener, index) => (
+                  <span key={opener.id}>
+                    {index > 0 ? ", " : ""}
+                    <Link
+                      href={`/artists/${opener.id}`}
+                      className="text-foreground/90 transition-colors hover:text-primary"
+                    >
+                      {opener.name}
+                    </Link>
+                  </span>
+                ))}
               </p>
             ) : null}
           </div>

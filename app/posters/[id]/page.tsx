@@ -228,7 +228,7 @@ export default async function PosterRecordPage({
                   src={p.imageUrl}
                   alt={p.title}
                   loading="lazy"
-                  className="aspect-[3/4] w-full rounded-lg border border-white/10 object-cover transition-transform group-hover:scale-[1.02]"
+                  className="aspect-[3/4] w-full rounded-lg border border-white/10 bg-black/40 object-contain transition-transform group-hover:scale-[1.02]"
                 />
               ) : (
                 <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-border bg-secondary p-2 text-center font-mono text-[10px] uppercase text-muted-foreground">

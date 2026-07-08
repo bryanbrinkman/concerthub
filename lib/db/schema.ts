@@ -146,6 +146,26 @@ export const shows = pgTable(
   (t) => [uniqueIndex("show_setlist_fm_idx").on(t.setlistFmId)],
 );
 
+/**
+ * Supporting acts on a show's bill. Canonical (shared across users) like
+ * the show itself; openers are full artist rows so they show up in the
+ * Artists section and get their own pages.
+ */
+export const showOpeners = pgTable(
+  "show_opener",
+  {
+    showId: text("show_id")
+      .notNull()
+      .references(() => shows.id, { onDelete: "cascade" }),
+    artistId: text("artist_id")
+      .notNull()
+      .references(() => artists.id, { onDelete: "cascade" }),
+    /** Billing order, 0 = first support act listed. */
+    position: integer("position").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.showId, t.artistId] })],
+);
+
 /* ------------------------------------------------------------------ */
 /* User-owned archive rows                                             */
 /* ------------------------------------------------------------------ */

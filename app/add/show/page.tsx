@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { Field, inputClass } from "@/components/form-controls";
+import { OpenerFields } from "@/components/opener-fields";
 import { addShowAction } from "../actions";
 
 export const metadata = { title: "Add show" };
@@ -83,6 +84,23 @@ export default async function AddShowPage() {
               <input
                 name="tourName"
                 placeholder="e.g. The Human Fear Tour"
+                className={inputClass}
+              />
+            </Field>
+            <Field
+              label="Openers / support acts (optional)"
+              hint="Everyone on the bill gets their own artist page and show credit."
+            >
+              <OpenerFields />
+            </Field>
+            <Field
+              label="setlist.fm link (optional)"
+              hint="Paste the show's setlist.fm URL to attach the exact setlist. Without it, we auto-match by artist name and date."
+            >
+              <input
+                name="setlistFmUrl"
+                type="url"
+                placeholder="https://www.setlist.fm/setlist/…"
                 className={inputClass}
               />
             </Field>

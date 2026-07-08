@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Heart, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import {
+  ChevronLeft,
+  Heart,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 
 import { removeShowAction, toggleFavoriteAction } from "@/app/show-actions";
 
@@ -13,6 +20,7 @@ import {
   getArchive,
   mediaLinksForShow,
   memoryForShow,
+  openersForShow,
   photosForShow,
   postersForShow,
   showsByArtist,
@@ -196,6 +204,13 @@ export default async function ShowDetailPage({
                 <MoreHorizontal className="h-4 w-4" />
               </summary>
               <div className="absolute right-0 top-10 z-20 w-56 rounded-lg border border-border bg-popover p-1.5 shadow-xl">
+                <Link
+                  href={`/edit/show/${show.id}`}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-accent"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit show details
+                </Link>
                 <form action={removeShowAction}>
                   <input type="hidden" name="showId" value={show.id} />
                   <button
@@ -229,6 +244,7 @@ export default async function ShowDetailPage({
           title: p.title,
         }))}
         ticketDetail={ticketDetail}
+        openers={openersForShow(archive, show)}
         canEdit={canEdit}
       />
 

@@ -128,7 +128,7 @@ export default async function ExplorePage() {
                   src={poster.imageUrl}
                   alt={`${poster.artistName ?? "Poster"} — ${poster.designer}`}
                   loading="lazy"
-                  className="aspect-[3/4] w-full rounded-lg border border-white/10 object-cover shadow-[0_20px_45px_-20px_rgba(0,0,0,0.9)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-[1.02]"
+                  className="aspect-[3/4] w-full rounded-lg border border-white/10 bg-black/40 object-contain shadow-[0_20px_45px_-20px_rgba(0,0,0,0.9)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-[1.02]"
                 />
                 <div className="mt-2 flex items-center justify-between gap-2 px-0.5">
                   <p className="truncate text-xs text-muted-foreground">
@@ -236,7 +236,7 @@ export default async function ExplorePage() {
                             src={thumb}
                             alt=""
                             loading="lazy"
-                            className="h-20 w-14 rounded-md border border-white/10 object-cover"
+                            className="h-20 w-14 rounded-md border border-white/10 bg-black/40 object-contain"
                           />
                         ))
                       ) : (

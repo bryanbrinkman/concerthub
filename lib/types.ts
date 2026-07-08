@@ -170,6 +170,8 @@ export interface Show {
   id: string;
   artistId: string;
   venueId: string;
+  /** Support acts on the bill, in billing order (artist ids). */
+  openerIds?: string[];
   tourId?: string;
   /** ISO date, local to the venue. */
   date: string;
@@ -179,6 +181,9 @@ export interface Show {
   /** Others in the user's circle who were there (mock for now). */
   attendeeCount?: number;
   gradient: GradientKey;
+  /** Explicitly linked setlist.fm setlist — beats the name+date search. */
+  setlistFmId?: string;
+  setlistFmUrl?: string;
 }
 
 /** A photo from a show night. */

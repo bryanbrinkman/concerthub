@@ -113,7 +113,7 @@ export default async function VenueDetailPage({
                   src={poster.imageUrl as string}
                   alt={poster.title}
                   loading="lazy"
-                  className="aspect-[3/4] w-full rounded-lg border border-white/10 object-cover transition-transform group-hover:scale-[1.02]"
+                  className="aspect-[3/4] w-full rounded-lg border border-white/10 bg-black/40 object-contain transition-transform group-hover:scale-[1.02]"
                 />
                 <p className="mt-1.5 truncate text-xs text-muted-foreground">
                   {poster.year} · {poster.designer}

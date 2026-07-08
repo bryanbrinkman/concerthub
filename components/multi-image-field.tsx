@@ -82,7 +82,7 @@ export function MultiImageField({
               <img
                 src={url}
                 alt={index === 0 ? "Cover image" : `Detail ${index}`}
-                className="h-20 w-16 rounded-md border border-border object-cover"
+                className="h-20 w-16 rounded-md border border-border bg-black/40 object-contain"
               />
               {index === 0 ? (
                 <span className="absolute bottom-0.5 left-0.5 rounded bg-black/70 px-1 text-[9px] uppercase tracking-wider text-white/90">

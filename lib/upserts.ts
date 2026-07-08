@@ -55,6 +55,26 @@ export async function upsertVenue(
   return again[0].id;
 }
 
+/**
+ * Replace a show's opener list with the given artist names (billing
+ * order preserved). Names are upserted as full artist rows so support
+ * acts appear in the Artists section too.
+ */
+export async function setShowOpeners(
+  db: Db,
+  showId: string,
+  names: string[],
+): Promise<void> {
+  await db.delete(t.showOpeners).where(eq(t.showOpeners.showId, showId));
+  for (let position = 0; position < names.length; position++) {
+    const artistId = await upsertArtist(db, names[position]);
+    await db
+      .insert(t.showOpeners)
+      .values({ showId, artistId, position })
+      .onConflictDoNothing();
+  }
+}
+
 export async function upsertTour(
   db: Db,
   artistId: string,

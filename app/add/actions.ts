@@ -2,13 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { currentUserId } from "@/auth";
 import { getDb, type Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { gradientFor } from "@/lib/archive";
-import { upsertArtist, upsertTour, upsertVenue } from "@/lib/upserts";
+import {
+  setShowOpeners,
+  upsertArtist,
+  upsertTour,
+  upsertVenue,
+} from "@/lib/upserts";
+import { parseSetlistFmUrl } from "@/lib/setlistfm";
 import type { Edition, EphemeraKind } from "@/lib/types";
 
 /** Server actions behind the add-item forms (/add/...). */
@@ -36,6 +42,45 @@ const str = (formData: FormData, key: string): string =>
 
 const optional = (value: string): string | undefined =>
   value.length > 0 ? value : undefined;
+
+/**
+ * Opener names from the form: repeated "openers" inputs, each of which may
+ * also hold a comma-separated list. Deduped, headliner excluded.
+ */
+const parseOpeners = (formData: FormData, headliner: string): string[] => {
+  const seen = new Set<string>([headliner.trim().toLowerCase()]);
+  const names: string[] = [];
+  for (const value of formData.getAll("openers")) {
+    for (const raw of String(value).split(",")) {
+      const name = raw.trim();
+      const key = name.toLowerCase();
+      if (!name || seen.has(key)) continue;
+      seen.add(key);
+      names.push(name);
+    }
+  }
+  return names;
+};
+
+/**
+ * Resolve a pasted setlist.fm URL to a setlist id that isn't already
+ * claimed by a different canonical show. Returns undefined when the URL
+ * doesn't parse or the id is taken.
+ */
+async function claimSetlistFmId(
+  db: Db,
+  url: string,
+  forShowId?: string,
+): Promise<string | undefined> {
+  const parsed = parseSetlistFmUrl(url);
+  if (!parsed) return undefined;
+  const taken = await db
+    .select({ id: t.shows.id })
+    .from(t.shows)
+    .where(eq(t.shows.setlistFmId, parsed));
+  if (taken[0] && taken[0].id !== forShowId) return undefined;
+  return parsed;
+}
 
 export async function addShowAction(formData: FormData) {
   const { userId, db } = await requireUserDb();
@@ -69,6 +114,11 @@ export async function addShowAction(formData: FormData) {
         eq(t.shows.date, date),
       ),
     );
+  const setlistFmUrl = optional(str(formData, "setlistFmUrl"));
+  const setlistFmId = setlistFmUrl
+    ? await claimSetlistFmId(db, setlistFmUrl)
+    : undefined;
+
   let showId = existing[0]?.id;
   if (!showId) {
     const inserted = await db
@@ -80,10 +130,22 @@ export async function addShowAction(formData: FormData) {
         date,
         showTime: optional(str(formData, "showTime")),
         gradient: gradientFor(artistName + date),
+        setlistFmId,
+        setlistFmUrl: setlistFmId ? setlistFmUrl : undefined,
       })
       .returning({ id: t.shows.id });
     showId = inserted[0].id;
+  } else if (setlistFmId) {
+    // Attaching to an existing canonical show — link the setlist if it
+    // doesn't have one yet.
+    await db
+      .update(t.shows)
+      .set({ setlistFmId, setlistFmUrl })
+      .where(and(eq(t.shows.id, showId), isNull(t.shows.setlistFmId)));
   }
+
+  const openerNames = parseOpeners(formData, artistName);
+  if (openerNames.length > 0) await setShowOpeners(db, showId, openerNames);
 
   await db
     .insert(t.userShows)
@@ -94,6 +156,68 @@ export async function addShowAction(formData: FormData) {
       favorite: formData.get("favorite") !== null,
     })
     .onConflictDoNothing();
+
+  revalidatePath("/", "layout");
+  redirect(`/shows/${showId}`);
+}
+
+/**
+ * Edit a show's supporting details: showtime, tour, openers, and the
+ * setlist.fm link (the retroactive path for manually added shows whose
+ * artist/date never auto-matched).
+ */
+export async function updateShowAction(formData: FormData) {
+  const { userId, db } = await requireUserDb();
+  const showId = str(formData, "showId");
+  if (!showId) return;
+  await assertOwnsShow(db, userId, showId);
+
+  const [show] = await db
+    .select()
+    .from(t.shows)
+    .where(eq(t.shows.id, showId));
+  if (!show) return;
+  const [artistRow] = await db
+    .select({ name: t.artists.name })
+    .from(t.artists)
+    .where(eq(t.artists.id, show.artistId));
+
+  const tourName = optional(str(formData, "tourName"));
+  const tourId = tourName
+    ? await upsertTour(db, show.artistId, tourName, show.date.slice(0, 4))
+    : null;
+
+  // setlist.fm link: cleared field unlinks; a new URL relinks (unless the
+  // setlist id already belongs to another show).
+  const urlInput = str(formData, "setlistFmUrl");
+  let setlistFmId = show.setlistFmId;
+  let setlistFmUrl = show.setlistFmUrl;
+  if (!urlInput) {
+    setlistFmId = null;
+    setlistFmUrl = null;
+  } else if (urlInput !== show.setlistFmUrl) {
+    const claimed = await claimSetlistFmId(db, urlInput, showId);
+    if (claimed) {
+      setlistFmId = claimed;
+      setlistFmUrl = urlInput;
+    }
+  }
+
+  await db
+    .update(t.shows)
+    .set({
+      showTime: optional(str(formData, "showTime")) ?? null,
+      tourId,
+      setlistFmId,
+      setlistFmUrl,
+    })
+    .where(eq(t.shows.id, showId));
+
+  await setShowOpeners(
+    db,
+    showId,
+    parseOpeners(formData, artistRow?.name ?? ""),
+  );
 
   revalidatePath("/", "layout");
   redirect(`/shows/${showId}`);

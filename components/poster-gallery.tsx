@@ -59,7 +59,7 @@ export function PosterGallery({
         <img
           src={current}
           alt={`Poster: ${title}`}
-          className="aspect-[3/4] w-full object-cover"
+          className="aspect-[3/4] w-full bg-black/40 object-contain"
         />
       </button>
 
@@ -82,7 +82,7 @@ export function PosterGallery({
               <img
                 src={url}
                 alt=""
-                className="h-14 w-11 object-cover"
+                className="h-14 w-11 bg-black/40 object-contain"
               />
             </button>
           ))}
