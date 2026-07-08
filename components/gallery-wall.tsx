@@ -26,6 +26,8 @@ export interface WallPosterItem {
   posterId: string;
   imageUrl: string;
   title: string;
+  /** Physical print width in inches (from edition dimensions), if known. */
+  widthIn?: number;
 }
 
 export interface WallSlot {
@@ -54,6 +56,22 @@ const ART_TOP = 4;
 /** Gallery midline the arrangement anchors to (slightly above center,
  * like eye-level hanging). */
 const MIDLINE = 44;
+/** The wall represents this many physical inches across — an 18" print
+ * hangs at 18/160 of the wall width, so sizes are true relative to each
+ * other. */
+const WALL_INCHES = 160;
+/** Default physical width when a print has no dimensions recorded. */
+const DEFAULT_WIDTH_IN = 18;
+/** Snap: fine grid + magnetic edge/center alignment to neighbors. */
+const SNAP_GRID = 1.25;
+const SNAP_TOLERANCE = 1.4;
+
+/** Wall width-% for a print, from its physical size. */
+export const wallWidthFor = (item: WallPosterItem): number =>
+  Math.min(
+    MAX_W,
+    Math.max(MIN_W, ((item.widthIn ?? DEFAULT_WIDTH_IN) / WALL_INCHES) * 100),
+  );
 
 /**
  * Salon-style auto arrangement: uniform physical spacing, columns
@@ -64,7 +82,6 @@ export function autoArrangeWall(
   items: WallPosterItem[],
   aspectOf: (posterId: string) => number = () => POSTER_ASPECT,
 ): WallSlot[] {
-  const widths = [12, 16, 20, 13, 17, 10, 21, 14];
   const gapX = 2.2;
   // Same physical distance vertically as horizontally.
   const gapY = gapX * WALL_ASPECT;
@@ -80,7 +97,8 @@ export function autoArrangeWall(
       const entries: ColumnEntry[] = [];
       let columnH = 0;
       while (index < items.length && entries.length < 3) {
-        const w = Math.max(MIN_W, widths[index % widths.length] * scale);
+        // True-to-size: width comes from the print's physical dimensions.
+        const w = Math.max(4.5, wallWidthFor(items[index]) * scale);
         const h = heightOf(w, aspectOf(items[index].posterId));
         if (entries.length > 0 && columnH + gapY + h > maxColumnH) break;
         entries.push({ item: items[index], w, h });
@@ -150,6 +168,7 @@ export function GalleryWall({
     return valid.length > 0 ? valid : autoArrangeWall(items);
   });
   const [selected, setSelected] = React.useState<string | null>(null);
+  const [draggingId, setDraggingId] = React.useState<string | null>(null);
   const [dirty, setDirty] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [savedFlash, setSavedFlash] = React.useState(false);
@@ -216,6 +235,7 @@ export function GalleryWall({
       origY: slot.y,
       hPct: wallRect ? (itemRect.height / wallRect.height) * 100 : 20,
     };
+    setDraggingId(slot.posterId);
     setSelected(slot.posterId);
     update(slot.posterId, { z: maxZ() + 1 });
   };
@@ -235,8 +255,64 @@ export function GalleryWall({
       y: Math.min(maxY, Math.max(0, state.origY + dy)),
     });
   };
+  /** Rendered height-% of a slot (real aspect when measured). */
+  const hPctOf = React.useCallback(
+    (slot: WallSlot) => (slot.w / aspectOf(slot.posterId)) * WALL_ASPECT,
+    [aspectOf],
+  );
+
+  /**
+   * Released pieces snap into place: magnetic alignment to neighbors'
+   * edges and centers first, then a fine grid — no free floating.
+   */
+  const snapIntoPlace = (posterId: string, hPct: number) => {
+    setSlots((list) => {
+      const slot = list.find((s) => s.posterId === posterId);
+      if (!slot) return list;
+      const others = list.filter((s) => s.posterId !== posterId);
+
+      const snapAxis = (value: number, targets: number[]) => {
+        let best: number | null = null;
+        for (const target of targets) {
+          const distance = Math.abs(target - value);
+          if (
+            distance <= SNAP_TOLERANCE &&
+            (best === null || distance < Math.abs(best - value))
+          ) {
+            best = target;
+          }
+        }
+        return best ?? Math.round(value / SNAP_GRID) * SNAP_GRID;
+      };
+
+      const xTargets = others.flatMap((o) => [
+        o.x, // left edges align
+        o.x + o.w - slot.w, // right edges align
+        o.x + (o.w - slot.w) / 2, // centers align
+      ]);
+      const yTargets = others.flatMap((o) => {
+        const oh = hPctOf(o);
+        return [
+          o.y, // tops align
+          o.y + oh - hPct, // bottoms align
+          o.y + (oh - hPct) / 2, // middles align
+        ];
+      });
+
+      const x = Math.min(100 - slot.w, Math.max(0, snapAxis(slot.x, xTargets)));
+      const y = Math.min(
+        Math.max(0, ART_BOTTOM - hPct),
+        Math.max(0, snapAxis(slot.y, yTargets)),
+      );
+      return list.map((s) => (s.posterId === posterId ? { ...s, x, y } : s));
+    });
+  };
+
   const onPointerUp = () => {
+    const state = drag.current;
     drag.current = null;
+    setDraggingId(null);
+    if (state) snapIntoPlace(state.posterId, state.hPct);
   };
 
   const selectedSlot = slots.find((s) => s.posterId === selected);
@@ -380,6 +456,12 @@ export function GalleryWall({
                 width: `${slot.w}%`,
                 zIndex: slot.z,
                 touchAction: "none",
+                // Pieces settle into their snapped spot; while dragging
+                // they track the pointer 1:1.
+                transition:
+                  draggingId === slot.posterId
+                    ? "none"
+                    : "left 0.25s cubic-bezier(0.22, 1, 0.36, 1), top 0.25s cubic-bezier(0.22, 1, 0.36, 1), width 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
               }}
               className={cn(
                 "absolute",
@@ -433,7 +515,7 @@ export function GalleryWall({
                       posterId: item.posterId,
                       x: 42,
                       y: 30,
-                      w: 15,
+                      w: wallWidthFor(item),
                       z: maxZ() + 1,
                     },
                   ]);

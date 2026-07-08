@@ -17,6 +17,19 @@ export function formatShowDate(iso: string): string {
   });
 }
 
+/**
+ * Physical print width in inches from an edition dimensions string —
+ * `18" x 24"`, `18x24`, `18 × 24 in` all parse (first number = width).
+ */
+export function parsePosterWidthIn(dimensions?: string): number | undefined {
+  if (!dimensions) return undefined;
+  const match = dimensions.match(
+    /(\d+(?:\.\d+)?)\s*(?:"|”|in(?:ch(?:es)?)?)?\s*[x×]\s*(\d+(?:\.\d+)?)/i,
+  );
+  const width = match ? Number(match[1]) : NaN;
+  return Number.isFinite(width) && width > 3 && width < 100 ? width : undefined;
+}
+
 /** "2014-06-06".."2014-06-08" → "June 6–8, 2014" (multi-day events). */
 export function formatDateRange(startIso: string, endIso: string): string {
   const [sy, sm, sd] = startIso.split("-").map(Number);
