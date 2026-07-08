@@ -114,15 +114,14 @@ function NavLink({
 
 function Brand() {
   return (
-    <Link href="/" className="block">
-      <p className="font-serif text-2xl font-bold leading-tight tracking-tight">
-        Concert
-        <br />
-        Collect
-      </p>
-      <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
-        Your shows. Your story.
-      </p>
+    <Link href="/" className="block overflow-hidden">
+      {/* The source PNG has generous transparent padding — negative margins
+          trim it optically. eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo.png"
+        alt="Concert Collect — every show, everything it left behind"
+        className="-mx-6 -my-12 w-[calc(100%+3rem)] max-w-none"
+      />
     </Link>
   );
 }
@@ -209,7 +208,7 @@ function SidebarBody({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="px-5 pb-5 pt-5">
+      <div className="px-5 pb-1 pt-2">
         <Brand />
       </div>
 
@@ -280,8 +279,13 @@ export function Sidebar(props: SidebarProps) {
 
       {/* Mobile top bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background/85 px-4 py-3 backdrop-blur lg:hidden">
-        <Link href="/" className="font-serif text-lg font-bold tracking-tight">
-          Concert Collect
+        <Link href="/" className="block overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="Concert Collect"
+            className="-my-7 h-20 w-auto"
+          />
         </Link>
         <button
           type="button"

@@ -80,9 +80,12 @@ export function Onboarding({ enabled }: { enabled: boolean }) {
           <X className="h-4 w-4" />
         </button>
 
-        <p className="font-serif text-2xl font-bold leading-tight">
-          Welcome to Concert Collect
-        </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt="Concert Collect"
+          className="mx-auto -my-12 w-64 max-w-full"
+        />
         <p className="mt-1 text-sm text-muted-foreground">
           Your shows. Your story. Let&apos;s get your archive started —
           pick whichever feels right:

@@ -78,14 +78,12 @@ export function WelcomeSplash({
           <X className="h-4 w-4" />
         </button>
 
-        <p className="font-serif text-2xl font-bold leading-tight">
-          Concert
-          <br />
-          Collect
-        </p>
-        <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
-          Your shows. Your story.
-        </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt="Concert Collect — every show, everything it left behind"
+          className="mx-auto -my-12 w-72 max-w-full"
+        />
 
         <div className="mt-5 space-y-3">
           {POINTS.map((point) => (
