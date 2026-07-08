@@ -86,6 +86,8 @@ export interface Edition {
   copyNumber?: number;
   technique?: string; // e.g. "6-color screen print"
   dimensions?: string; // e.g. "18\" x 24\""
+  /** Autographed by the poster artist and/or band. */
+  signed?: boolean;
   markings?: string; // e.g. "Signed & numbered in pencil"
 }
 

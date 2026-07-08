@@ -60,6 +60,7 @@ export function PosterDetailsCard({
     ]);
   }
   if (edition?.technique) rows.push(["Medium", edition.technique]);
+  if (edition?.signed) rows.push(["Autographed", "Yes — signed"]);
   if (edition?.markings) rows.push(["Markings", edition.markings]);
   if (poster.notes) rows.push(["Notes", poster.notes]);
 

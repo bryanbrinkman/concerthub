@@ -140,6 +140,7 @@ export async function addPosterAction(formData: FormData) {
       Number.isFinite(copyNumber) && copyNumber > 0 ? copyNumber : undefined,
     technique: optional(str(formData, "technique")),
     dimensions: optional(str(formData, "dimensions")),
+    signed: formData.get("signed") !== null,
     markings: optional(str(formData, "markings")),
   };
 
@@ -196,6 +197,7 @@ export async function updatePosterAction(formData: FormData) {
       Number.isFinite(copyNumber) && copyNumber > 0 ? copyNumber : undefined,
     technique: optional(str(formData, "technique")),
     dimensions: optional(str(formData, "dimensions")),
+    signed: formData.get("signed") !== null,
     markings: optional(str(formData, "markings")),
   };
 

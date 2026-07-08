@@ -143,6 +143,15 @@ export default async function EditPosterPage({
                 />
               </Field>
             </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="signed"
+                defaultChecked={edition?.signed ?? false}
+                className="h-4 w-4 accent-[#8b5cf6]"
+              />
+              Signed / autographed
+            </label>
             <Field label="Markings (optional)">
               <input
                 name="markings"

@@ -202,7 +202,8 @@ export default async function PosterRecordPage({
         ? `#${edition.copyNumber} of ${edition.runSize}`
         : String(edition.runSize),
     ]);
-  if (edition?.markings) rows.push(["Signed / numbered", edition.markings]);
+  if (edition?.signed) rows.push(["Autographed", "Yes — signed"]);
+  if (edition?.markings) rows.push(["Markings", edition.markings]);
   if (record.notes) rows.push(["Notes", record.notes]);
 
   const relatedGrid = (items: typeof sameBand, heading: string) =>
