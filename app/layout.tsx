@@ -91,6 +91,7 @@ export default async function RootLayout({
     { label: "Explore the archive", href: "/explore", group: "Pages" },
     { label: "Poster Database", href: "/posters", group: "Pages" },
     { label: "My poster rack", href: "/my-posters", group: "Pages" },
+    { label: "My Gallery wall", href: "/my-gallery", group: "Pages" },
     { label: "Trading Post", href: "/prints", group: "Pages" },
     { label: "Import from setlist.fm", href: "/import", group: "Pages" },
     { label: "Tickets", href: "/tickets", group: "Pages" },

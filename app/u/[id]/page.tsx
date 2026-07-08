@@ -9,6 +9,7 @@ import { formatShortDate, formatShowDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PosterArt } from "@/components/gradient-art";
 import { TicketArt } from "@/components/ticket-art";
+import { GalleryWall, type WallSlot } from "@/components/gallery-wall";
 
 export const metadata = { title: "Collector profile" };
 
@@ -66,6 +67,28 @@ export default async function ProfilePage({
   const wall = posterRows.filter((p) => p.imageUrl);
   const name = user.name ?? "A collector";
 
+  // Hand-arranged gallery wall, when the collector has saved one.
+  let galleryLayout: WallSlot[] | undefined;
+  try {
+    const [galleryRow] = await db
+      .select({ layout: t.galleryWalls.layout })
+      .from(t.galleryWalls)
+      .where(eq(t.galleryWalls.userId, user.id));
+    galleryLayout = galleryRow?.layout;
+  } catch {
+    // gallery table not migrated yet — fall back to the grid
+  }
+  const galleryItems = wall.map((p) => ({
+    posterId: p.id,
+    imageUrl: p.imageUrl as string,
+    title: p.title,
+  }));
+  const hasGallery =
+    galleryLayout &&
+    galleryLayout.some((slot) =>
+      galleryItems.some((item) => item.posterId === slot.posterId),
+    );
+
   return (
     <div className="space-y-8">
       <div>
@@ -79,7 +102,14 @@ export default async function ProfilePage({
         </p>
       </div>
 
-      {wall.length > 0 ? (
+      {hasGallery ? (
+        <section>
+          <h2 className="mb-4 text-lg font-semibold">Gallery wall</h2>
+          <GalleryWall items={galleryItems} initialLayout={galleryLayout} />
+        </section>
+      ) : null}
+
+      {wall.length > 0 && !hasGallery ? (
         <section>
           <h2 className="mb-4 text-lg font-semibold">Poster wall</h2>
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4">

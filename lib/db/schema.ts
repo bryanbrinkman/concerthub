@@ -392,6 +392,21 @@ export const providerCache = pgTable(
   (t) => [uniqueIndex("provider_cache_key_idx").on(t.provider, t.queryKey)],
 );
 
+/**
+ * A user's gallery wall: hand-arranged poster layout. Coordinates are
+ * percentages (x/w of wall width, y of wall height) so the wall scales
+ * to any screen.
+ */
+export const galleryWalls = pgTable("gallery_wall", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  layout: jsonb("layout")
+    .notNull()
+    .$type<Array<{ posterId: string; x: number; y: number; w: number; z: number }>>(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+});
+
 export const collections = pgTable("collection", {
   id: text("id").primaryKey().$defaultFn(uuid),
   userId: text("user_id")

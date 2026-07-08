@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Compass,
   Download,
+  Frame,
   Heart,
   Home,
   Image as ImageIcon,
@@ -72,6 +73,7 @@ function collectionNav(counts: ArchiveCounts): NavItem[] {
   return [
     { label: "My Shows", href: "/my-shows", icon: CalendarDays, count: counts.shows },
     { label: "My Posters", href: "/my-posters", icon: ImageIcon, count: counts.posters },
+    { label: "My Gallery", href: "/my-gallery", icon: Frame, count: undefined },
     { label: "Wantlist", href: "/my-posters?state=want", icon: Heart, count: counts.wishlist },
     { label: "Collections", href: "/collections", icon: Library, count: undefined },
     { label: "Tickets", href: "/tickets", icon: Ticket, count: counts.tickets },
