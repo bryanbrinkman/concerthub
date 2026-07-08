@@ -196,11 +196,14 @@ export function PosterRack({ posters }: { posters: RackPoster[] }) {
         {/* Metadata for the featured print */}
         <div className="flex flex-col justify-center gap-3">
           <div>
-            <h2 className="text-lg font-semibold leading-tight">
+            <Link
+              href={`/posters/${poster.id}`}
+              className="text-lg font-semibold leading-tight hover:text-primary"
+            >
               {poster.title}
-            </h2>
+            </Link>
             <p className="mt-1 text-sm text-muted-foreground">
-              {poster.designer} · {poster.year}
+              Poster art by {poster.designer} · {poster.year}
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5">

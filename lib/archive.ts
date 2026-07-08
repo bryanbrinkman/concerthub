@@ -27,6 +27,7 @@ import type {
   MediaLink,
   MediaLinkKind,
   Poster,
+  PosterState,
   Show,
   ShowPhoto,
   Tour,
@@ -173,6 +174,7 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
       notes: row.notes ?? undefined,
       gradient: g(row.gradient),
       owned: row.owned,
+      state: (row.state ?? (row.owned ? "own" : "want")) as PosterState,
       imageUrl: row.imageUrl ?? undefined,
       imageUrls: row.imageUrls ?? undefined,
       expressoBeansId: row.expressoBeansId ?? undefined,
@@ -268,10 +270,13 @@ export const showsByArtist = (a: ArchiveData, artistId: string) =>
 export const showsByVenue = (a: ArchiveData, venueId: string) =>
   allShows(a).filter((s) => s.venueId === venueId);
 
+export const posterState = (p: Poster): PosterState =>
+  p.state ?? (p.owned ? "own" : "want");
+
 export function archiveCounts(a: ArchiveData) {
   return {
     shows: a.shows.filter((s) => s.attended).length,
-    wishlist: a.posters.filter((p) => !p.owned).length,
+    wishlist: a.posters.filter((p) => posterState(p) === "want").length,
     posters:
       a.posters.filter((p) => p.owned).length +
       a.ephemera.filter((e) => e.kind === "poster").length,

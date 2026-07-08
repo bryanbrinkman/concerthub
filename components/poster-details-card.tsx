@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink, FolderPlus, Frame, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpRight, ExternalLink, FolderPlus, Frame, Pencil, Trash2 } from "lucide-react";
 
 import type { EnrichedPoster } from "@/lib/expressobeans";
 import { deletePosterAction } from "@/app/manage-actions";
@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { PosterImage } from "@/components/poster-image";
 import { PosterGallery } from "@/components/poster-gallery";
 import { EmptyState } from "@/components/empty-state";
+import { StateBadge } from "@/components/state-badge";
+import { posterState } from "@/lib/archive";
 
 /** Collector metadata for the show's poster/print. */
 export function PosterDetailsCard({
@@ -44,7 +46,7 @@ export function PosterDetailsCard({
   ];
 
   const rows: Array<[string, string]> = [
-    ["Artist", poster.designer],
+    ["Poster Artist", poster.designer],
     ["Title", poster.title],
     ["Year", String(poster.year)],
   ];
@@ -108,18 +110,22 @@ export function PosterDetailsCard({
               ))}
             </div>
           ) : null}
-          {!poster.owned ? (
-            <Badge variant="outline" className="mt-1">
-              Wishlist — not in collection
-            </Badge>
-          ) : null}
+          <div className="mt-1">
+            <StateBadge state={posterState(poster)} />
+          </div>
         </dl>
       </CardContent>
       <CardFooter className="flex-wrap gap-2">
         <Button variant="outline" size="sm" asChild>
+          <Link href={`/posters/${poster.id}`}>
+            <ArrowUpRight />
+            View poster record
+          </Link>
+        </Button>
+        <Button variant="ghost" size="sm" asChild>
           <a href={poster.ebUrl} target="_blank" rel="noreferrer">
             <ExternalLink />
-            View on Expresso Beans
+            Expresso Beans
           </a>
         </Button>
         <Button variant="secondary" size="sm">

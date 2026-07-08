@@ -12,6 +12,7 @@ import {
   showsByArtist,
 } from "@/lib/archive";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { GradientArt } from "@/components/gradient-art";
 import { ShowCard } from "@/components/show-card";
 
@@ -27,6 +28,10 @@ export default async function ArtistDetailPage({
 
   const shows = showsByArtist(archive, artist.id);
   const attended = shows.filter((s) => s.attended);
+  const showIds = new Set(shows.map((s) => s.id));
+  const posterography = archive.posters
+    .filter((p) => p.showId && showIds.has(p.showId))
+    .sort((a, b) => b.year - a.year);
 
   return (
     <div className="space-y-6">
@@ -72,6 +77,52 @@ export default async function ArtistDetailPage({
         </div>
       </div>
 
+      {/* Posterography — the visual record of this band's shows */}
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Posterography</h2>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/add/poster">Add a poster</Link>
+          </Button>
+        </div>
+        {posterography.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">
+            No posters cataloged for {artist.name} yet — know of one?{" "}
+            <Link href="/add/poster" className="text-primary hover:underline">
+              Add it →
+            </Link>
+          </p>
+        ) : (
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            {posterography.map((poster) => (
+              <Link
+                key={poster.id}
+                href={`/posters/${poster.id}`}
+                className="group block"
+              >
+                {poster.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={poster.imageUrl}
+                    alt={poster.title}
+                    loading="lazy"
+                    className="aspect-[3/4] w-full rounded-lg border border-white/10 object-cover transition-transform group-hover:scale-[1.02]"
+                  />
+                ) : (
+                  <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-border bg-secondary p-2 text-center font-mono text-[10px] uppercase text-muted-foreground">
+                    {poster.title}
+                  </div>
+                )}
+                <p className="mt-1.5 truncate text-xs text-muted-foreground">
+                  {poster.year} · {poster.designer}
+                </p>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <h2 className="text-lg font-semibold">Show history</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {shows.map((show) => (
           <ShowCard

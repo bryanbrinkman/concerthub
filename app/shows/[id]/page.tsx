@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Heart, MoreHorizontal, Trash2 } from "lucide-react";
+import { ChevronLeft, Heart, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 
 import { removeShowAction, toggleFavoriteAction } from "@/app/show-actions";
 
@@ -15,6 +15,7 @@ import {
   memoryForShow,
   photosForShow,
   postersForShow,
+  showsByArtist,
   showsForTour,
 } from "@/lib/archive";
 import { getSetlistForShow } from "@/lib/data";
@@ -67,9 +68,10 @@ export default async function ShowDetailPage({
   // seeded setlist as offline fallback; user archives fall back to the
   // empty state.
   const seededSetlist = archive.demo ? getSetlistForShow(show.id) : undefined;
+  const showPosters = postersForShow(archive, show.id);
   const [setlist, poster] = await Promise.all([
     resolveSetlist(show, artist?.name, seededSetlist),
-    enrichPoster(postersForShow(archive, show.id)[0]),
+    enrichPoster(showPosters[0]),
   ]);
 
   const canEdit = !archive.demo;
@@ -96,6 +98,27 @@ export default async function ShowDetailPage({
       imageUrl: postersForShow(archive, s.id)[0]?.imageUrl,
       artistShort: (a?.name ?? "····").slice(0, 4),
       current: s.id === show.id,
+    };
+  });
+
+  // Related shows by the same artist (beyond this tour).
+  const artistShows = artist
+    ? showsByArtist(archive, artist.id).filter(
+        (s2) => !tourShows.some((ts) => ts.id === s2.id) || s2.id === show.id,
+      )
+    : [];
+  const artistCarouselItems: TourCarouselItem[] = artistShows.map((s2) => {
+    const v = findVenue(archive, s2.venueId);
+    return {
+      id: s2.id,
+      href: `/shows/${s2.id}`,
+      dateLabel: formatShortDate(s2.date),
+      cityLabel: v ? `${v.city}${v.region ? `, ${v.region}` : ""}` : "",
+      venueName: v?.name ?? "",
+      gradient: s2.gradient,
+      imageUrl: postersForShow(archive, s2.id)[0]?.imageUrl,
+      artistShort: (artist?.name ?? "····").slice(0, 4),
+      current: s2.id === show.id,
     };
   });
 
@@ -146,7 +169,7 @@ export default async function ShowDetailPage({
                 <Heart
                   className={show.favorite ? "fill-primary text-primary" : ""}
                 />
-                {show.favorite ? "Favorited" : "Favorite"}
+                {show.favorite ? "Saved" : "Save"}
               </Button>
             </form>
           ) : (
@@ -154,9 +177,15 @@ export default async function ShowDetailPage({
               <Heart
                 className={show.favorite ? "fill-primary text-primary" : ""}
               />
-              Favorite
+              Save
             </Button>
           )}
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/add/ephemera?show=${show.id}`}>
+              <Plus />
+              Add artifact
+            </Link>
+          </Button>
           <ShareButton />
           {canEdit ? (
             <details className="relative">
@@ -194,6 +223,11 @@ export default async function ShowDetailPage({
         tour={tour}
         setlist={setlist}
         poster={poster}
+        posterVariants={showPosters.map((p) => ({
+          id: p.id,
+          imageUrl: p.imageUrl,
+          title: p.title,
+        }))}
         ticketDetail={ticketDetail}
         canEdit={canEdit}
       />
@@ -231,6 +265,10 @@ export default async function ShowDetailPage({
                 </section>
               </div>
               <TourCarousel items={carouselItems} />
+              <TourCarousel
+                items={artistCarouselItems}
+                title={`More from ${artist?.name ?? "this artist"}`}
+              />
             </TabsContent>
 
             <TabsContent value="setlist">

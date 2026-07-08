@@ -46,6 +46,7 @@ export default async function PrintsPage() {
             year: t.posters.year,
             imageUrl: t.posters.imageUrl,
             imageUrls: t.posters.imageUrls,
+            state: t.posters.state,
             gradient: t.posters.gradient,
             ownerId: t.posters.userId,
             ownerName: t.users.name,
@@ -136,10 +137,20 @@ export default async function PrintsPage() {
                   />
                 )}
                 <div className="mt-2.5 flex-1 space-y-1 px-0.5">
-                  <p className="truncate text-sm font-medium">{poster.title}</p>
+                  <a
+                    href={`/posters/${poster.id}`}
+                    className="block truncate text-sm font-medium hover:text-primary"
+                  >
+                    {poster.title}
+                  </a>
                   <p className="truncate text-xs text-muted-foreground">
-                    {poster.designer} · {poster.year}
+                    Poster art by {poster.designer} · {poster.year}
                   </p>
+                  {poster.state === "trade" || poster.state === "sell" ? (
+                    <Badge variant={poster.state === "sell" ? "default" : "secondary"}>
+                      {poster.state === "sell" ? "For Sale" : "For Trade"}
+                    </Badge>
+                  ) : null}
                   {poster.artistName ? (
                     <p className="truncate text-xs text-muted-foreground">
                       {poster.artistName}

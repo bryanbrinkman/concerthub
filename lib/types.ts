@@ -74,6 +74,9 @@ export interface Setlist {
   // (GET /rest/1.0/setlist/{setlistId}) and store the raw payload alongside.
 }
 
+/** Where a print sits in the collection lifecycle. */
+export type PosterState = "own" | "want" | "trade" | "sell";
+
 /** A single print run / variant of a poster (regular, foil, AP, etc.). */
 export interface Edition {
   id: string;
@@ -98,6 +101,8 @@ export interface Poster {
   notes?: string;
   gradient: GradientKey;
   owned: boolean;
+  /** Collection state — Own / Want / For Trade / For Sale. */
+  state?: PosterState;
   /**
    * Numeric id from the Expresso Beans item page URL
    * (expressobeans.com/public/detail.php/<id>). When set,

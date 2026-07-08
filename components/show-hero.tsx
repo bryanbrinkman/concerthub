@@ -26,6 +26,8 @@ interface ShowHeroProps {
   setlist?: Setlist;
   /** The show's poster, if cataloged — real EB artwork renders when available. */
   poster?: EnrichedPoster;
+  /** All poster records on this show — variants render as a small rail. */
+  posterVariants?: Array<{ id: string; imageUrl?: string; title: string }>;
   /** Ticket ephemera detail — real seats print on the stub art. */
   ticketDetail?: string;
   /** Viewer owns this archive: "I was there" becomes a real toggle. */
@@ -40,6 +42,7 @@ export function ShowHero({
   tour,
   setlist,
   poster,
+  posterVariants = [],
   ticketDetail,
   canEdit,
 }: ShowHeroProps) {
@@ -49,15 +52,44 @@ export function ShowHero({
       <div className="relative grid gap-5 p-4 sm:p-5 lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_350px]">
         {/* Poster — pinned top-left; ticket-stub art when no print exists */}
         {poster?.resolvedImageUrl ? (
-          <PosterImage
-            imageUrl={poster.resolvedImageUrl}
-            gradient={show.gradient}
-            title={artist?.name ?? "Unknown artist"}
-            className="mx-auto w-full max-w-[250px] self-start shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)] lg:mx-0"
-          />
+          <div className="mx-auto w-full max-w-[250px] space-y-2 self-start lg:mx-0">
+            <PosterImage
+              imageUrl={poster.resolvedImageUrl}
+              gradient={show.gradient}
+              title={artist?.name ?? "Unknown artist"}
+              className="shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)]"
+            />
+            {posterVariants.length > 1 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {posterVariants.map((variant) => (
+                  <Link
+                    key={variant.id}
+                    href={`/posters/${variant.id}`}
+                    title={variant.title}
+                    className="block overflow-hidden rounded-md opacity-70 ring-1 ring-border transition-opacity hover:opacity-100"
+                  >
+                    {variant.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={variant.imageUrl}
+                        alt={variant.title}
+                        loading="lazy"
+                        className="h-14 w-11 object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-14 w-11 items-center justify-center bg-secondary font-mono text-[8px] uppercase text-muted-foreground">
+                        {variant.title.slice(0, 6)}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </div>
         ) : (
-          <TicketArt
-            seedId={show.id}
+          <div className="mx-auto w-full max-w-[250px] space-y-2 self-start lg:mx-0">
+            <TicketArt
+              seedId={show.id}
             gradient={show.gradient}
             artist={artist?.name ?? "Unknown artist"}
             venue={venue?.name}
@@ -69,12 +101,22 @@ export function ShowHero({
             dateLine={formatShowDate(show.date)}
             timeLine={show.showTime}
             tourLine={tour?.name}
-            sec={stub.sec}
-            row={stub.row}
-            seat={stub.seat}
-            price={stub.price}
-            className="mx-auto w-full max-w-[250px] self-start shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)] lg:mx-0"
-          />
+              sec={stub.sec}
+              row={stub.row}
+              seat={stub.seat}
+              price={stub.price}
+              className="shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)]"
+            />
+            <p className="text-center text-xs text-muted-foreground lg:text-left">
+              Know of a poster from this show?{" "}
+              <Link
+                href={`/add/poster?show=${show.id}`}
+                className="text-primary hover:underline"
+              >
+                Add it →
+              </Link>
+            </p>
+          </div>
         )}
 
         {/* Title + meta + CTAs — top-aligned with the poster, even when the

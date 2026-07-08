@@ -68,6 +68,20 @@ export default async function RootLayout({
       href: `/venues/${venue.id}`,
       group: "Venues",
     })),
+    ...archive.posters.map((poster) => {
+      const show = poster.showId
+        ? archive.shows.find((s) => s.id === poster.showId)
+        : undefined;
+      const artistName = show
+        ? archive.artists.find((a) => a.id === show.artistId)?.name
+        : undefined;
+      return {
+        label: `${poster.title} — ${poster.designer}`,
+        sublabel: `${artistName ? `${artistName} · ` : ""}${poster.year} poster`,
+        href: `/posters/${poster.id}`,
+        group: "Posters",
+      };
+    }),
     { label: "Poster rack", href: "/posters", group: "Pages" },
     { label: "Trading Post", href: "/prints", group: "Pages" },
     { label: "Import from setlist.fm", href: "/import", group: "Pages" },

@@ -55,15 +55,18 @@ export function SearchPalette({ items }: { items: SearchItem[] }) {
     }
   }, [open]);
 
-  const q = query.trim().toLowerCase();
+  // Multi-token match: every word must appear somewhere in the item, so
+  // "Rilo Kiley Capitol Theatre" and "Killer Acid poster" both resolve.
+  const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const haystack = (i: SearchItem) =>
+    `${i.label} ${i.sublabel ?? ""} ${i.group}`.toLowerCase();
   const results = (
-    q.length === 0
+    tokens.length === 0
       ? items.filter((i) => i.group === "Pages")
-      : items.filter(
-          (i) =>
-            i.label.toLowerCase().includes(q) ||
-            i.sublabel?.toLowerCase().includes(q),
-        )
+      : items.filter((i) => {
+          const hay = haystack(i);
+          return tokens.every((token) => hay.includes(token));
+        })
   ).slice(0, MAX_RESULTS);
 
   const go = (href: string) => {
@@ -105,7 +108,7 @@ export function SearchPalette({ items }: { items: SearchItem[] }) {
                 go(results[activeIndex].href);
               }
             }}
-            placeholder="Search shows, artists, venues…"
+            placeholder="Search shows, posters, artists, venues…"
             className="h-11 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
           />
           <kbd className="rounded border border-border bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">

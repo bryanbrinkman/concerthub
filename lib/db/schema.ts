@@ -210,6 +210,8 @@ export const posters = pgTable("poster", {
   notes: text("notes"),
   gradient: text("gradient").notNull().default("midnight"),
   owned: boolean("owned").notNull().default(true),
+  /** Collection state: own | want | trade | sell. */
+  state: text("state").notNull().default("own"),
   imageUrl: text("image_url"),
   /** Additional detail shots (numbering, signature, foil, condition). */
   imageUrls: text("image_urls").array(),

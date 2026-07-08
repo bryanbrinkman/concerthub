@@ -149,12 +149,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title={archive.demo ? "Welcome to Concert Collect" : "Welcome back"}
-        subtitle={
-          archive.demo
-            ? "A live music archive where the poster is the star. Sign in to hang your own wall."
-            : "Your poster wall — the shows worth framing."
-        }
+        title="Every show. Everything it left behind."
+        subtitle="Explore concerts, collect posters, and preserve the artifacts that make live music memorable."
         actions={
           <>
             {!archive.demo && archive.userId ? (
@@ -172,23 +168,6 @@ export default async function DashboardPage() {
           </>
         }
       />
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="flex items-center gap-4 p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                <stat.icon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold tabular-nums">{stat.value}</p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
       {/* The poster wall */}
       <section>
@@ -267,6 +246,24 @@ export default async function DashboardPage() {
           </div>
         )}
       </section>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Card key={stat.label}>
+            <CardContent className="flex items-center gap-4 p-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                <stat.icon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold tabular-nums">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
 
       {/* Latest memory */}
       {latestMemory && latestMemoryShow ? (

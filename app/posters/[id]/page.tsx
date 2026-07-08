@@ -1,0 +1,374 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowUpRight, ChevronLeft, ExternalLink, Pencil } from "lucide-react";
+import { and, eq, ne } from "drizzle-orm";
+
+import { currentUserId } from "@/auth";
+import { getDb } from "@/lib/db";
+import * as t from "@/lib/db/schema";
+import { getArchive, posterState } from "@/lib/archive";
+import type { Edition, PosterState } from "@/lib/types";
+import { formatShortDate } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
+import { PosterGallery } from "@/components/poster-gallery";
+import { StateBadge } from "@/components/state-badge";
+
+export const metadata = { title: "Poster record" };
+
+interface PosterRecord {
+  id: string;
+  title: string;
+  designer: string;
+  year: number;
+  notes?: string;
+  images: string[];
+  editions: Edition[];
+  state: PosterState;
+  ownerId?: string;
+  ownerName?: string;
+  showId?: string;
+  showDate?: string;
+  artistName?: string;
+  venueName?: string;
+  venueCity?: string;
+  isOwner: boolean;
+}
+
+/**
+ * Canonical poster record: the collectible object, always connected back
+ * to its show. Resolves from the viewer's archive first (covers demo
+ * mode), then the shared database (covers Trading Post links).
+ */
+export default async function PosterRecordPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const archive = await getArchive();
+  const db = getDb();
+  const viewerId = await currentUserId();
+
+  let record: PosterRecord | undefined;
+  const mine = archive.posters.find((p) => p.id === id);
+  if (mine) {
+    const show = mine.showId
+      ? archive.shows.find((s) => s.id === mine.showId)
+      : undefined;
+    const artist = show
+      ? archive.artists.find((a) => a.id === show.artistId)
+      : undefined;
+    const venue = show
+      ? archive.venues.find((v) => v.id === show.venueId)
+      : undefined;
+    record = {
+      id: mine.id,
+      title: mine.title,
+      designer: mine.designer,
+      year: mine.year,
+      notes: mine.notes,
+      images: [
+        ...(mine.imageUrl ? [mine.imageUrl] : []),
+        ...(mine.imageUrls ?? []),
+      ],
+      editions: mine.editions,
+      state: posterState(mine),
+      showId: show?.id,
+      showDate: show?.date,
+      artistName: artist?.name,
+      venueName: venue?.name,
+      venueCity: venue?.city,
+      isOwner: !archive.demo,
+    };
+  } else if (db) {
+    try {
+      const [row] = await db
+        .select({
+          id: t.posters.id,
+          title: t.posters.title,
+          designer: t.posters.designer,
+          year: t.posters.year,
+          notes: t.posters.notes,
+          imageUrl: t.posters.imageUrl,
+          imageUrls: t.posters.imageUrls,
+          editions: t.posters.editions,
+          state: t.posters.state,
+          owned: t.posters.owned,
+          ownerId: t.posters.userId,
+          ownerName: t.users.name,
+          showId: t.posters.showId,
+          showDate: t.shows.date,
+          artistName: t.artists.name,
+          venueName: t.venues.name,
+          venueCity: t.venues.city,
+        })
+        .from(t.posters)
+        .innerJoin(t.users, eq(t.posters.userId, t.users.id))
+        .leftJoin(t.shows, eq(t.posters.showId, t.shows.id))
+        .leftJoin(t.artists, eq(t.shows.artistId, t.artists.id))
+        .leftJoin(t.venues, eq(t.shows.venueId, t.venues.id))
+        .where(eq(t.posters.id, id));
+      if (row) {
+        record = {
+          id: row.id,
+          title: row.title,
+          designer: row.designer,
+          year: row.year,
+          notes: row.notes ?? undefined,
+          images: [
+            ...(row.imageUrl ? [row.imageUrl] : []),
+            ...(row.imageUrls ?? []),
+          ],
+          editions: row.editions ?? [],
+          state: (row.state ?? (row.owned ? "own" : "want")) as PosterState,
+          ownerId: row.ownerId,
+          ownerName: row.ownerName ?? undefined,
+          showId: row.showId ?? undefined,
+          showDate: row.showDate ?? undefined,
+          artistName: row.artistName ?? undefined,
+          venueName: row.venueName ?? undefined,
+          venueCity: row.venueCity ?? undefined,
+          isOwner: viewerId != null && row.ownerId === viewerId,
+        };
+      }
+    } catch (error) {
+      console.warn("[poster record] query failed:", error);
+    }
+  }
+  if (!record) notFound();
+
+  // Related records (best effort; shared catalog only).
+  let sameBand: Array<{ id: string; title: string; imageUrl: string | null; year: number }> = [];
+  let samePosterArtist: typeof sameBand = [];
+  if (db) {
+    try {
+      if (record.showId) {
+        const [showRow] = await db
+          .select({ artistId: t.shows.artistId })
+          .from(t.shows)
+          .where(eq(t.shows.id, record.showId));
+        if (showRow) {
+          sameBand = await db
+            .select({
+              id: t.posters.id,
+              title: t.posters.title,
+              imageUrl: t.posters.imageUrl,
+              year: t.posters.year,
+            })
+            .from(t.posters)
+            .innerJoin(t.shows, eq(t.posters.showId, t.shows.id))
+            .where(
+              and(eq(t.shows.artistId, showRow.artistId), ne(t.posters.id, record.id)),
+            )
+            .limit(6);
+        }
+      }
+      samePosterArtist = await db
+        .select({
+          id: t.posters.id,
+          title: t.posters.title,
+          imageUrl: t.posters.imageUrl,
+          year: t.posters.year,
+        })
+        .from(t.posters)
+        .where(
+          and(eq(t.posters.designer, record.designer), ne(t.posters.id, record.id)),
+        )
+        .limit(6);
+    } catch (error) {
+      console.warn("[poster record] related query failed:", error);
+    }
+  }
+
+  const edition = record.editions[0];
+  const rows: Array<[string, string]> = [["Poster Artist", record.designer]];
+  if (record.artistName) rows.push(["Artist / Band", record.artistName]);
+  if (record.showDate) rows.push(["Show date", formatShortDate(record.showDate)]);
+  if (record.venueName)
+    rows.push([
+      "Venue",
+      `${record.venueName}${record.venueCity ? ` · ${record.venueCity}` : ""}`,
+    ]);
+  rows.push(["Year", String(record.year)]);
+  if (edition?.name) rows.push(["Variant", edition.name]);
+  if (edition?.dimensions) rows.push(["Dimensions", edition.dimensions]);
+  if (edition?.technique) rows.push(["Printing method", edition.technique]);
+  if (edition?.runSize)
+    rows.push([
+      "Edition size",
+      edition.copyNumber
+        ? `#${edition.copyNumber} of ${edition.runSize}`
+        : String(edition.runSize),
+    ]);
+  if (edition?.markings) rows.push(["Signed / numbered", edition.markings]);
+  if (record.notes) rows.push(["Notes", record.notes]);
+
+  const relatedGrid = (items: typeof sameBand, heading: string) =>
+    items.length > 0 ? (
+      <section>
+        <h2 className="mb-3 text-base font-semibold">{heading}</h2>
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          {items.map((p) => (
+            <Link key={p.id} href={`/posters/${p.id}`} className="group block">
+              {p.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={p.imageUrl}
+                  alt={p.title}
+                  loading="lazy"
+                  className="aspect-[3/4] w-full rounded-lg border border-white/10 object-cover transition-transform group-hover:scale-[1.02]"
+                />
+              ) : (
+                <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-border bg-secondary p-2 text-center font-mono text-[10px] uppercase text-muted-foreground">
+                  {p.title}
+                </div>
+              )}
+              <p className="mt-1.5 truncate text-xs text-muted-foreground">
+                {p.title} · {p.year}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </section>
+    ) : null;
+
+  return (
+    <div className="space-y-8">
+      <Link
+        href="/posters"
+        className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Posters
+      </Link>
+
+      <PageHeader
+        title={record.title}
+        subtitle={`Poster record · art by ${record.designer}`}
+        actions={
+          record.isOwner ? (
+            <Button variant="outline" asChild>
+              <Link href={`/edit/poster/${record.id}`}>
+                <Pencil />
+                Edit details
+              </Link>
+            </Button>
+          ) : undefined
+        }
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+        {/* Artwork */}
+        {record.images.length > 0 ? (
+          <PosterGallery images={record.images} title={record.title} />
+        ) : (
+          <div className="flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border p-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              No artwork on this record yet.
+            </p>
+            {record.isOwner ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/edit/poster/${record.id}`}>Upload an image</Link>
+              </Button>
+            ) : null}
+          </div>
+        )}
+
+        {/* Metadata panel */}
+        <div className="space-y-5">
+          <Card>
+            <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle>Print details</CardTitle>
+              <StateBadge state={record.state} />
+            </CardHeader>
+            <CardContent>
+              <dl className="space-y-2 text-sm">
+                {rows.map(([label, value]) => (
+                  <div key={label} className="flex gap-3">
+                    <dt className="w-32 shrink-0 text-muted-foreground">
+                      {label}
+                    </dt>
+                    <dd className="min-w-0 flex-1 font-medium">{value}</dd>
+                  </div>
+                ))}
+                {record.ownerName ? (
+                  <div className="flex gap-3">
+                    <dt className="w-32 shrink-0 text-muted-foreground">
+                      Collection
+                    </dt>
+                    <dd className="min-w-0 flex-1 font-medium">
+                      {record.ownerId ? (
+                        <Link
+                          href={`/u/${record.ownerId}`}
+                          className="hover:text-primary"
+                        >
+                          {record.ownerName}
+                        </Link>
+                      ) : (
+                        record.ownerName
+                      )}
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {/* TODO(api): deep-link to the exact Expresso Beans item. */}
+                <Button variant="outline" size="sm" asChild>
+                  <a
+                    href="https://www.expressobeans.com/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <ExternalLink />
+                    Source: Expresso Beans
+                  </a>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <a href="mailto:hello@concertcollect.com?subject=Report%20a%20poster%20record">
+                    Report an issue
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Related show card */}
+          {record.showId && record.artistName ? (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>From the show</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Link
+                  href={
+                    mine ? `/shows/${record.showId}` : `/u/${record.ownerId}`
+                  }
+                  className="group flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium group-hover:text-primary">
+                      {record.artistName}
+                    </p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {record.venueName}
+                      {record.venueCity ? ` · ${record.venueCity}` : ""}
+                      {record.showDate
+                        ? ` · ${formatShortDate(record.showDate)}`
+                        : ""}
+                    </p>
+                  </div>
+                  <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
+                </Link>
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
+      </div>
+
+      {relatedGrid(sameBand, `More posters — ${record.artistName ?? "this band"}`)}
+      {relatedGrid(samePosterArtist, `More by ${record.designer}`)}
+    </div>
+  );
+}

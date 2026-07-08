@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 import {
   ArrowLeftRight,
   CalendarDays,
+  Compass,
   Download,
   Heart,
-  Home,
   Image as ImageIcon,
   Library,
   LogIn,
@@ -49,24 +49,24 @@ interface NavItem {
 }
 
 const MAIN_NAV: NavItem[] = [
-  { label: "Home", href: "/", icon: Home },
+  { label: "Explore", href: "/", icon: Compass },
   { label: "Shows", href: "/shows", icon: CalendarDays },
+  { label: "Posters", href: "/posters", icon: ImageIcon },
   { label: "Artists", href: "/artists", icon: Users },
   { label: "Venues", href: "/venues", icon: MapPin },
   { label: "Collections", href: "/collections", icon: Library },
-  { label: "Memories", href: "/memories", icon: StickyNote },
   { label: "Trading Post", href: "/prints", icon: ArrowLeftRight },
   { label: "Import", href: "/import", icon: Download },
 ];
 
 function collectionNav(counts: ArchiveCounts): NavItem[] {
   return [
-    { label: "All Shows", href: "/shows", icon: CalendarDays, count: counts.shows },
-    { label: "Wishlist", href: "/collections", icon: Heart, count: counts.wishlist },
-    { label: "Posters", href: "/posters", icon: ImageIcon, count: counts.posters },
+    { label: "My Shows", href: "/shows", icon: CalendarDays, count: counts.shows },
+    { label: "My Posters", href: "/posters", icon: ImageIcon, count: counts.posters },
+    { label: "Wantlist", href: "/posters?state=want", icon: Heart, count: counts.wishlist },
     { label: "Tickets", href: "/tickets", icon: Ticket, count: counts.tickets },
     { label: "Merch", href: "/merch", icon: Shirt, count: counts.merch },
-    { label: "Favorites", href: "/collections", icon: Heart, count: counts.favorites },
+    { label: "Memories", href: "/memories", icon: StickyNote, count: undefined },
   ];
 }
 
@@ -241,7 +241,7 @@ function SidebarBody({
 
         <div>
           <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Collections
+            My Archive
           </p>
           <div className="space-y-0.5">
             {collectionNav(counts).map((item) => (

@@ -1,4 +1,7 @@
-import { Library, Plus } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeftRight, Frame, Heart, Library, Plus, Tag } from "lucide-react";
+
+import { posterState } from "@/lib/archive";
 
 import { getArchive } from "@/lib/archive";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +14,16 @@ import { EmptyState } from "@/components/empty-state";
 export const metadata = { title: "Collections" };
 
 export default async function CollectionsPage() {
-  const { collections } = await getArchive();
+  const archive = await getArchive();
+  const { collections } = archive;
+  const stateCount = (state: string) =>
+    archive.posters.filter((p) => posterState(p) === state).length;
+  const smart = [
+    { label: "My Posters", icon: Frame, count: archive.posters.filter((p) => posterState(p) !== "want").length, href: "/posters" },
+    { label: "Wantlist", icon: Heart, count: stateCount("want"), href: "/posters?state=want" },
+    { label: "For Trade", icon: ArrowLeftRight, count: stateCount("trade"), href: "/posters?state=trade" },
+    { label: "For Sale", icon: Tag, count: stateCount("sell"), href: "/posters?state=sell" },
+  ];
   return (
     <div>
       <PageHeader
@@ -24,6 +36,23 @@ export default async function CollectionsPage() {
           </Button>
         }
       />
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {smart.map((item) => (
+          <Link key={item.label} href={item.href} className="block">
+            <Card className="h-full transition-colors hover:border-white/20">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <item.icon className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-lg font-semibold tabular-nums">{item.count}</p>
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
       {collections.length === 0 ? (
         <EmptyState
           icon={Library}

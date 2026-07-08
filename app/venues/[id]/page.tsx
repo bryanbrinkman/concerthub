@@ -27,6 +27,21 @@ export default async function VenueDetailPage({
 
   const shows = showsByVenue(archive, venue.id);
   const attended = shows.filter((s) => s.attended);
+  const showIds = new Set(shows.map((s) => s.id));
+  const venuePosters = archive.posters
+    .filter((p) => p.showId && showIds.has(p.showId) && p.imageUrl)
+    .sort((a, b) => b.year - a.year);
+  const artistCounts = new Map<string, number>();
+  for (const s2 of shows) {
+    artistCounts.set(s2.artistId, (artistCounts.get(s2.artistId) ?? 0) + 1);
+  }
+  const topArtists = [...artistCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([artistId, count]) => ({
+      artist: findArtist(archive, artistId),
+      count,
+    }));
 
   return (
     <div className="space-y-6">
@@ -70,6 +85,46 @@ export default async function VenueDetailPage({
         </div>
       </div>
 
+      {venuePosters.length > 0 ? (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">Posters from this venue</h2>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            {venuePosters.map((poster) => (
+              <Link key={poster.id} href={`/posters/${poster.id}`} className="group block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={poster.imageUrl as string}
+                  alt={poster.title}
+                  loading="lazy"
+                  className="aspect-[3/4] w-full rounded-lg border border-white/10 object-cover transition-transform group-hover:scale-[1.02]"
+                />
+                <p className="mt-1.5 truncate text-xs text-muted-foreground">
+                  {poster.year} · {poster.designer}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {topArtists.length > 0 ? (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">Top artists here</h2>
+          <div className="flex flex-wrap gap-2">
+            {topArtists.map(({ artist, count }) =>
+              artist ? (
+                <Link key={artist.id} href={`/artists/${artist.id}`}>
+                  <Badge variant="secondary">
+                    {artist.name} · {count}
+                  </Badge>
+                </Link>
+              ) : null,
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      <h2 className="text-lg font-semibold">Show history</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {shows.map((show) => (
           <ShowCard

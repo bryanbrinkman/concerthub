@@ -74,7 +74,7 @@ export default async function AddPosterPage({
                   className={inputClass}
                 />
               </Field>
-              <Field label="Designer / print artist">
+              <Field label="Poster Artist">
                 <input
                   name="designer"
                   placeholder="e.g. Killer Acid"
@@ -152,15 +152,14 @@ export default async function AddPosterPage({
             >
               <MultiImageField />
             </Field>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                name="owned"
-                defaultChecked
-                className="h-4 w-4 accent-[#8b5cf6]"
-              />
-              I own this print (uncheck for wishlist)
-            </label>
+            <Field label="Collection status">
+              <select name="state" defaultValue="own" className={selectClass}>
+                <option value="own">Own — it's in my collection</option>
+                <option value="want">Want — hunting a copy</option>
+                <option value="trade">For Trade</option>
+                <option value="sell">For Sale</option>
+              </select>
+            </Field>
             <Button type="submit">
               <Frame />
               Save to archive
