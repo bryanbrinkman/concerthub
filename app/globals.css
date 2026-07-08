@@ -79,34 +79,24 @@ body {
   background: rgba(139, 92, 246, 0.35);
 }
 
-/* Poster rack page-flip (components/poster-rack.tsx) */
-@keyframes fan-in-fwd {
+/* Poster rack metadata swap (components/poster-rack.tsx) */
+@keyframes fade-up {
   from {
-    transform: rotateY(-70deg);
-    opacity: 0.25;
+    transform: translateY(8px);
+    opacity: 0;
   }
   to {
-    transform: rotateY(0deg);
+    transform: translateY(0);
     opacity: 1;
   }
 }
-@keyframes fan-in-back {
-  from {
-    transform: rotateY(70deg);
-    opacity: 0.25;
-  }
-  to {
-    transform: rotateY(0deg);
-    opacity: 1;
-  }
+.animate-fade-up {
+  animation: fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.animate-fan-in-fwd {
-  animation: fan-in-fwd 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  transform-origin: left center;
-}
-.animate-fan-in-back {
-  animation: fan-in-back 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  transform-origin: right center;
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none;
+  }
 }
 
 /* Thin scrollbars for the carousel + sidebar */
