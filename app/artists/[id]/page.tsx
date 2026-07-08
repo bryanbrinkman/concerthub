@@ -8,6 +8,7 @@ import {
   findTour,
   findVenue,
   getArchive,
+  showTitleFor,
   postersForShow,
   showsByArtist,
 } from "@/lib/archive";
@@ -38,6 +39,29 @@ export default async function ArtistDetailPage({
   const showsMissingPosters = shows.filter(
     (s) => !posteredShowIds.has(s.id),
   ).length;
+
+  // Billing role for this artist on a given show (legacy single-artist
+  // shows count as headline slots).
+  const roleOn = (showId: string): string => {
+    const show = archive.shows.find((s) => s.id === showId);
+    if (!show) return "headliner";
+    const slot = (show.performers ?? []).find((p) => p.artistId === artist.id);
+    if (slot) return slot.billingRole;
+    return show.artistId === artist.id ? "headliner" : "unknown";
+  };
+  const isFestivalShow = (showId: string): boolean => {
+    const show = archive.shows.find((s) => s.id === showId);
+    return show?.eventType === "festival" || show?.eventType === "festival_day";
+  };
+  // Headline/co-headline posters make the primary posterography; festival
+  // lineup posters and support slots get their own subsection so one
+  // 50-band festival poster never dominates 50 posterographies.
+  const headlinePosters = posterography.filter((p) =>
+    ["headliner", "co_headliner"].includes(roleOn(p.showId as string)),
+  );
+  const appearancePosters = posterography.filter(
+    (p) => !headlinePosters.includes(p),
+  );
 
   return (
     <div className="space-y-6">
@@ -116,31 +140,79 @@ export default async function ArtistDetailPage({
             </Link>
           </p>
         ) : (
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-            {posterography.map((poster) => (
-              <Link
-                key={poster.id}
-                href={`/posters/${poster.id}`}
-                className="group block"
-              >
-                {poster.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={poster.imageUrl}
-                    alt={poster.title}
-                    loading="lazy"
-                    className="aspect-[3/4] w-full rounded-lg border border-white/10 bg-black/40 object-contain transition-transform group-hover:scale-[1.02]"
-                  />
-                ) : (
-                  <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-border bg-secondary p-2 text-center font-mono text-[10px] uppercase text-muted-foreground">
-                    {poster.title}
-                  </div>
-                )}
-                <p className="mt-1.5 truncate text-xs text-muted-foreground">
-                  {poster.year} · {poster.designer}
-                </p>
-              </Link>
-            ))}
+          <div className="space-y-5">
+            {headlinePosters.length > 0 ? (
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                {headlinePosters.map((poster) => (
+                  <Link
+                    key={poster.id}
+                    href={`/posters/${poster.id}`}
+                    className="group block"
+                  >
+                    {poster.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={poster.imageUrl}
+                        alt={poster.title}
+                        loading="lazy"
+                        className="aspect-[3/4] w-full rounded-lg border border-white/10 bg-black/40 object-contain transition-transform group-hover:scale-[1.02]"
+                      />
+                    ) : (
+                      <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-border bg-secondary p-2 text-center font-mono text-[10px] uppercase text-muted-foreground">
+                        {poster.title}
+                      </div>
+                    )}
+                    <p className="mt-1.5 truncate text-xs text-muted-foreground">
+                      {poster.year} · {poster.designer}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No headline posters yet — {artist.name}'s posters below are
+                from festival lineups or support slots.
+              </p>
+            )}
+
+            {appearancePosters.length > 0 ? (
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
+                  Festival appearances & support bills
+                </h3>
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                  {appearancePosters.map((poster) => (
+                    <Link
+                      key={poster.id}
+                      href={`/posters/${poster.id}`}
+                      className="group relative block"
+                    >
+                      {poster.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={poster.imageUrl}
+                          alt={poster.title}
+                          loading="lazy"
+                          className="aspect-[3/4] w-full rounded-lg border border-white/10 bg-black/40 object-contain transition-transform group-hover:scale-[1.02]"
+                        />
+                      ) : (
+                        <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-border bg-secondary p-2 text-center font-mono text-[10px] uppercase text-muted-foreground">
+                          {poster.title}
+                        </div>
+                      )}
+                      <span className="absolute left-1.5 top-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] text-white/85">
+                        {isFestivalShow(poster.showId as string)
+                          ? "Festival appearance"
+                          : "On the bill"}
+                      </span>
+                      <p className="mt-1.5 truncate text-xs text-muted-foreground">
+                        {poster.year} · {poster.designer}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </section>
@@ -155,6 +227,7 @@ export default async function ArtistDetailPage({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {shows.map((show) => (
           <ShowCard
+            title={showTitleFor(archive, show)}
             key={show.id}
             show={show}
             artist={findArtist(archive, show.artistId) ?? artist}

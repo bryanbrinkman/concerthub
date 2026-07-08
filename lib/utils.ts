@@ -17,6 +17,18 @@ export function formatShowDate(iso: string): string {
   });
 }
 
+/** "2014-06-06".."2014-06-08" → "June 6–8, 2014" (multi-day events). */
+export function formatDateRange(startIso: string, endIso: string): string {
+  const [sy, sm, sd] = startIso.split("-").map(Number);
+  const [ey, em, ed] = endIso.split("-").map(Number);
+  const month = (m: number, style: "long" | "short" = "long") =>
+    new Date(2000, m - 1, 1).toLocaleDateString("en-US", { month: style });
+  if (sy === ey && sm === em) return `${month(sm)} ${sd}–${ed}, ${sy}`;
+  if (sy === ey)
+    return `${month(sm, "short")} ${sd} – ${month(em, "short")} ${ed}, ${sy}`;
+  return `${month(sm, "short")} ${sd}, ${sy} – ${month(em, "short")} ${ed}, ${ey}`;
+}
+
 /**
  * Pull real section/row/seat/price out of a ticket ephemera detail line
  * like "Sec 110 · Row 18 · Seat 7 · $89.50" so the default ticket-stub

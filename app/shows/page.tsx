@@ -35,7 +35,9 @@ export default async function ShowsPage({
     id: string;
     date: string;
     gradient: string | null;
-    artistName: string;
+    /** Event display title (name / co-headliners / primary act). */
+    title: string;
+    lineupNames: string;
     venueName: string;
     venueCity: string;
     venueRegion: string | null;
@@ -73,6 +75,7 @@ export default async function ShowsPage({
               id: t.shows.id,
               date: t.shows.date,
               gradient: t.shows.gradient,
+              name: t.shows.name,
               artistName: t.artists.name,
               venueName: t.venues.name,
               venueCity: t.venues.city,
@@ -97,16 +100,49 @@ export default async function ShowsPage({
           artByShow.set(p.showId, { id: p.id, imageUrl: p.imageUrl });
         }
       }
+
+      // Full bills — searchable and used for co-headline titles. Isolated
+      // try/catch: a pending 0006 migration degrades to headliner-only.
+      const lineupByShow = new Map<string, Array<{ name: string; role: string }>>();
+      try {
+        const performerRows = await db
+          .select({
+            showId: t.showPerformers.showId,
+            role: t.showPerformers.billingRole,
+            order: t.showPerformers.billingOrder,
+            name: t.artists.name,
+          })
+          .from(t.showPerformers)
+          .innerJoin(t.artists, eq(t.showPerformers.artistId, t.artists.id));
+        for (const row of [...performerRows].sort((a, b) => a.order - b.order)) {
+          const list = lineupByShow.get(row.showId) ?? [];
+          list.push({ name: row.name, role: row.role });
+          lineupByShow.set(row.showId, list);
+        }
+      } catch (error) {
+        console.warn("[shows] lineup query failed (migration pending?):", error);
+      }
+
       rows = showRows
-        .map((s) => ({
-          ...s,
-          posterImage: artByShow.get(s.id)?.imageUrl ?? null,
-          posterId: artByShow.get(s.id)?.id ?? null,
-          posters: posterCounts.get(s.id) ?? 0,
-          photos: photoCounts.get(s.id) ?? 0,
-          memories: memoryCounts.get(s.id) ?? 0,
-          ephemera: ephemeraCounts.get(s.id) ?? 0,
-        }))
+        .map((s) => {
+          const bill = lineupByShow.get(s.id) ?? [];
+          const heads = bill
+            .filter((p) => p.role === "headliner" || p.role === "co_headliner")
+            .map((p) => p.name);
+          const title =
+            s.name ?? (heads.length > 0 ? heads.join(" + ") : s.artistName);
+          return {
+            ...s,
+            title,
+            lineupNames: bill.map((p) => p.name).join(" "),
+            posterImage: artByShow.get(s.id)?.imageUrl ?? null,
+            posterId: artByShow.get(s.id)?.id ?? null,
+            posters: posterCounts.get(s.id) ?? 0,
+            photos: photoCounts.get(s.id) ?? 0,
+            memories: memoryCounts.get(s.id) ?? 0,
+            ephemera: ephemeraCounts.get(s.id) ?? 0,
+          };
+        })
         .filter((s) => s.posters + s.photos + s.memories + s.ephemera > 0);
     } catch (error) {
       console.warn("[shows] public database query failed:", error);
@@ -116,8 +152,10 @@ export default async function ShowsPage({
   const tokens = (q ?? "").toLowerCase().split(/\s+/).filter(Boolean);
   if (tokens.length > 0) {
     rows = rows.filter((s) => {
+      // Lineup names included: "OutKast Governors Ball 2014" matches the
+      // festival even though its title doesn't contain OutKast.
       const hay =
-        `${s.artistName} ${s.venueName} ${s.venueCity} ${s.venueRegion ?? ""} ${s.date}`.toLowerCase();
+        `${s.title} ${s.lineupNames} ${s.venueName} ${s.venueCity} ${s.venueRegion ?? ""} ${s.date}`.toLowerCase();
       return tokens.every((token) => hay.includes(token));
     });
   }
@@ -170,14 +208,14 @@ export default async function ShowsPage({
               <PosterArt
                 gradient={(show.gradient ?? "midnight") as GradientKey}
                 imageUrl={show.posterImage}
-                title={show.artistName}
+                title={show.title}
                 className="shadow-[0_20px_45px_-20px_rgba(0,0,0,0.9)] transition-transform duration-300 group-hover:scale-[1.02]"
               />
             ) : (
               <TicketArt
                 seedId={show.id}
                 gradient={(show.gradient ?? "midnight") as GradientKey}
-                artist={show.artistName}
+                artist={show.title}
                 venue={show.venueName}
                 cityLine={`${show.venueCity}${show.venueRegion ? `, ${show.venueRegion}` : ""}`}
                 dateLine={formatShowDate(show.date)}
@@ -187,7 +225,7 @@ export default async function ShowsPage({
               <>
                 {art}
                 <div className="mt-2.5 space-y-1 px-0.5">
-                  <p className="truncate text-sm font-medium">{show.artistName}</p>
+                  <p className="truncate text-sm font-medium">{show.title}</p>
                   <p className="truncate text-xs text-muted-foreground">
                     {show.venueName} · {show.venueCity}
                     {show.venueRegion ? `, ${show.venueRegion}` : ""}

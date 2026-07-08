@@ -35,6 +35,18 @@ export async function seedDemoForUser(db: Db, userId: string): Promise<void> {
     )
     .onConflictDoNothing();
   await db
+    .insert(t.showPerformers)
+    .values(
+      seed.shows.map((s) => ({
+        showId: s.id,
+        artistId: s.artistId,
+        billingRole: "headliner",
+        billingOrder: 1,
+        source: "demo",
+      })),
+    )
+    .onConflictDoNothing();
+  await db
     .insert(t.userShows)
     .values(
       seed.shows.map((s) => ({

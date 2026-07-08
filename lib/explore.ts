@@ -106,6 +106,7 @@ export async function getExploreData(): Promise<ExploreData | null> {
             id: t.shows.id,
             date: t.shows.date,
             gradient: t.shows.gradient,
+            name: t.shows.name,
             artistId: t.shows.artistId,
             artistName: t.artists.name,
             venueId: t.shows.venueId,
@@ -126,6 +127,30 @@ export async function getExploreData(): Promise<ExploreData | null> {
 
     const state = (p: { state: string | null; owned: boolean }): PosterState =>
       (p.state ?? (p.owned ? "own" : "want")) as PosterState;
+
+    // Headline-billed performers per show (posterography attribution).
+    // Isolated try/catch so a pending 0006 migration degrades to the
+    // legacy single-artist attribution instead of nulling Explore.
+    const headsByShow = new Map<string, Array<{ artistId: string; name: string }>>();
+    try {
+      const performerRows = await db
+        .select({
+          showId: t.showPerformers.showId,
+          artistId: t.showPerformers.artistId,
+          role: t.showPerformers.billingRole,
+          name: t.artists.name,
+        })
+        .from(t.showPerformers)
+        .innerJoin(t.artists, eq(t.showPerformers.artistId, t.artists.id));
+      for (const row of performerRows) {
+        if (row.role !== "headliner" && row.role !== "co_headliner") continue;
+        const list = headsByShow.get(row.showId) ?? [];
+        list.push({ artistId: row.artistId, name: row.name });
+        headsByShow.set(row.showId, list);
+      }
+    } catch (error) {
+      console.warn("[explore] lineup query failed (migration pending?):", error);
+    }
 
     const postersByShow = new Map<string, typeof posterRows>();
     for (const p of posterRows) {
@@ -161,11 +186,18 @@ export async function getExploreData(): Promise<ExploreData | null> {
           (photoCounts.get(s.id) ?? 0) +
           (memoryCounts.get(s.id) ?? 0) +
           (ephemeraCounts.get(s.id) ?? 0);
+        const heads = headsByShow.get(s.id) ?? [];
         return {
           id: s.id,
           date: s.date,
           gradient: s.gradient,
-          artistName: s.artistName,
+          // Event title: explicit name, co-headline billing, or the
+          // legacy primary artist.
+          artistName:
+            s.name ??
+            (heads.length > 0
+              ? heads.map((h) => h.name).join(" + ")
+              : s.artistName),
           venueName: s.venueName,
           venueCity: s.venueCity,
           venueRegion: s.venueRegion ?? undefined,
@@ -178,21 +210,30 @@ export async function getExploreData(): Promise<ExploreData | null> {
       .filter((s) => s.artifacts > 0)
       .slice(0, 5);
 
-    // Posterographies: performers ranked by poster count.
+    // Posterographies: performers ranked by poster count. Posters are
+    // attributed to a show's HEADLINE-billed performers (so a 50-band
+    // festival poster doesn't land in 50 posterographies); legacy shows
+    // without lineup rows fall back to the single artist.
     const byArtist = new Map<
       string,
       { name: string; years: number[]; thumbs: string[]; count: number; showIds: Set<string> }
     >();
     for (const p of posterRows) {
-      if (!p.artistId || !p.artistName) continue;
-      const entry =
-        byArtist.get(p.artistId) ??
-        { name: p.artistName, years: [], thumbs: [], count: 0, showIds: new Set<string>() };
-      entry.count += 1;
-      entry.years.push(p.year);
-      if (p.imageUrl && entry.thumbs.length < 3) entry.thumbs.push(p.imageUrl);
-      if (p.showId) entry.showIds.add(p.showId);
-      byArtist.set(p.artistId, entry);
+      const credits =
+        (p.showId ? headsByShow.get(p.showId) : undefined) ??
+        (p.artistId && p.artistName
+          ? [{ artistId: p.artistId, name: p.artistName }]
+          : []);
+      for (const credit of credits) {
+        const entry =
+          byArtist.get(credit.artistId) ??
+          { name: credit.name, years: [], thumbs: [], count: 0, showIds: new Set<string>() };
+        entry.count += 1;
+        entry.years.push(p.year);
+        if (p.imageUrl && entry.thumbs.length < 3) entry.thumbs.push(p.imageUrl);
+        if (p.showId) entry.showIds.add(p.showId);
+        byArtist.set(credit.artistId, entry);
+      }
     }
     const showCountByArtist = new Map<string, number>();
     for (const s of showRows) {

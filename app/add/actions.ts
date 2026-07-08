@@ -9,10 +9,12 @@ import { getDb, type Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { gradientFor } from "@/lib/archive";
 import {
-  setShowOpeners,
+  addToShowLineup,
+  setShowLineup,
   upsertArtist,
   upsertTour,
   upsertVenue,
+  type LineupEntry,
 } from "@/lib/upserts";
 import { parseSetlistFmUrl } from "@/lib/setlistfm";
 import type { Edition, EphemeraKind } from "@/lib/types";
@@ -43,23 +45,44 @@ const str = (formData: FormData, key: string): string =>
 const optional = (value: string): string | undefined =>
   value.length > 0 ? value : undefined;
 
+const BILLING_ROLES = new Set([
+  "headliner",
+  "co_headliner",
+  "support",
+  "opener",
+  "festival_performer",
+  "special_guest",
+  "unknown",
+]);
+const EVENT_TYPES = new Set([
+  "concert",
+  "festival",
+  "festival_day",
+  "multi_act",
+  "other",
+]);
+
 /**
- * Opener names from the form: repeated "openers" inputs, each of which may
- * also hold a comma-separated list. Deduped, headliner excluded.
+ * Additional bill entries from the form: parallel repeated
+ * performerName/performerRole fields (see components/lineup-fields.tsx).
+ * Order = billing order. Deduped, primary act excluded.
  */
-const parseOpeners = (formData: FormData, headliner: string): string[] => {
-  const seen = new Set<string>([headliner.trim().toLowerCase()]);
-  const names: string[] = [];
-  for (const value of formData.getAll("openers")) {
-    for (const raw of String(value).split(",")) {
-      const name = raw.trim();
-      const key = name.toLowerCase();
-      if (!name || seen.has(key)) continue;
-      seen.add(key);
-      names.push(name);
-    }
-  }
-  return names;
+const parseLineup = (formData: FormData, primaryName: string): LineupEntry[] => {
+  const names = formData.getAll("performerName").map(String);
+  const roles = formData.getAll("performerRole").map(String);
+  const seen = new Set<string>([primaryName.trim().toLowerCase()]);
+  const entries: LineupEntry[] = [];
+  names.forEach((raw, i) => {
+    const name = raw.trim();
+    const key = name.toLowerCase();
+    if (!name || seen.has(key)) return;
+    seen.add(key);
+    entries.push({
+      name,
+      role: BILLING_ROLES.has(roles[i]) ? roles[i] : "support",
+    });
+  });
+  return entries;
 };
 
 /**
@@ -119,6 +142,13 @@ export async function addShowAction(formData: FormData) {
     ? await claimSetlistFmId(db, setlistFmUrl)
     : undefined;
 
+  const eventTypeInput = str(formData, "eventType");
+  const eventType = EVENT_TYPES.has(eventTypeInput) ? eventTypeInput : "concert";
+  const eventName = optional(str(formData, "eventName"));
+  const endDateInput = str(formData, "endDate");
+  const endDate = endDateInput && endDateInput > date ? endDateInput : undefined;
+  const lineup = parseLineup(formData, artistName);
+
   let showId = existing[0]?.id;
   if (!showId) {
     const inserted = await db
@@ -127,25 +157,37 @@ export async function addShowAction(formData: FormData) {
         artistId,
         venueId,
         tourId,
+        name: eventName,
+        eventType,
         date,
+        endDate,
         showTime: optional(str(formData, "showTime")),
-        gradient: gradientFor(artistName + date),
+        gradient: gradientFor((eventName ?? artistName) + date),
         setlistFmId,
         setlistFmUrl: setlistFmId ? setlistFmUrl : undefined,
       })
       .returning({ id: t.shows.id });
     showId = inserted[0].id;
-  } else if (setlistFmId) {
-    // Attaching to an existing canonical show — link the setlist if it
-    // doesn't have one yet.
-    await db
-      .update(t.shows)
-      .set({ setlistFmId, setlistFmUrl })
-      .where(and(eq(t.shows.id, showId), isNull(t.shows.setlistFmId)));
+    // The primary act is billed first; the rest follow in form order.
+    await setShowLineup(db, showId, [
+      { name: artistName, role: "headliner" },
+      ...lineup,
+    ]);
+  } else {
+    if (setlistFmId) {
+      // Attaching to an existing canonical show — link the setlist if it
+      // doesn't have one yet.
+      await db
+        .update(t.shows)
+        .set({ setlistFmId, setlistFmUrl })
+        .where(and(eq(t.shows.id, showId), isNull(t.shows.setlistFmId)));
+    }
+    // Never clobber an existing event's bill — only add what's new.
+    await addToShowLineup(db, showId, [
+      { name: artistName, role: "headliner" },
+      ...lineup,
+    ]);
   }
-
-  const openerNames = parseOpeners(formData, artistName);
-  if (openerNames.length > 0) await setShowOpeners(db, showId, openerNames);
 
   await db
     .insert(t.userShows)
@@ -162,9 +204,9 @@ export async function addShowAction(formData: FormData) {
 }
 
 /**
- * Edit a show's supporting details: showtime, tour, openers, and the
- * setlist.fm link (the retroactive path for manually added shows whose
- * artist/date never auto-matched).
+ * Edit a show/event: event type & name, dates, tour, the full bill, and
+ * the setlist.fm link (the retroactive path for manually added shows
+ * whose artist/date never auto-matched).
  */
 export async function updateShowAction(formData: FormData) {
   const { userId, db } = await requireUserDb();
@@ -181,6 +223,7 @@ export async function updateShowAction(formData: FormData) {
     .select({ name: t.artists.name })
     .from(t.artists)
     .where(eq(t.artists.id, show.artistId));
+  const primaryName = artistRow?.name ?? "";
 
   const tourName = optional(str(formData, "tourName"));
   const tourId = tourName
@@ -203,9 +246,16 @@ export async function updateShowAction(formData: FormData) {
     }
   }
 
+  const eventTypeInput = str(formData, "eventType");
+  const endDateInput = str(formData, "endDate");
+  const primaryRole = str(formData, "primaryRole");
+
   await db
     .update(t.shows)
     .set({
+      name: optional(str(formData, "eventName")) ?? null,
+      eventType: EVENT_TYPES.has(eventTypeInput) ? eventTypeInput : "concert",
+      endDate: endDateInput && endDateInput > show.date ? endDateInput : null,
       showTime: optional(str(formData, "showTime")) ?? null,
       tourId,
       setlistFmId,
@@ -213,11 +263,16 @@ export async function updateShowAction(formData: FormData) {
     })
     .where(eq(t.shows.id, showId));
 
-  await setShowOpeners(
-    db,
-    showId,
-    parseOpeners(formData, artistRow?.name ?? ""),
-  );
+  // Full bill replacement: primary act first, then the form's rows in
+  // order. Per-performer setlist links survive (setShowLineup re-attaches
+  // them by artist).
+  await setShowLineup(db, showId, [
+    {
+      name: primaryName,
+      role: BILLING_ROLES.has(primaryRole) ? primaryRole : "headliner",
+    },
+    ...parseLineup(formData, primaryName),
+  ]);
 
   revalidatePath("/", "layout");
   redirect(`/shows/${showId}`);

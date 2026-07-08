@@ -14,6 +14,8 @@ import { Search } from "lucide-react";
 export interface SearchItem {
   label: string;
   sublabel?: string;
+  /** Extra match-only terms (e.g. full lineup names) — never displayed. */
+  keywords?: string;
   href: string;
   group: string;
 }
@@ -59,7 +61,7 @@ export function SearchPalette({ items }: { items: SearchItem[] }) {
   // "Rilo Kiley Capitol Theatre" and "Killer Acid poster" both resolve.
   const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const haystack = (i: SearchItem) =>
-    `${i.label} ${i.sublabel ?? ""} ${i.group}`.toLowerCase();
+    `${i.label} ${i.sublabel ?? ""} ${i.keywords ?? ""} ${i.group}`.toLowerCase();
   const results = (
     tokens.length === 0
       ? items.filter((i) => i.group === "Pages")

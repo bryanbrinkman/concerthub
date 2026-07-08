@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Field, inputClass } from "@/components/form-controls";
-import { OpenerFields } from "@/components/opener-fields";
+import { Field, inputClass, selectClass } from "@/components/form-controls";
+import { LineupFields } from "@/components/lineup-fields";
 import { addShowAction } from "../actions";
 
 export const metadata = { title: "Add show" };
@@ -36,9 +36,30 @@ export default async function AddShowPage() {
         </CardHeader>
         <CardContent>
           <form action={addShowAction} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Event type">
+                <select name="eventType" defaultValue="concert" className={selectClass}>
+                  <option value="concert">Concert</option>
+                  <option value="festival">Festival</option>
+                  <option value="festival_day">Festival day</option>
+                  <option value="multi_act">Multi-act bill</option>
+                  <option value="other">Other</option>
+                </select>
+              </Field>
+              <Field
+                label="Event name (optional)"
+                hint="Festivals & multi-act bills — becomes the title, e.g. “Governors Ball 2014”."
+              >
+                <input
+                  name="eventName"
+                  placeholder="e.g. Governors Ball 2014"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
             <Field
-              label="Artist"
-              hint="Use the billing setlist.fm uses (e.g. “Jeff Lynne's ELO”, not “ELO”) so the live setlist resolves."
+              label="Headliner / primary act"
+              hint="Use the billing setlist.fm uses (e.g. “Jeff Lynne's ELO”, not “ELO”) so the live setlist resolves. For festivals, the first act you care about is fine — the full bill goes below."
             >
               <input
                 name="artistName"
@@ -72,6 +93,9 @@ export default async function AddShowPage() {
               <Field label="Date">
                 <input name="date" required type="date" className={inputClass} />
               </Field>
+              <Field label="End date (multi-day events)">
+                <input name="endDate" type="date" className={inputClass} />
+              </Field>
               <Field label="Showtime (optional)">
                 <input
                   name="showTime"
@@ -88,10 +112,10 @@ export default async function AddShowPage() {
               />
             </Field>
             <Field
-              label="Openers / support acts (optional)"
-              hint="Everyone on the bill gets their own artist page and show credit."
+              label="Rest of the bill (optional)"
+              hint="Co-headliners, support acts, or a whole festival lineup — everyone gets their own artist page and show credit. Rows are billing order."
             >
-              <OpenerFields />
+              <LineupFields knownNames={archive.artists.map((a) => a.name)} />
             </Field>
             <Field
               label="setlist.fm link (optional)"

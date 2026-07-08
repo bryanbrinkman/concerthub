@@ -15,6 +15,9 @@ interface ShowCardProps {
   posterImage?: string;
   /** Ticket ephemera detail line — real seats print on the stub art. */
   ticketDetail?: string;
+  /** Event display title (co-headliners, festivals) — defaults to the
+   * artist's name. Compute with showTitleFor(archive, show). */
+  title?: string;
 }
 
 /** Poster-forward card linking to a show detail page. */
@@ -25,8 +28,10 @@ export function ShowCard({
   tour,
   posterImage,
   ticketDetail,
+  title,
 }: ShowCardProps) {
   const stub = parseTicketStub(ticketDetail);
+  const heading = title ?? artist?.name ?? "Unknown artist";
   return (
     <Link
       href={`/shows/${show.id}`}
@@ -37,14 +42,14 @@ export function ShowCard({
           <PosterArt
             gradient={show.gradient}
             imageUrl={posterImage}
-            title={artist?.name ?? "Unknown artist"}
+            title={heading}
             className="transition-transform duration-300 group-hover:scale-[1.015]"
           />
         ) : (
           <TicketArt
             seedId={show.id}
             gradient={show.gradient}
-            artist={artist?.name ?? "Unknown artist"}
+            artist={heading}
             venue={venue?.name}
             cityLine={
               venue
@@ -64,9 +69,7 @@ export function ShowCard({
       </div>
       <div className="space-y-1.5 p-3">
         <div className="flex items-start justify-between gap-2">
-          <p className="truncate font-medium leading-tight">
-            {artist?.name ?? "Unknown artist"}
-          </p>
+          <p className="truncate font-medium leading-tight">{heading}</p>
           {show.favorite ? (
             <Heart className="h-4 w-4 shrink-0 fill-primary text-primary" />
           ) : null}

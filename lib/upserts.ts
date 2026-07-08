@@ -55,22 +55,80 @@ export async function upsertVenue(
   return again[0].id;
 }
 
+export interface LineupEntry {
+  name: string;
+  role: string;
+}
+
 /**
- * Replace a show's opener list with the given artist names (billing
- * order preserved). Names are upserted as full artist rows so support
- * acts appear in the Artists section too.
+ * Replace a show's bill with the given entries (billing order = array
+ * order, starting at 1). Names are upserted as full artist rows so every
+ * performer appears in the Artists section. Per-performer setlist.fm
+ * links survive edits — they're re-attached by artist id.
  */
-export async function setShowOpeners(
+export async function setShowLineup(
   db: Db,
   showId: string,
-  names: string[],
+  entries: LineupEntry[],
 ): Promise<void> {
-  await db.delete(t.showOpeners).where(eq(t.showOpeners.showId, showId));
-  for (let position = 0; position < names.length; position++) {
-    const artistId = await upsertArtist(db, names[position]);
+  const existing = await db
+    .select()
+    .from(t.showPerformers)
+    .where(eq(t.showPerformers.showId, showId));
+  const previous = new Map(existing.map((row) => [row.artistId, row]));
+
+  await db
+    .delete(t.showPerformers)
+    .where(eq(t.showPerformers.showId, showId));
+
+  const seen = new Set<string>();
+  let order = 1;
+  for (const entry of entries) {
+    const name = entry.name.trim();
+    if (!name) continue;
+    const artistId = await upsertArtist(db, name);
+    if (seen.has(artistId)) continue;
+    seen.add(artistId);
+    const prev = previous.get(artistId);
     await db
-      .insert(t.showOpeners)
-      .values({ showId, artistId, position })
+      .insert(t.showPerformers)
+      .values({
+        showId,
+        artistId,
+        billingRole: entry.role,
+        billingOrder: order++,
+        setlistFmId: prev?.setlistFmId,
+        setlistFmUrl: prev?.setlistFmUrl,
+        stage: prev?.stage,
+        setTime: prev?.setTime,
+        source: prev?.source ?? "user",
+      })
+      .onConflictDoNothing();
+  }
+}
+
+/**
+ * Add entries to an existing bill without touching what's already there
+ * (used when an add-show form matches an existing canonical event).
+ */
+export async function addToShowLineup(
+  db: Db,
+  showId: string,
+  entries: LineupEntry[],
+): Promise<void> {
+  const existing = await db
+    .select({ billingOrder: t.showPerformers.billingOrder })
+    .from(t.showPerformers)
+    .where(eq(t.showPerformers.showId, showId));
+  let order =
+    existing.reduce((max, row) => Math.max(max, row.billingOrder), 0) + 1;
+  for (const entry of entries) {
+    const name = entry.name.trim();
+    if (!name) continue;
+    const artistId = await upsertArtist(db, name);
+    await db
+      .insert(t.showPerformers)
+      .values({ showId, artistId, billingRole: entry.role, billingOrder: order++ })
       .onConflictDoNothing();
   }
 }

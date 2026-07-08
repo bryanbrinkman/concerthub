@@ -18,17 +18,21 @@ import { authEnabled, currentUserId } from "@/auth";
 import { getDb } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import * as seed from "@/lib/data";
+import { showTitle, supportsOf } from "@/lib/billing";
 import type {
   Artist,
+  BillingRole,
   Collection,
   EphemeraItem,
   EphemeraKind,
+  EventType,
   GradientKey,
   MediaLink,
   MediaLinkKind,
   Poster,
   PosterState,
   Show,
+  ShowPerformer,
   ShowPhoto,
   Tour,
   UserMemory,
@@ -105,28 +109,38 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
     ? await db.select().from(t.shows).where(inArray(t.shows.id, showIds))
     : [];
 
-  // Openers are loaded before artists so support acts land in the artist
-  // list (and get pages) alongside headliners.
-  const openerRows = showIds.length
+  // Lineups load before artists so every performer on a bill lands in the
+  // artist list (and gets a page) alongside headliners.
+  const performerRows = showIds.length
     ? await safeRows(
         db
           .select()
-          .from(t.showOpeners)
-          .where(inArray(t.showOpeners.showId, showIds)),
-        "openers",
+          .from(t.showPerformers)
+          .where(inArray(t.showPerformers.showId, showIds)),
+        "lineups",
       )
     : [];
-  const openersByShow = new Map<string, string[]>();
-  for (const row of [...openerRows].sort((a, b) => a.position - b.position)) {
-    const list = openersByShow.get(row.showId) ?? [];
-    list.push(row.artistId);
-    openersByShow.set(row.showId, list);
+  const performersByShow = new Map<string, ShowPerformer[]>();
+  for (const row of [...performerRows].sort(
+    (a, b) => a.billingOrder - b.billingOrder,
+  )) {
+    const list = performersByShow.get(row.showId) ?? [];
+    list.push({
+      artistId: row.artistId,
+      billingRole: row.billingRole as BillingRole,
+      billingOrder: row.billingOrder,
+      stage: row.stage ?? undefined,
+      setTime: row.setTime ?? undefined,
+      setlistFmId: row.setlistFmId ?? undefined,
+      setlistFmUrl: row.setlistFmUrl ?? undefined,
+    });
+    performersByShow.set(row.showId, list);
   }
 
   const artistIds = [
     ...new Set([
       ...showRows.map((s) => s.artistId),
-      ...openerRows.map((o) => o.artistId),
+      ...performerRows.map((p) => p.artistId),
     ]),
   ];
   const venueIds = [...new Set(showRows.map((s) => s.venueId))];
@@ -199,9 +213,14 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
       id: row.id,
       artistId: row.artistId,
       venueId: row.venueId,
-      openerIds: openersByShow.get(row.id),
+      performers: performersByShow.get(row.id),
+      name: row.name ?? undefined,
+      eventType: (row.eventType ?? "concert") as EventType,
+      festivalId: row.festivalId ?? undefined,
+      stage: row.stage ?? undefined,
       tourId: row.tourId ?? undefined,
       date: row.date,
+      endDate: row.endDate ?? undefined,
       showTime: row.showTime ?? undefined,
       attended: flags.get(row.id)?.attended ?? true,
       favorite: flags.get(row.id)?.favorite ?? false,
@@ -333,16 +352,43 @@ export const showsForTour = (a: ArchiveData, tourId: string) =>
   a.shows
     .filter((s) => s.tourId === tourId)
     .sort((x, y) => x.date.localeCompare(y.date));
-/** Shows where the artist headlined OR opened. */
+/** Shows where the artist appears anywhere on the bill. */
 export const showsByArtist = (a: ArchiveData, artistId: string) =>
   allShows(a).filter(
-    (s) => s.artistId === artistId || (s.openerIds ?? []).includes(artistId),
+    (s) =>
+      s.artistId === artistId ||
+      (s.performers ?? []).some((p) => p.artistId === artistId),
   );
 
-/** The support acts on a show's bill, in billing order. */
+/** Display title for a show, resolved against this archive's artists. */
+export const showTitleFor = (a: ArchiveData, show: Show): string =>
+  showTitle(show, (id) => findArtist(a, id)?.name);
+
+/** The full bill with artist records attached, in billing order. */
+export const lineupFor = (
+  a: ArchiveData,
+  show: Show,
+): Array<{ artist: Artist; performer: ShowPerformer }> => {
+  const performers =
+    show.performers && show.performers.length > 0
+      ? [...show.performers].sort((x, y) => x.billingOrder - y.billingOrder)
+      : [
+          {
+            artistId: show.artistId,
+            billingRole: "headliner" as BillingRole,
+            billingOrder: 1,
+          },
+        ];
+  return performers.flatMap((performer) => {
+    const artist = findArtist(a, performer.artistId);
+    return artist ? [{ artist, performer }] : [];
+  });
+};
+
+/** Support/opener/special-guest acts on a show's bill, in billing order. */
 export const openersForShow = (a: ArchiveData, show: Show) =>
-  (show.openerIds ?? [])
-    .map((id) => findArtist(a, id))
+  supportsOf(show)
+    .map((p) => findArtist(a, p.artistId))
     .filter((x): x is Artist => Boolean(x));
 export const showsByVenue = (a: ArchiveData, venueId: string) =>
   allShows(a).filter((s) => s.venueId === venueId);

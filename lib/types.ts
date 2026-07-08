@@ -166,15 +166,58 @@ export interface MediaLink {
   url: string;
 }
 
+/** Where a performer sits on a show's bill. */
+export type BillingRole =
+  | "headliner"
+  | "co_headliner"
+  | "support"
+  | "opener"
+  | "festival_performer"
+  | "special_guest"
+  | "unknown";
+
+/** What kind of event a show record represents. */
+export type EventType =
+  | "concert"
+  | "festival"
+  | "festival_day"
+  | "multi_act"
+  | "other";
+
+/** One performer's slot on a show/event bill. */
+export interface ShowPerformer {
+  artistId: string;
+  billingRole: BillingRole;
+  /** 1 = top of the bill. */
+  billingOrder: number;
+  stage?: string;
+  setTime?: string;
+  /** This performer's own setlist.fm set at the event. */
+  setlistFmId?: string;
+  setlistFmUrl?: string;
+}
+
 export interface Show {
   id: string;
+  /**
+   * Primary act (headliner / first-billed) — denormalized from the full
+   * bill in `performers` so single-artist paths keep working.
+   */
   artistId: string;
   venueId: string;
-  /** Support acts on the bill, in billing order (artist ids). */
-  openerIds?: string[];
+  /** The full bill, in billing order. Absent = single-artist show. */
+  performers?: ShowPerformer[];
+  /** Event name — festivals and multi-act bills ("Governors Ball 2014"). */
+  name?: string;
+  eventType?: EventType;
+  /** Parent festival show id for festival-day records. */
+  festivalId?: string;
+  stage?: string;
   tourId?: string;
   /** ISO date, local to the venue. */
   date: string;
+  /** Last day of a multi-day event. */
+  endDate?: string;
   showTime?: string; // e.g. "7:30 PM"
   attended: boolean;
   favorite: boolean;

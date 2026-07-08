@@ -7,6 +7,7 @@ import {
   findArtist,
   findVenue,
   getArchive,
+  showTitleFor,
 } from "@/lib/archive";
 import { formatShortDate } from "@/lib/utils";
 import { Sidebar } from "@/components/sidebar";
@@ -50,10 +51,15 @@ export default async function RootLayout({
   // ⌘K search index: the viewer's archive + app pages.
   const searchItems: SearchItem[] = [
     ...archive.shows.map((show) => ({
-      label: `${findArtist(archive, show.artistId)?.name ?? "Unknown"} — ${
+      label: `${showTitleFor(archive, show)} — ${
         findVenue(archive, show.venueId)?.name ?? ""
       }`,
       sublabel: formatShortDate(show.date),
+      // Whole bill is searchable: "OutKast Governors Ball" resolves the
+      // festival even though the title doesn't contain OutKast.
+      keywords: (show.performers ?? [])
+        .map((p) => findArtist(archive, p.artistId)?.name ?? "")
+        .join(" "),
       href: `/shows/${show.id}`,
       group: "Shows",
     })),

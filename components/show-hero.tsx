@@ -10,7 +10,7 @@ import {
 
 import type { Artist, Setlist, Show, Tour, Venue } from "@/lib/types";
 import type { EnrichedPoster } from "@/lib/expressobeans";
-import { formatShowDate, parseTicketStub } from "@/lib/utils";
+import { formatDateRange, formatShowDate, parseTicketStub } from "@/lib/utils";
 import { toggleAttendedAction } from "@/app/show-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,13 @@ interface ShowHeroProps {
   posterVariants?: Array<{ id: string; imageUrl?: string; title: string }>;
   /** Ticket ephemera detail — real seats print on the stub art. */
   ticketDetail?: string;
-  /** Support acts on the bill, in billing order. */
+  /**
+   * Display title for the event — "Radiohead", "The Postal Service +
+   * Death Cab for Cutie", "Governors Ball 2014". Falls back to the
+   * primary artist's name.
+   */
+  displayTitle?: string;
+  /** Support acts on the bill, in billing order ("With …" line). */
   openers?: Artist[];
   /** Viewer owns this archive: "I was there" becomes a real toggle. */
   canEdit?: boolean;
@@ -46,10 +52,15 @@ export function ShowHero({
   poster,
   posterVariants = [],
   ticketDetail,
+  displayTitle,
   openers = [],
   canEdit,
 }: ShowHeroProps) {
   const stub = parseTicketStub(ticketDetail);
+  const title = displayTitle ?? artist?.name ?? "Unknown artist";
+  const dateLabel = show.endDate
+    ? formatDateRange(show.date, show.endDate)
+    : formatShowDate(show.date);
   return (
     <section className="relative overflow-hidden rounded-xl border border-border bg-card">
       <div className="relative grid gap-5 p-4 sm:p-5 lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_350px]">
@@ -94,14 +105,14 @@ export function ShowHero({
             <TicketArt
               seedId={show.id}
             gradient={show.gradient}
-            artist={artist?.name ?? "Unknown artist"}
+            artist={title}
             venue={venue?.name}
             cityLine={
               venue
                 ? `${venue.city}${venue.region ? `, ${venue.region}` : ""}${venue.country ? `, ${venue.country}` : ""}`
                 : undefined
             }
-            dateLine={formatShowDate(show.date)}
+            dateLine={dateLabel}
             timeLine={show.showTime}
             tourLine={tour?.name}
               sec={stub.sec}
@@ -128,7 +139,7 @@ export function ShowHero({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                {artist?.name ?? "Unknown artist"}
+                {title}
               </h1>
             </div>
             {tour ? (
@@ -139,7 +150,7 @@ export function ShowHero({
             ) : null}
             {openers.length > 0 ? (
               <p className="mt-1 text-sm text-muted-foreground">
-                with{" "}
+                With{" "}
                 {openers.map((opener, index) => (
                   <span key={opener.id}>
                     {index > 0 ? ", " : ""}
@@ -172,7 +183,7 @@ export function ShowHero({
             <p className="flex items-start gap-2.5">
               <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <span>
-                <span className="font-medium">{formatShowDate(show.date)}</span>
+                <span className="font-medium">{dateLabel}</span>
                 {show.showTime ? (
                   <>
                     <br />

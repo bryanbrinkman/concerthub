@@ -131,6 +131,11 @@ export const shows = pgTable(
   "show",
   {
     id: text("id").primaryKey().$defaultFn(uuid),
+    /**
+     * Primary act — denormalized pointer to the headliner (or first-billed
+     * performer). The full bill lives in show_performer; this column keeps
+     * legacy queries and NOT NULL constraints working.
+     */
     artistId: text("artist_id")
       .notNull()
       .references(() => artists.id, { onDelete: "cascade" }),
@@ -140,7 +145,17 @@ export const shows = pgTable(
     tourId: text("tour_id").references(() => tours.id, {
       onDelete: "set null",
     }),
+    /** Event name for festivals / multi-act bills ("Governors Ball 2014"). */
+    name: text("name"),
     date: date("date", { mode: "string" }).notNull(),
+    /** Last day of a multi-day event (festivals). */
+    endDate: date("end_date", { mode: "string" }),
+    /** concert | festival | festival_day | multi_act | other */
+    eventType: text("event_type").notNull().default("concert"),
+    /** Stage, for festival-day/stage records. */
+    stage: text("stage"),
+    /** Parent festival show for festival-day records (FK added in SQL). */
+    festivalId: text("festival_id"),
     showTime: text("show_time"),
     gradient: text("gradient").notNull().default("midnight"),
     /** setlist.fm setlist id — dedupe key for imports. */
@@ -151,12 +166,13 @@ export const shows = pgTable(
 );
 
 /**
- * Supporting acts on a show's bill. Canonical (shared across users) like
- * the show itself; openers are full artist rows so they show up in the
- * Artists section and get their own pages.
+ * The full bill for a show/event — many-to-many between shows and
+ * performers. Canonical (shared across users); every performer is a full
+ * artist row, so support acts and festival lineups get artist pages.
+ * Replaces the old show_opener table (migrated by drizzle/0006).
  */
-export const showOpeners = pgTable(
-  "show_opener",
+export const showPerformers = pgTable(
+  "show_performer",
   {
     showId: text("show_id")
       .notNull()
@@ -164,8 +180,20 @@ export const showOpeners = pgTable(
     artistId: text("artist_id")
       .notNull()
       .references(() => artists.id, { onDelete: "cascade" }),
-    /** Billing order, 0 = first support act listed. */
-    position: integer("position").notNull().default(0),
+    /** headliner | co_headliner | support | opener | festival_performer |
+     *  special_guest | unknown */
+    billingRole: text("billing_role").notNull().default("headliner"),
+    /** 1 = top of the bill. */
+    billingOrder: integer("billing_order").notNull().default(1),
+    stage: text("stage"),
+    setTime: text("set_time"),
+    /** This performer's own setlist.fm set at this event. */
+    setlistFmId: text("setlist_fm_id"),
+    setlistFmUrl: text("setlist_fm_url"),
+    /** user | setlist.fm | migration | demo */
+    source: text("source").notNull().default("user"),
+    /** confirmed | inferred */
+    confidence: text("confidence").notNull().default("confirmed"),
   },
   (t) => [primaryKey({ columns: [t.showId, t.artistId] })],
 );

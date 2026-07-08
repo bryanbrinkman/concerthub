@@ -8,6 +8,7 @@ import {
   findTour,
   findVenue,
   getArchive,
+  showTitleFor,
   postersForShow,
 } from "@/lib/archive";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,7 @@ export default async function MyShowsPage({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {shows.map((show) => (
             <ShowCard
+            title={showTitleFor(archive, show)}
               key={show.id}
               show={show}
               artist={findArtist(archive, show.artistId)}

@@ -18,14 +18,18 @@ import {
   findTour,
   findVenue,
   getArchive,
+  lineupFor,
   mediaLinksForShow,
   memoryForShow,
   openersForShow,
   photosForShow,
   postersForShow,
+  showTitleFor,
   showsByArtist,
   showsForTour,
 } from "@/lib/archive";
+import { isFestival } from "@/lib/billing";
+import { LineupCard } from "@/components/lineup-card";
 import { getSetlistForShow } from "@/lib/data";
 import { resolveSetlist } from "@/lib/setlistfm";
 import { enrichPoster } from "@/lib/expressobeans";
@@ -52,9 +56,8 @@ export async function generateMetadata({
   const archive = await getArchive();
   const show = findShow(archive, id);
   if (!show) return { title: "Show not found" };
-  const artist = findArtist(archive, show.artistId);
   return {
-    title: `${artist?.name ?? "Show"} · ${formatShortDate(show.date)}`,
+    title: `${showTitleFor(archive, show)} · ${formatShortDate(show.date)}`,
   };
 }
 
@@ -71,6 +74,11 @@ export default async function ShowDetailPage({
   const artist = findArtist(archive, show.artistId);
   const venue = findVenue(archive, show.venueId);
   const tour = show.tourId ? findTour(archive, show.tourId) : undefined;
+  const displayTitle = showTitleFor(archive, show);
+  const lineup = lineupFor(archive, show);
+  // The lineup card earns its place when there's a real bill to show —
+  // any multi-act event, always for festivals.
+  const showLineupCard = lineup.length > 1 || isFestival(show);
 
   // Live data: setlist.fm setlist + poster imagery. Demo mode gets the
   // seeded setlist as offline fallback; user archives fall back to the
@@ -244,9 +252,12 @@ export default async function ShowDetailPage({
           title: p.title,
         }))}
         ticketDetail={ticketDetail}
+        displayTitle={displayTitle}
         openers={openersForShow(archive, show)}
         canEdit={canEdit}
       />
+
+      {showLineupCard ? <LineupCard items={lineup} /> : null}
 
       {/* Main content + right rail */}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
