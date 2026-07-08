@@ -155,11 +155,11 @@ export default async function ShowDetailPage({
       {/* Top bar: back + quick actions */}
       <div className="flex items-center justify-between gap-3">
         <Link
-          href="/shows"
+          href="/my-shows"
           className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" />
-          Back to all shows
+          Back to my shows
         </Link>
         <div className="flex items-center gap-2">
           {canEdit ? (

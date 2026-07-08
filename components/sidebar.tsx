@@ -61,7 +61,7 @@ const MAIN_NAV: NavItem[] = [
 
 function collectionNav(counts: ArchiveCounts): NavItem[] {
   return [
-    { label: "My Shows", href: "/shows", icon: CalendarDays, count: counts.shows },
+    { label: "My Shows", href: "/my-shows", icon: CalendarDays, count: counts.shows },
     { label: "My Posters", href: "/posters", icon: ImageIcon, count: counts.posters },
     { label: "Wantlist", href: "/posters?state=want", icon: Heart, count: counts.wishlist },
     { label: "Tickets", href: "/tickets", icon: Ticket, count: counts.tickets },

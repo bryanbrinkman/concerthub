@@ -68,6 +68,11 @@ export function MultiImageField({
       {urls.map((url) => (
         <input key={url} type="hidden" name={name} value={url} />
       ))}
+      {/* A pasted-but-not-yet-added URL still submits with the form, so
+          "paste then hit Save" works without clicking +. */}
+      {draft.trim() && !urls.includes(draft.trim()) ? (
+        <input type="hidden" name={name} value={draft.trim()} />
+      ) : null}
 
       {urls.length > 0 ? (
         <div className="flex flex-wrap gap-2">
@@ -135,7 +140,7 @@ export function MultiImageField({
             }
           }}
           placeholder={
-            canUpload ? "…or paste an image URL" : "Paste an image URL (https://…)"
+            canUpload ? "…or paste an image URL (res.cloudinary.com/…)" : "Paste an image URL (res.cloudinary.com/…)"
           }
           className={inputClass}
         />
