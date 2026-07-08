@@ -206,6 +206,15 @@ export default async function PosterRecordPage({
   if (edition?.markings) rows.push(["Markings", edition.markings]);
   if (record.notes) rows.push(["Notes", record.notes]);
 
+  // Contribution prompts: nudge the community to complete the record.
+  const missingBits: string[] = [];
+  if (!record.designer || record.designer === "Unknown")
+    missingBits.push("poster artist credit");
+  if (!edition?.runSize) missingBits.push("edition size");
+  if (!edition?.technique) missingBits.push("printing method");
+  if (!edition?.dimensions) missingBits.push("dimensions");
+  if (record.images.length === 0) missingBits.push("an image");
+
   const relatedGrid = (items: typeof sameBand, heading: string) =>
     items.length > 0 ? (
       <section>
@@ -259,6 +268,26 @@ export default async function PosterRecordPage({
           ) : undefined
         }
       />
+
+      {missingBits.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <p className="text-sm text-amber-200">
+            <span className="font-medium">Know more about this print?</span>{" "}
+            This record is missing {missingBits.join(", ")}.
+          </p>
+          {record.isOwner ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/edit/poster/${record.id}`}>Complete the record</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" asChild>
+              <a href="mailto:hello@concertcollect.com?subject=Poster%20record%20details">
+                Share what you know
+              </a>
+            </Button>
+          )}
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
         {/* Artwork */}

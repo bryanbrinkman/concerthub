@@ -32,6 +32,12 @@ export default async function ArtistDetailPage({
   const posterography = archive.posters
     .filter((p) => p.showId && showIds.has(p.showId))
     .sort((a, b) => b.year - a.year);
+  const posteredShowIds = new Set(
+    posterography.map((p) => p.showId as string),
+  );
+  const showsMissingPosters = shows.filter(
+    (s) => !posteredShowIds.has(s.id),
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -80,7 +86,24 @@ export default async function ArtistDetailPage({
       {/* Posterography — the visual record of this band's shows */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Posterography</h2>
+          <div>
+            <h2 className="text-lg font-semibold">Posterography</h2>
+            {posterography.length > 0 ? (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {showsMissingPosters > 0 ? (
+                  <span className="text-amber-400">
+                    {showsMissingPosters}{" "}
+                    {showsMissingPosters === 1 ? "show is" : "shows are"}{" "}
+                    missing poster data — know of one?
+                  </span>
+                ) : (
+                  <span className="text-emerald-400">
+                    Complete for all known shows
+                  </span>
+                )}
+              </p>
+            ) : null}
+          </div>
           <Button variant="outline" size="sm" asChild>
             <Link href="/add/poster">Add a poster</Link>
           </Button>

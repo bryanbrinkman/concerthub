@@ -31,6 +31,14 @@ export default async function VenueDetailPage({
   const venuePosters = archive.posters
     .filter((p) => p.showId && showIds.has(p.showId) && p.imageUrl)
     .sort((a, b) => b.year - a.year);
+  const posteredShowIds = new Set(
+    archive.posters
+      .filter((p) => p.showId && showIds.has(p.showId))
+      .map((p) => p.showId as string),
+  );
+  const showsMissingPosters = shows.filter(
+    (s) => !posteredShowIds.has(s.id),
+  ).length;
   const artistCounts = new Map<string, number>();
   for (const s2 of shows) {
     artistCounts.set(s2.artistId, (artistCounts.get(s2.artistId) ?? 0) + 1);
@@ -81,6 +89,15 @@ export default async function VenueDetailPage({
             <Badge>
               {attended.length} {attended.length === 1 ? "show" : "shows"}
             </Badge>
+            {showsMissingPosters > 0 ? (
+              <Badge
+                variant="secondary"
+                className="border-amber-500/30 text-amber-300"
+              >
+                {showsMissingPosters}{" "}
+                {showsMissingPosters === 1 ? "show" : "shows"} missing posters
+              </Badge>
+            ) : null}
           </div>
         </div>
       </div>

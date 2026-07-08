@@ -108,7 +108,7 @@ export function SearchPalette({ items }: { items: SearchItem[] }) {
                 go(results[activeIndex].href);
               }
             }}
-            placeholder="Search shows, posters, artists, venues…"
+            placeholder="Search an artist, venue, show, poster, or poster artist…"
             className="h-11 w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
           />
           <kbd className="rounded border border-border bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">

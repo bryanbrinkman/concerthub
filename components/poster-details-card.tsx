@@ -29,7 +29,7 @@ export function PosterDetailsCard({
       <EmptyState
         icon={Frame}
         title="No poster cataloged"
-        description="Add the show print — designer, edition size, technique, and your copy number."
+        description="No poster has been added for this show yet. Know of one? Help complete the archive."
         actionLabel="Add poster"
         actionHref={addHref}
       />

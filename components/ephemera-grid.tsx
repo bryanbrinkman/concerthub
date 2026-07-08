@@ -45,9 +45,9 @@ export function EphemeraGrid({
     return (
       <EmptyState
         icon={Upload}
-        title="No ephemera yet"
-        description="Ticket stubs, wristbands, laminates, posters — scan or photograph what you kept."
-        actionLabel="Upload ephemera"
+        title="No artifacts yet"
+        description="No artifacts have been added yet. Add a ticket, shirt, photo, setlist, or memory from this show."
+        actionLabel="Add artifacts"
         actionHref={addHref}
       />
     );
