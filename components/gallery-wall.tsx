@@ -44,54 +44,86 @@ const MIN_W = 6;
 const MAX_W = 38;
 /** Wall aspect (w/h) — used to convert widths into height-% for layout. */
 const WALL_ASPECT = 1.6;
-/** Assumed poster aspect for auto-arrange math (real images render true). */
+/** Fallback poster aspect until the real image dimensions are known. */
 const POSTER_ASPECT = 0.75;
+/** The floor line (height-%). Art may never cross it. */
+const FLOOR_Y = 90;
+/** Bottom margin above the floor + top margin. */
+const ART_BOTTOM = FLOOR_Y - 2;
+const ART_TOP = 4;
+/** Gallery midline the arrangement anchors to (slightly above center,
+ * like eye-level hanging). */
+const MIDLINE = 44;
 
-/** Salon-style auto arrangement clustered around the wall's midline. */
-export function autoArrangeWall(items: WallPosterItem[]): WallSlot[] {
+/**
+ * Salon-style auto arrangement: uniform physical spacing, columns
+ * anchored on the midline, whole composition centered on the wall.
+ * `aspectOf` supplies each poster's real width/height ratio when known.
+ */
+export function autoArrangeWall(
+  items: WallPosterItem[],
+  aspectOf: (posterId: string) => number = () => POSTER_ASPECT,
+): WallSlot[] {
   const widths = [12, 16, 20, 13, 17, 10, 21, 14];
-  const gapX = 2.5;
-  const gapY = 4;
-  // Height-% of an item of width w% (poster aspect assumed 3:4):
-  // h% = (w / posterAspect) * wallAspect.
-  const heightOf = (w: number) => (w / POSTER_ASPECT) * WALL_ASPECT;
+  const gapX = 2.2;
+  // Same physical distance vertically as horizontally.
+  const gapY = gapX * WALL_ASPECT;
+  const heightOf = (w: number, aspect: number) => (w / aspect) * WALL_ASPECT;
+  const maxColumnH = ART_BOTTOM - ART_TOP;
 
-  const layout = (scale: number): { slots: WallSlot[]; xEnd: number } => {
-    const slots: WallSlot[] = [];
-    let x = 3;
+  interface ColumnEntry { item: WallPosterItem; w: number; h: number }
+
+  const build = (scale: number) => {
+    const columns: Array<{ entries: ColumnEntry[]; w: number; h: number }> = [];
     let index = 0;
     while (index < items.length) {
-      // 1–3 posters per column, until the column would overflow.
-      const column: Array<{ item: WallPosterItem; w: number; h: number }> = [];
+      const entries: ColumnEntry[] = [];
       let columnH = 0;
-      while (index < items.length && column.length < 3) {
+      while (index < items.length && entries.length < 3) {
         const w = Math.max(MIN_W, widths[index % widths.length] * scale);
-        const h = heightOf(w);
-        if (column.length > 0 && columnH + gapY + h > 82) break;
-        column.push({ item: items[index], w, h });
-        columnH += (column.length > 1 ? gapY : 0) + h;
+        const h = heightOf(w, aspectOf(items[index].posterId));
+        if (entries.length > 0 && columnH + gapY + h > maxColumnH) break;
+        entries.push({ item: items[index], w, h });
+        columnH += (entries.length > 1 ? gapY : 0) + h;
         index++;
       }
-      let y = Math.max(3, 50 - columnH / 2);
-      const columnW = Math.max(...column.map((c) => c.w));
-      for (const entry of column) {
-        slots.push({
-          posterId: entry.item.posterId,
-          x: x + (columnW - entry.w) / 2,
-          y,
-          w: entry.w,
-          z: slots.length + 1,
-        });
-        y += entry.h + gapY;
-      }
-      x += columnW + gapX;
+      columns.push({
+        entries,
+        w: Math.max(...entries.map((e) => e.w)),
+        h: columnH,
+      });
     }
-    return { slots, xEnd: x };
+    const totalW =
+      columns.reduce((sum, c) => sum + c.w, 0) + gapX * (columns.length - 1);
+    return { columns, totalW };
   };
 
-  const first = layout(1);
-  if (first.xEnd <= 98) return first.slots;
-  return layout(Math.max(0.4, 95 / first.xEnd)).slots;
+  let { columns, totalW } = build(1);
+  if (totalW > 94) {
+    ({ columns, totalW } = build(Math.max(0.35, 94 / totalW)));
+  }
+
+  // Center the whole composition horizontally on the wall.
+  const slots: WallSlot[] = [];
+  let x = Math.max(1, (100 - totalW) / 2);
+  for (const column of columns) {
+    let y = Math.min(
+      Math.max(ART_TOP, MIDLINE - column.h / 2),
+      Math.max(ART_TOP, ART_BOTTOM - column.h),
+    );
+    for (const entry of column.entries) {
+      slots.push({
+        posterId: entry.item.posterId,
+        x: x + (column.w - entry.w) / 2,
+        y,
+        w: entry.w,
+        z: slots.length + 1,
+      });
+      y += entry.h + gapY;
+    }
+    x += column.w + gapX;
+  }
+  return slots;
 }
 
 export function GalleryWall({
@@ -129,7 +161,33 @@ export function GalleryWall({
     startY: number;
     origX: number;
     origY: number;
+    /** Dragged item's rendered height in height-% (floor clamping). */
+    hPct: number;
   } | null>(null);
+
+  // Real image aspects, measured as artwork loads — Tidy uses them for
+  // uniform spacing, and the initial auto-layout re-runs once everything
+  // is measured (only while the wall is still untouched).
+  const aspects = React.useRef(new Map<string, number>());
+  const [measured, setMeasured] = React.useState(0);
+  const hadInitialLayout = React.useRef(
+    Boolean(initialLayout && initialLayout.length > 0),
+  );
+  const aspectOf = React.useCallback(
+    (posterId: string) => aspects.current.get(posterId) ?? POSTER_ASPECT,
+    [],
+  );
+  React.useEffect(() => {
+    if (
+      !hadInitialLayout.current &&
+      !dirty &&
+      measured > 0 &&
+      measured >= items.length
+    ) {
+      setSlots(autoArrangeWall(items, aspectOf));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [measured]);
 
   const update = (posterId: string, patch: Partial<WallSlot>) => {
     setSlots((list) =>
@@ -148,12 +206,15 @@ export function GalleryWall({
     if (!editable) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
+    const wallRect = wallRef.current?.getBoundingClientRect();
+    const itemRect = e.currentTarget.getBoundingClientRect();
     drag.current = {
       posterId: slot.posterId,
       startX: e.clientX,
       startY: e.clientY,
       origX: slot.x,
       origY: slot.y,
+      hPct: wallRect ? (itemRect.height / wallRect.height) * 100 : 20,
     };
     setSelected(slot.posterId);
     update(slot.posterId, { z: maxZ() + 1 });
@@ -167,9 +228,11 @@ export function GalleryWall({
     if (!slot) return;
     const dx = ((e.clientX - state.startX) / rect.width) * 100;
     const dy = ((e.clientY - state.startY) / rect.height) * 100;
+    // Art hangs on the wall — it never crosses onto the floor.
+    const maxY = Math.max(0, ART_BOTTOM - state.hPct);
     update(state.posterId, {
       x: Math.min(100 - slot.w, Math.max(0, state.origX + dx)),
-      y: Math.min(94, Math.max(0, state.origY + dy)),
+      y: Math.min(maxY, Math.max(0, state.origY + dy)),
     });
   };
   const onPointerUp = () => {
@@ -210,7 +273,7 @@ export function GalleryWall({
             variant="outline"
             size="sm"
             onClick={() => {
-              setSlots(autoArrangeWall(items));
+              setSlots(autoArrangeWall(items, aspectOf));
               setDirty(true);
             }}
           >
@@ -298,8 +361,7 @@ export function GalleryWall({
         onPointerCancel={onPointerUp}
         className="relative w-full select-none overflow-hidden rounded-xl border border-white/10 aspect-[8/5]"
         style={{
-          background:
-            "linear-gradient(180deg, #efedea 0%, #e7e4df 78%, #cfccc6 78.5%, #b9b6b0 100%)",
+          background: `linear-gradient(180deg, #efedea 0%, #e7e4df ${FLOOR_Y - 0.5}%, #cfccc6 ${FLOOR_Y}%, #b9b6b0 100%)`,
         }}
       >
         {/* soft gallery lighting */}
@@ -330,6 +392,16 @@ export function GalleryWall({
                 src={item.imageUrl}
                 alt={item.title}
                 draggable={false}
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  if (img.naturalWidth && img.naturalHeight) {
+                    aspects.current.set(
+                      slot.posterId,
+                      img.naturalWidth / img.naturalHeight,
+                    );
+                    setMeasured((n) => n + 1);
+                  }
+                }}
                 className="w-full shadow-[0_10px_24px_-8px_rgba(0,0,0,0.35)]"
               />
             </div>
