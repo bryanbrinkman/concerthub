@@ -10,6 +10,8 @@ import {
   Users,
 } from "lucide-react";
 
+import { and, eq, isNotNull, sql } from "drizzle-orm";
+
 import { seedDemoAction } from "@/app/seed-actions";
 import {
   allShows,
@@ -20,6 +22,8 @@ import {
   getArchive,
   postersForShow,
 } from "@/lib/archive";
+import { getDb } from "@/lib/db";
+import * as t from "@/lib/db/schema";
 import { formatShortDate } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,16 +37,100 @@ export default async function DashboardPage() {
   const archive = await getArchive();
   const counts = archiveCounts(archive);
 
-  // The poster is the star: the front page showcases only shows whose
-  // pages have real poster artwork attached.
-  const posterShows = allShows(archive)
-    .flatMap((show) => {
-      const posterImage = postersForShow(archive, show.id).find(
-        (p) => p.imageUrl,
-      )?.imageUrl;
-      return posterImage ? [{ show, posterImage }] : [];
-    })
-    .slice(0, 8);
+  // The poster is the star. Signed-in: your own postered shows. Signed
+  // out: a random assortment of postered shows from ALL collectors,
+  // linking to their public profiles.
+  interface WallTile {
+    key: string;
+    image: string;
+    title: string;
+    subtitle: string;
+    line2?: string;
+    href: string;
+  }
+
+  const ownTiles = (): WallTile[] =>
+    allShows(archive)
+      .flatMap((show) => {
+        const posterImage = postersForShow(archive, show.id).find(
+          (p) => p.imageUrl,
+        )?.imageUrl;
+        return posterImage ? [{ show, posterImage }] : [];
+      })
+      .slice(0, 8)
+      .map(({ show, posterImage }) => {
+        const artist = findArtist(archive, show.artistId);
+        const venue = findVenue(archive, show.venueId);
+        return {
+          key: show.id,
+          image: posterImage,
+          title: artist?.name ?? "Unknown artist",
+          subtitle: `${venue?.name ?? ""}${venue ? " · " : ""}${formatShortDate(show.date)}`,
+          href: `/shows/${show.id}`,
+        };
+      });
+
+  let wallTiles: WallTile[];
+  let communityWall = false;
+  if (!archive.demo) {
+    wallTiles = ownTiles();
+  } else {
+    // Community wall for signed-out visitors.
+    const db = getDb();
+    let rows: Array<{
+      id: string;
+      imageUrl: string | null;
+      title: string;
+      ownerId: string;
+      ownerName: string | null;
+      artistName: string | null;
+      venueName: string | null;
+      showDate: string | null;
+    }> = [];
+    if (db) {
+      try {
+        rows = await db
+          .select({
+            id: t.posters.id,
+            imageUrl: t.posters.imageUrl,
+            title: t.posters.title,
+            ownerId: t.posters.userId,
+            ownerName: t.users.name,
+            artistName: t.artists.name,
+            venueName: t.venues.name,
+            showDate: t.shows.date,
+          })
+          .from(t.posters)
+          .innerJoin(t.users, eq(t.posters.userId, t.users.id))
+          .leftJoin(t.shows, eq(t.posters.showId, t.shows.id))
+          .leftJoin(t.artists, eq(t.shows.artistId, t.artists.id))
+          .leftJoin(t.venues, eq(t.shows.venueId, t.venues.id))
+          .where(
+            and(eq(t.posters.owned, true), isNotNull(t.posters.imageUrl)),
+          )
+          .orderBy(sql`random()`)
+          .limit(8);
+      } catch (error) {
+        console.warn("[home] community wall query failed:", error);
+      }
+    }
+    if (rows.length > 0) {
+      communityWall = true;
+      wallTiles = rows.map((row) => ({
+        key: row.id,
+        image: row.imageUrl as string,
+        title: row.artistName ?? row.title,
+        subtitle: `${row.venueName ?? ""}${row.venueName && row.showDate ? " · " : ""}${
+          row.showDate ? formatShortDate(row.showDate) : ""
+        }`,
+        line2: `from ${row.ownerName ?? "a collector"}'s archive`,
+        href: `/u/${row.ownerId}`,
+      }));
+    } else {
+      // No community prints yet (or no DB) — fall back to the demo wall.
+      wallTiles = ownTiles();
+    }
+  }
 
   const latestMemory = [...archive.memories].sort((a, b) =>
     b.createdAt.localeCompare(a.createdAt),
@@ -105,15 +193,17 @@ export default async function DashboardPage() {
       {/* The poster wall */}
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">The poster wall</h2>
+          <h2 className="text-lg font-semibold">
+            {communityWall ? "From the community's walls" : "The poster wall"}
+          </h2>
           <Link
-            href="/posters"
+            href={communityWall ? "/prints" : "/posters"}
             className="text-sm text-primary transition-colors hover:text-primary/80"
           >
-            Fan through the rack
+            {communityWall ? "Browse the Trading Post" : "Fan through the rack"}
           </Link>
         </div>
-        {posterShows.length === 0 ? (
+        {wallTiles.length === 0 ? (
           <div className="space-y-4">
             <EmptyState
               icon={archive.shows.length === 0 ? Download : Frame}
@@ -153,34 +243,27 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 xl:grid-cols-4">
-            {posterShows.map(({ show, posterImage }) => {
-              const artist = findArtist(archive, show.artistId);
-              const venue = findVenue(archive, show.venueId);
-              return (
-                <Link
-                  key={show.id}
-                  href={`/shows/${show.id}`}
-                  className="group block"
-                >
-                  <PosterArt
-                    gradient={show.gradient}
-                    imageUrl={posterImage}
-                    title={artist?.name ?? "Unknown artist"}
-                    className="shadow-[0_20px_45px_-20px_rgba(0,0,0,0.9)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-[1.02]"
-                  />
-                  <div className="mt-2.5 px-0.5">
-                    <p className="truncate text-sm font-medium">
-                      {artist?.name ?? "Unknown artist"}
+            {wallTiles.map((tile) => (
+              <Link key={tile.key} href={tile.href} className="group block">
+                <PosterArt
+                  gradient="midnight"
+                  imageUrl={tile.image}
+                  title={tile.title}
+                  className="shadow-[0_20px_45px_-20px_rgba(0,0,0,0.9)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-[1.02]"
+                />
+                <div className="mt-2.5 px-0.5">
+                  <p className="truncate text-sm font-medium">{tile.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {tile.subtitle}
+                  </p>
+                  {tile.line2 ? (
+                    <p className="truncate text-xs text-muted-foreground/70">
+                      {tile.line2}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {venue?.name}
-                      {venue ? " · " : ""}
-                      {formatShortDate(show.date)}
-                    </p>
-                  </div>
-                </Link>
-              );
-            })}
+                  ) : null}
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </section>

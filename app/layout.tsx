@@ -11,6 +11,7 @@ import {
 import { formatShortDate } from "@/lib/utils";
 import { Sidebar } from "@/components/sidebar";
 import { Onboarding } from "@/components/onboarding";
+import { WelcomeSplash } from "@/components/welcome-splash";
 import { SearchPalette, type SearchItem } from "@/components/search-palette";
 
 export const metadata: Metadata = {
@@ -94,7 +95,8 @@ export default async function RootLayout({
             {children}
           </div>
         </main>
-        {/* First-run welcome for signed-in users with an empty archive */}
+        {/* First-visit splash (signed out) + first-run onboarding (signed in, empty archive) */}
+        <WelcomeSplash enabled={archive.demo} authEnabled={authEnabled} />
         <Onboarding enabled={!archive.demo && archive.shows.length === 0} />
         {/* ⌘K search over the viewer's archive */}
         <SearchPalette items={searchItems} />
