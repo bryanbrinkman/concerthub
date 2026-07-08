@@ -6,6 +6,7 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 
@@ -30,6 +31,7 @@ import {
 } from "@/lib/archive";
 import { isFestival } from "@/lib/billing";
 import { LineupCard } from "@/components/lineup-card";
+import { OnTheMarket } from "@/components/on-the-market";
 import { getSetlistForShow } from "@/lib/data";
 import { resolveSetlist } from "@/lib/setlistfm";
 import { enrichPoster } from "@/lib/expressobeans";
@@ -219,6 +221,13 @@ export default async function ShowDetailPage({
                   <Pencil className="h-4 w-4" />
                   Edit show details
                 </Link>
+                <Link
+                  href={`/shows/${show.id}/enrich`}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-accent"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Enrich show
+                </Link>
                 <form action={removeShowAction}>
                   <input type="hidden" name="showId" value={show.id} />
                   <button
@@ -330,6 +339,7 @@ export default async function ShowDetailPage({
         {/* Right rail — stacks below main content under xl */}
         <aside className="min-w-0 space-y-5">
           <EphemeraGrid items={ephemeraItems} addHref={`/add/ephemera?show=${show.id}`} canEdit={canEdit} />
+          <OnTheMarket showId={show.id} />
           {memoryPanel}
           <MediaLinksCard links={links} />
         </aside>

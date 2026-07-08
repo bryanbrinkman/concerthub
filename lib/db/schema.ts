@@ -324,6 +324,74 @@ export const posterInterests = pgTable(
   ],
 );
 
+/* ------------------------------------------------------------------ */
+/* Show enrichment engine (lib/enrich)                                 */
+/* ------------------------------------------------------------------ */
+
+/** One provider run for one show — progress + rate-limit bookkeeping. */
+export const enrichmentJobs = pgTable("enrichment_job", {
+  id: text("id").primaryKey().$defaultFn(uuid),
+  showId: text("show_id")
+    .notNull()
+    .references(() => shows.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  provider: text("provider").notNull(),
+  /** running | done | error | skipped */
+  status: text("status").notNull().default("running"),
+  detail: text("detail"),
+  candidateCount: integer("candidate_count").notNull().default(0),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
+/**
+ * A suggested fact about a show with full provenance — never merged into
+ * canonical records without confidence gating (auto-accept) or human
+ * review. kind: performer | event_meta | poster_image | video |
+ * marketplace | reference.
+ */
+export const dataCandidates = pgTable(
+  "data_candidate",
+  {
+    id: text("id").primaryKey().$defaultFn(uuid),
+    showId: text("show_id")
+      .notNull()
+      .references(() => shows.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    /** Images: official_poster | possible_poster | event_image | ticket |
+     *  merch | unknown. Web discoveries default to possible_poster. */
+    candidateType: text("candidate_type"),
+    /** Stable dedupe key within (show, kind): video id, image URL, name… */
+    valueKey: text("value_key").notNull(),
+    value: jsonb("value").notNull().$type<Record<string, unknown>>(),
+    provider: text("provider").notNull(),
+    sourceUrl: text("source_url"),
+    /** 0–100. */
+    confidence: integer("confidence").notNull().default(20),
+    /** Human-readable scoring reasons ("Exact event name", …). */
+    reasons: text("reasons").array(),
+    /** pending | auto_accepted | user_confirmed | rejected | superseded */
+    status: text("status").notNull().default("pending"),
+    fetchedAt: timestamp("fetched_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("candidate_unique_idx").on(t.showId, t.kind, t.valueKey)],
+);
+
+/** Raw provider responses, cached per normalized query. */
+export const providerCache = pgTable(
+  "provider_cache",
+  {
+    id: text("id").primaryKey().$defaultFn(uuid),
+    provider: text("provider").notNull(),
+    queryKey: text("query_key").notNull(),
+    response: jsonb("response").$type<unknown>(),
+    fetchedAt: timestamp("fetched_at", { mode: "date" }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+  },
+  (t) => [uniqueIndex("provider_cache_key_idx").on(t.provider, t.queryKey)],
+);
+
 export const collections = pgTable("collection", {
   id: text("id").primaryKey().$defaultFn(uuid),
   userId: text("user_id")
