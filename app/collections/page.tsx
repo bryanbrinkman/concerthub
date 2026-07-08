@@ -19,10 +19,10 @@ export default async function CollectionsPage() {
   const stateCount = (state: string) =>
     archive.posters.filter((p) => posterState(p) === state).length;
   const smart = [
-    { label: "My Posters", icon: Frame, count: archive.posters.filter((p) => posterState(p) !== "want").length, href: "/posters" },
-    { label: "Wantlist", icon: Heart, count: stateCount("want"), href: "/posters?state=want" },
-    { label: "For Trade", icon: ArrowLeftRight, count: stateCount("trade"), href: "/posters?state=trade" },
-    { label: "For Sale", icon: Tag, count: stateCount("sell"), href: "/posters?state=sell" },
+    { label: "My Posters", icon: Frame, count: archive.posters.filter((p) => posterState(p) !== "want").length, href: "/my-posters" },
+    { label: "Wantlist", icon: Heart, count: stateCount("want"), href: "/my-posters?state=want" },
+    { label: "For Trade", icon: ArrowLeftRight, count: stateCount("trade"), href: "/my-posters?state=trade" },
+    { label: "For Sale", icon: Tag, count: stateCount("sell"), href: "/my-posters?state=sell" },
   ];
   return (
     <div>

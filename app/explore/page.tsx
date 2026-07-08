@@ -238,19 +238,19 @@ export default async function ExplorePage() {
               count: explore.missing.postersMissingImages,
               label: "posters missing images",
               cta: "Upload an image",
-              href: "/posters",
+              href: "/my-posters",
             },
             {
               count: explore.missing.postersMissingCredit,
               label: "posters missing artist credit",
               cta: "Credit a Poster Artist",
-              href: "/posters",
+              href: "/my-posters",
             },
             {
               count: explore.missing.postersMissingEdition,
               label: "posters missing edition details",
               cta: "Fill in details",
-              href: "/posters",
+              href: "/my-posters",
             },
           ].map((item) => (
             <Card key={item.label}>

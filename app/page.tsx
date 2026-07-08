@@ -120,7 +120,7 @@ export default async function HomePage() {
               From the Archive
             </h2>
             <Link
-              href="/prints"
+              href="/posters"
               className="text-sm text-primary transition-colors hover:text-primary/80"
             >
               Browse all posters →

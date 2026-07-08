@@ -346,7 +346,7 @@ export async function addPosterAction(formData: FormData) {
   });
 
   revalidatePath("/", "layout");
-  redirect(showId ? `/shows/${showId}` : "/posters");
+  redirect(showId ? `/shows/${showId}` : "/my-posters");
 }
 
 export async function updatePosterAction(formData: FormData) {
@@ -402,7 +402,7 @@ export async function updatePosterAction(formData: FormData) {
     .where(and(eq(t.posters.id, posterId), eq(t.posters.userId, userId)));
 
   revalidatePath("/", "layout");
-  redirect(showId ? `/shows/${showId}` : "/posters");
+  redirect(showId ? `/shows/${showId}` : "/my-posters");
 }
 
 export async function addPhotoAction(formData: FormData) {
