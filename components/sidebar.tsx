@@ -305,21 +305,24 @@ function SidebarBody({
           ) : null}
         </div>
 
-        <div>
-          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            My Archive
-          </p>
-          <div className="space-y-0.5">
-            {collectionNav(counts).map((item) => (
-              <NavLink
-                key={item.label}
-                item={item}
-                pathname={pathname}
-                onNavigate={onNavigate}
-              />
-            ))}
+        {/* Personal section — signed-in users only */}
+        {user ? (
+          <div>
+            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              My Archive
+            </p>
+            <div className="space-y-0.5">
+              {collectionNav(counts).map((item) => (
+                <NavLink
+                  key={item.label}
+                  item={item}
+                  pathname={pathname}
+                  onNavigate={onNavigate}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
       </nav>
 
       <div className="space-y-3 border-t border-border px-4 py-4">
