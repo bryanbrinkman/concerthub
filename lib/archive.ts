@@ -70,10 +70,25 @@ function demoArchive(): ArchiveData {
   };
 }
 
+/**
+ * Run one archive query, degrading to [] on failure (e.g. an unapplied
+ * column migration) so a single broken table never demotes the whole
+ * signed-in archive to demo data.
+ */
+async function safeRows<T>(query: PromiseLike<T[]>, label: string): Promise<T[]> {
+  try {
+    return await query;
+  } catch (error) {
+    console.warn(`[archive] ${label} query failed (migration pending?):`, error);
+    return [];
+  }
+}
+
 async function loadUserArchive(userId: string): Promise<ArchiveData> {
   const db = getDb();
   if (!db) return demoArchive();
 
+  // Core spine — if these fail, the caller falls back to demo mode.
   const userShowRows = await db
     .select()
     .from(t.userShows)
@@ -108,23 +123,50 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
     collectionRows,
   ] = await Promise.all([
     artistIds.length
-      ? db.select().from(t.artists).where(inArray(t.artists.id, artistIds))
+      ? safeRows(
+          db.select().from(t.artists).where(inArray(t.artists.id, artistIds)),
+          "artists",
+        )
       : Promise.resolve([]),
     venueIds.length
-      ? db.select().from(t.venues).where(inArray(t.venues.id, venueIds))
+      ? safeRows(
+          db.select().from(t.venues).where(inArray(t.venues.id, venueIds)),
+          "venues",
+        )
       : Promise.resolve([]),
     tourIds.length
-      ? db.select().from(t.tours).where(inArray(t.tours.id, tourIds))
+      ? safeRows(
+          db.select().from(t.tours).where(inArray(t.tours.id, tourIds)),
+          "tours",
+        )
       : Promise.resolve([]),
-    db.select().from(t.posters).where(eq(t.posters.userId, userId)),
-    db
-      .select()
-      .from(t.ephemeraItems)
-      .where(eq(t.ephemeraItems.userId, userId)),
-    db.select().from(t.memories).where(eq(t.memories.userId, userId)),
-    db.select().from(t.mediaLinks).where(eq(t.mediaLinks.userId, userId)),
-    db.select().from(t.showPhotos).where(eq(t.showPhotos.userId, userId)),
-    db.select().from(t.collections).where(eq(t.collections.userId, userId)),
+    safeRows(
+      db.select().from(t.posters).where(eq(t.posters.userId, userId)),
+      "posters",
+    ),
+    safeRows(
+      db
+        .select()
+        .from(t.ephemeraItems)
+        .where(eq(t.ephemeraItems.userId, userId)),
+      "ephemera",
+    ),
+    safeRows(
+      db.select().from(t.memories).where(eq(t.memories.userId, userId)),
+      "memories",
+    ),
+    safeRows(
+      db.select().from(t.mediaLinks).where(eq(t.mediaLinks.userId, userId)),
+      "media links",
+    ),
+    safeRows(
+      db.select().from(t.showPhotos).where(eq(t.showPhotos.userId, userId)),
+      "photos",
+    ),
+    safeRows(
+      db.select().from(t.collections).where(eq(t.collections.userId, userId)),
+      "collections",
+    ),
   ]);
 
   return {
