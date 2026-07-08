@@ -124,10 +124,25 @@ export default async function AddPosterPage({
                   className={inputClass}
                 />
               </Field>
-              <Field label="Dimensions">
+              <Field label="Width (inches)">
                 <input
-                  name="dimensions"
-                  placeholder={'18" x 24"'}
+                  name="widthIn"
+                  type="number"
+                  min={4}
+                  max={99}
+                  step="0.5"
+                  placeholder="18"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Height (inches)">
+                <input
+                  name="heightIn"
+                  type="number"
+                  min={4}
+                  max={99}
+                  step="0.5"
+                  placeholder="24"
                   className={inputClass}
                 />
               </Field>

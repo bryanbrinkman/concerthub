@@ -8,7 +8,7 @@ import { getDb } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { getArchive, posterState } from "@/lib/archive";
 import type { Edition, PosterState } from "@/lib/types";
-import { formatShortDate } from "@/lib/utils";
+import { formatEditionSize, formatShortDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -193,7 +193,8 @@ export default async function PosterRecordPage({
     ]);
   rows.push(["Year", String(record.year)]);
   if (edition?.name) rows.push(["Variant", edition.name]);
-  if (edition?.dimensions) rows.push(["Dimensions", edition.dimensions]);
+  const editionSize = formatEditionSize(edition);
+  if (editionSize) rows.push(["Dimensions", editionSize]);
   if (edition?.technique) rows.push(["Printing method", edition.technique]);
   if (edition?.runSize)
     rows.push([
@@ -212,7 +213,7 @@ export default async function PosterRecordPage({
     missingBits.push("poster artist credit");
   if (!edition?.runSize) missingBits.push("edition size");
   if (!edition?.technique) missingBits.push("printing method");
-  if (!edition?.dimensions) missingBits.push("dimensions");
+  if (!formatEditionSize(edition)) missingBits.push("dimensions");
   if (record.images.length === 0) missingBits.push("an image");
 
   const relatedGrid = (items: typeof sameBand, heading: string) =>

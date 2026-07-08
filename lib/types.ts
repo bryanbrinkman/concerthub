@@ -85,7 +85,15 @@ export interface Edition {
   /** The collector's copy number within the run, if owned. */
   copyNumber?: number;
   technique?: string; // e.g. "6-color screen print"
-  dimensions?: string; // e.g. "18\" x 24\""
+  /** Physical size in inches — structured so sizes are computable. */
+  widthIn?: number;
+  heightIn?: number;
+  /**
+   * @deprecated Legacy free-text size ("18\" x 24\"") — migrated to
+   * widthIn/heightIn by drizzle/0009; kept only as a display fallback
+   * for unparseable strings.
+   */
+  dimensions?: string;
   /** Autographed by the poster artist and/or band. */
   signed?: boolean;
   markings?: string; // e.g. "Signed & numbered in pencil"

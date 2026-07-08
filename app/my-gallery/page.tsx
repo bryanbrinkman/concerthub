@@ -5,7 +5,7 @@ import { getArchive } from "@/lib/archive";
 import { getDb } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { enrichPosters } from "@/lib/expressobeans";
-import { parsePosterWidthIn } from "@/lib/utils";
+import { parsePosterSizeIn } from "@/lib/utils";
 import { saveGalleryAction } from "@/app/gallery-actions";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
@@ -33,7 +33,9 @@ export default async function MyGalleryPage() {
       posterId: poster.id,
       imageUrl: poster.resolvedImageUrl as string,
       title: poster.title,
-      widthIn: parsePosterWidthIn(poster.editions[0]?.dimensions),
+      widthIn:
+        poster.editions[0]?.widthIn ??
+        parsePosterSizeIn(poster.editions[0]?.dimensions)?.widthIn,
     }));
 
   if (items.length === 0) {

@@ -45,6 +45,12 @@ const str = (formData: FormData, key: string): string =>
 const optional = (value: string): string | undefined =>
   value.length > 0 ? value : undefined;
 
+/** Positive inches from a number input (3–100), else undefined. */
+const posInches = (formData: FormData, key: string): number | undefined => {
+  const value = Number(str(formData, key));
+  return Number.isFinite(value) && value > 3 && value < 100 ? value : undefined;
+};
+
 const BILLING_ROLES = new Set([
   "headliner",
   "co_headliner",
@@ -318,7 +324,8 @@ export async function addPosterAction(formData: FormData) {
     copyNumber:
       Number.isFinite(copyNumber) && copyNumber > 0 ? copyNumber : undefined,
     technique: optional(str(formData, "technique")),
-    dimensions: optional(str(formData, "dimensions")),
+    widthIn: posInches(formData, "widthIn"),
+    heightIn: posInches(formData, "heightIn"),
     signed: formData.get("signed") !== null,
     markings: optional(str(formData, "markings")),
   };
@@ -375,7 +382,8 @@ export async function updatePosterAction(formData: FormData) {
     copyNumber:
       Number.isFinite(copyNumber) && copyNumber > 0 ? copyNumber : undefined,
     technique: optional(str(formData, "technique")),
-    dimensions: optional(str(formData, "dimensions")),
+    widthIn: posInches(formData, "widthIn"),
+    heightIn: posInches(formData, "heightIn"),
     signed: formData.get("signed") !== null,
     markings: optional(str(formData, "markings")),
   };

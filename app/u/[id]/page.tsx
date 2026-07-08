@@ -5,7 +5,7 @@ import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import type { GradientKey } from "@/lib/types";
-import { formatShortDate, formatShowDate, parsePosterWidthIn } from "@/lib/utils";
+import { formatShortDate, formatShowDate, parsePosterSizeIn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PosterArt } from "@/components/gradient-art";
 import { TicketArt } from "@/components/ticket-art";
@@ -83,7 +83,9 @@ export default async function ProfilePage({
     posterId: p.id,
     imageUrl: p.imageUrl as string,
     title: p.title,
-    widthIn: parsePosterWidthIn(p.editions?.[0]?.dimensions),
+    widthIn:
+      p.editions?.[0]?.widthIn ??
+      parsePosterSizeIn(p.editions?.[0]?.dimensions)?.widthIn,
   }));
   const hasGallery =
     galleryLayout &&

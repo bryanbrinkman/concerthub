@@ -11,6 +11,7 @@ import { PosterGallery } from "@/components/poster-gallery";
 import { EmptyState } from "@/components/empty-state";
 import { StateBadge } from "@/components/state-badge";
 import { posterState } from "@/lib/archive";
+import { formatEditionSize } from "@/lib/utils";
 
 /** Collector metadata for the show's poster/print. */
 export function PosterDetailsCard({
@@ -50,7 +51,8 @@ export function PosterDetailsCard({
     ["Title", poster.title],
     ["Year", String(poster.year)],
   ];
-  if (edition?.dimensions) rows.push(["Dimensions", edition.dimensions]);
+  const size = formatEditionSize(edition);
+  if (size) rows.push(["Dimensions", size]);
   if (edition?.runSize) {
     rows.push([
       "Edition",

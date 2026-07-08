@@ -7,7 +7,7 @@ import {
   findVenue,
   getArchive,
 } from "@/lib/archive";
-import { formatShortDate } from "@/lib/utils";
+import { formatShortDate, parsePosterSizeIn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -41,6 +41,10 @@ export default async function EditPosterPage({
 
   const shows = allShows(archive);
   const edition = poster.editions[0];
+  const legacySize =
+    edition?.widthIn && edition?.heightIn
+      ? { widthIn: edition.widthIn, heightIn: edition.heightIn }
+      : parsePosterSizeIn(edition?.dimensions);
   const defaultImages = [
     ...(poster.imageUrl ? [poster.imageUrl] : []),
     ...(poster.imageUrls ?? []),
@@ -135,10 +139,27 @@ export default async function EditPosterPage({
                   className={inputClass}
                 />
               </Field>
-              <Field label="Dimensions">
+              <Field label="Width (inches)">
                 <input
-                  name="dimensions"
-                  defaultValue={edition?.dimensions ?? ""}
+                  name="widthIn"
+                  type="number"
+                  min={4}
+                  max={99}
+                  step="0.5"
+                  defaultValue={legacySize?.widthIn ?? ""}
+                  placeholder="18"
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Height (inches)">
+                <input
+                  name="heightIn"
+                  type="number"
+                  min={4}
+                  max={99}
+                  step="0.5"
+                  defaultValue={legacySize?.heightIn ?? ""}
+                  placeholder="24"
                   className={inputClass}
                 />
               </Field>

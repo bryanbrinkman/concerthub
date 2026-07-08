@@ -18,16 +18,41 @@ export function formatShowDate(iso: string): string {
 }
 
 /**
- * Physical print width in inches from an edition dimensions string —
- * `18" x 24"`, `18x24`, `18 × 24 in` all parse (first number = width).
+ * Physical print size in inches from a legacy dimensions string —
+ * `18" x 24"`, `18x24`, `18 × 24 in` all parse (width first).
  */
-export function parsePosterWidthIn(dimensions?: string): number | undefined {
+export function parsePosterSizeIn(
+  dimensions?: string,
+): { widthIn: number; heightIn: number } | undefined {
   if (!dimensions) return undefined;
   const match = dimensions.match(
     /(\d+(?:\.\d+)?)\s*(?:"|”|in(?:ch(?:es)?)?)?\s*[x×]\s*(\d+(?:\.\d+)?)/i,
   );
-  const width = match ? Number(match[1]) : NaN;
-  return Number.isFinite(width) && width > 3 && width < 100 ? width : undefined;
+  if (!match) return undefined;
+  const widthIn = Number(match[1]);
+  const heightIn = Number(match[2]);
+  if (!Number.isFinite(widthIn) || widthIn <= 3 || widthIn >= 100) {
+    return undefined;
+  }
+  return {
+    widthIn,
+    heightIn:
+      Number.isFinite(heightIn) && heightIn > 3 && heightIn < 100
+        ? heightIn
+        : widthIn,
+  };
+}
+
+/** Edition size for display: structured fields first, legacy fallback. */
+export function formatEditionSize(edition?: {
+  widthIn?: number;
+  heightIn?: number;
+  dimensions?: string;
+}): string | undefined {
+  if (edition?.widthIn && edition?.heightIn) {
+    return `${edition.widthIn}" × ${edition.heightIn}"`;
+  }
+  return edition?.dimensions || undefined;
 }
 
 /** "2014-06-06".."2014-06-08" → "June 6–8, 2014" (multi-day events). */
