@@ -78,7 +78,9 @@ export function TicketArt({
   return (
     <div
       className={cn(
-        "@container relative aspect-[3/4] overflow-hidden rounded-lg bg-[#eae4d2] text-zinc-900",
+        // Squat stub, capped width: stays ticket-sized and dense even in
+        // wide grid cells instead of stretching tall and airy.
+        "@container relative mx-auto aspect-[5/6] w-full max-w-60 overflow-hidden rounded-lg bg-[#eae4d2] text-zinc-900",
         className,
       )}
     >
@@ -94,7 +96,7 @@ export function TicketArt({
       </div>
 
       {/* body */}
-      <div className="flex h-[74%] flex-col items-center justify-center gap-[2.5%] px-[7%] text-center font-mono uppercase">
+      <div className="flex h-[74%] flex-col items-center justify-center gap-[1.5%] px-[7%] text-center font-mono uppercase">
         <p className="tracking-[0.22em] text-[clamp(0.28rem,3.2cqw,0.5rem)] text-zinc-500">
           {(tourLine ?? "An Evening With").toUpperCase()}
         </p>
@@ -113,7 +115,7 @@ export function TicketArt({
         ) : null}
         <div
           className={cn(
-            "my-[2%] grid w-full border-y border-zinc-900/25 py-[3%]",
+            "my-[1.5%] grid w-full border-y border-zinc-900/25 py-[2%]",
             grid.length === 4 ? "grid-cols-4" : "grid-cols-3",
           )}
         >
