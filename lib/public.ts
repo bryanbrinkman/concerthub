@@ -12,7 +12,7 @@
 
 import { eq, inArray } from "drizzle-orm";
 
-import { getDb } from "@/lib/db";
+import { getDb, type Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import type { BillingRole, EventType } from "@/lib/types";
 
