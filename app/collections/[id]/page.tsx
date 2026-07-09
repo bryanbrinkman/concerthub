@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, LogIn, Plus, Trash2, X } from "lucide-react";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { getArchive } from "@/lib/archive";
 import { getDb } from "@/lib/db";

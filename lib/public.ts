@@ -10,7 +10,7 @@
  * migration) so pages can fall back to the viewer archive.
  */
 
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 
 import { getDb, type Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
@@ -185,11 +185,14 @@ async function publicShowIds(db: Db): Promise<Set<string>> {
       | typeof t.memories
       | typeof t.ephemeraItems,
   ) => {
-    const rows = await db
-      .select({ showId: table.showId })
+    // sql-wrapped column: the proven pattern for selecting across a table
+    // union (see app/shows/page.tsx) — the raw union column doesn't
+    // reliably satisfy drizzle's SelectedFields type.
+    const rows = (await db
+      .select({ showId: sql<string>`${table.showId}` })
       .from(table)
-      .groupBy(table.showId);
-    for (const row of rows) if (row.showId) ids.add(row.showId as string);
+      .groupBy(table.showId)) as Array<{ showId: string | null }>;
+    for (const row of rows) if (row.showId) ids.add(row.showId);
   };
   await Promise.all([
     collect(t.posters),
