@@ -1,25 +1,17 @@
 "use client";
 
 import * as React from "react";
-import {
-  ArrowDownToLine,
-  ArrowUpToLine,
-  Check,
-  LayoutGrid,
-  Loader2,
-  Minus,
-  Plus,
-  X,
-} from "lucide-react";
+import { Check, LayoutGrid, Loader2, Minus, Plus, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 /**
- * Gallery wall: posters pinned to a light wall, salon style. Drag with
- * mouse or touch to rearrange; coordinates are percentages so the same
- * layout scales from phone to desktop. Also renders read-only for
- * public profiles.
+ * Gallery wall: posters hung on a light wall, salon style. The editor is
+ * an order-based sortable grid — drag a piece onto another and they swap,
+ * and the whole wall re-tidies around the new order. Positions are
+ * percentages so a layout scales from phone to desktop. Also renders
+ * read-only (from saved positions) for public profiles.
  */
 
 export interface WallPosterItem {
@@ -62,9 +54,6 @@ const MIDLINE = 44;
 const WALL_INCHES = 160;
 /** Default physical width when a print has no dimensions recorded. */
 const DEFAULT_WIDTH_IN = 18;
-/** Snap: fine grid + magnetic edge/center alignment to neighbors. */
-const SNAP_GRID = 1.25;
-const SNAP_TOLERANCE = 1.4;
 
 /** Wall width-% for a print, from its physical size. */
 export const wallWidthFor = (item: WallPosterItem): number =>
@@ -76,11 +65,15 @@ export const wallWidthFor = (item: WallPosterItem): number =>
 /**
  * Salon-style auto arrangement: uniform physical spacing, columns
  * anchored on the midline, whole composition centered on the wall.
- * `aspectOf` supplies each poster's real width/height ratio when known.
+ * Order in = order out (left-to-right, top-to-bottom within a column), so
+ * reordering the item list re-tidies the wall. `aspectOf` supplies each
+ * poster's real width/height ratio; `widthOf` supplies its wall width
+ * (physical size, or a per-poster override).
  */
 export function autoArrangeWall(
   items: WallPosterItem[],
   aspectOf: (posterId: string) => number = () => POSTER_ASPECT,
+  widthOf: (item: WallPosterItem) => number = wallWidthFor,
 ): WallSlot[] {
   const gapX = 2.2;
   // Same physical distance vertically as horizontally.
@@ -98,7 +91,7 @@ export function autoArrangeWall(
       let columnH = 0;
       while (index < items.length && entries.length < 3) {
         // True-to-size: width comes from the print's physical dimensions.
-        const w = Math.max(4.5, wallWidthFor(items[index]) * scale);
+        const w = Math.max(4.5, widthOf(items[index]) * scale);
         const h = heightOf(w, aspectOf(items[index].posterId));
         if (entries.length > 0 && columnH + gapY + h > maxColumnH) break;
         entries.push({ item: items[index], w, h });
@@ -144,6 +137,55 @@ export function autoArrangeWall(
   return slots;
 }
 
+/** Reading order (left-to-right by column, then top-to-bottom) from saved
+ * positions, so an existing layout re-derives a stable item order. */
+function orderFromSlots(slots: WallSlot[]): string[] {
+  return [...slots]
+    .sort((a, b) => (Math.abs(a.x - b.x) > 4 ? a.x - b.x : a.y - b.y))
+    .map((s) => s.posterId);
+}
+
+/** Read-only wall (public profiles): render saved positions as-is. */
+function StaticWall({
+  items,
+  layout,
+}: {
+  items: WallPosterItem[];
+  layout: WallSlot[];
+}) {
+  const itemById = new Map(items.map((item) => [item.posterId, item]));
+  const slots = layout.filter((s) => itemById.has(s.posterId));
+  return (
+    <div
+      className="relative w-full overflow-hidden rounded-xl border border-white/10 aspect-[8/5]"
+      style={{
+        background: `linear-gradient(180deg, #efedea 0%, #e7e4df ${FLOOR_Y - 0.5}%, #cfccc6 ${FLOOR_Y}%, #b9b6b0 100%)`,
+      }}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_60%_at_50%_0%,rgba(255,255,255,0.55),transparent_60%)]" />
+      {slots.map((slot) => {
+        const item = itemById.get(slot.posterId);
+        if (!item) return null;
+        return (
+          <div
+            key={slot.posterId}
+            style={{ left: `${slot.x}%`, top: `${slot.y}%`, width: `${slot.w}%`, zIndex: slot.z }}
+            className="absolute"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.imageUrl}
+              alt={item.title}
+              loading="lazy"
+              className="w-full shadow-[0_10px_24px_-8px_rgba(0,0,0,0.35)]"
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function GalleryWall({
   items,
   initialLayout,
@@ -161,170 +203,172 @@ export function GalleryWall({
     () => new Map(items.map((item) => [item.posterId, item])),
     [items],
   );
-  const [slots, setSlots] = React.useState<WallSlot[]>(() => {
-    const valid = (initialLayout ?? []).filter((slot) =>
-      itemById.has(slot.posterId),
-    );
-    return valid.length > 0 ? valid : autoArrangeWall(items);
+
+  if (!editable) {
+    const layout =
+      initialLayout && initialLayout.length > 0
+        ? initialLayout
+        : autoArrangeWall(items);
+    return <StaticWall items={items} layout={layout} />;
+  }
+
+  return <EditableWall items={items} itemById={itemById} initialLayout={initialLayout} onSave={onSave} />;
+}
+
+function EditableWall({
+  items,
+  itemById,
+  initialLayout,
+  onSave,
+}: {
+  items: WallPosterItem[];
+  itemById: Map<string, WallPosterItem>;
+  initialLayout?: WallSlot[];
+  onSave?: (layout: WallSlot[]) => Promise<void>;
+}) {
+  // The wall is an ordered list of poster ids. Positions are DERIVED from
+  // that order via autoArrangeWall, so any reorder re-tidies the wall.
+  const [order, setOrder] = React.useState<string[]>(() => {
+    const saved = (initialLayout ?? []).filter((s) => itemById.has(s.posterId));
+    return saved.length > 0
+      ? orderFromSlots(saved)
+      : items.map((i) => i.posterId);
   });
+  // Per-poster width override (the +/- control); otherwise physical size.
+  const [sizeOverride, setSizeOverride] = React.useState<Map<string, number>>(
+    new Map(),
+  );
   const [selected, setSelected] = React.useState<string | null>(null);
-  const [draggingId, setDraggingId] = React.useState<string | null>(null);
+  const [dragId, setDragId] = React.useState<string | null>(null);
+  const [dragPos, setDragPos] = React.useState<{ x: number; y: number } | null>(null);
   const [dirty, setDirty] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [savedFlash, setSavedFlash] = React.useState(false);
 
   const wallRef = React.useRef<HTMLDivElement>(null);
-  const drag = React.useRef<{
-    posterId: string;
-    startX: number;
-    startY: number;
-    origX: number;
-    origY: number;
-    /** Dragged item's rendered height in height-% (floor clamping). */
-    hPct: number;
-  } | null>(null);
+  const pointerOffset = React.useRef({ x: 0, y: 0 });
+  const lastSwap = React.useRef<string | null>(null);
 
-  // Real image aspects, measured as artwork loads — Tidy uses them for
-  // uniform spacing, and the initial auto-layout re-runs once everything
-  // is measured (only while the wall is still untouched).
+  // Measured image aspects (drive tidy heights); recompute layout when new
+  // measurements land.
   const aspects = React.useRef(new Map<string, number>());
   const [measured, setMeasured] = React.useState(0);
-  const hadInitialLayout = React.useRef(
-    Boolean(initialLayout && initialLayout.length > 0),
-  );
   const aspectOf = React.useCallback(
     (posterId: string) => aspects.current.get(posterId) ?? POSTER_ASPECT,
     [],
   );
-  React.useEffect(() => {
-    if (
-      !hadInitialLayout.current &&
-      !dirty &&
-      measured > 0 &&
-      measured >= items.length
-    ) {
-      setSlots(autoArrangeWall(items, aspectOf));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [measured]);
-
-  const update = (posterId: string, patch: Partial<WallSlot>) => {
-    setSlots((list) =>
-      list.map((slot) =>
-        slot.posterId === posterId ? { ...slot, ...patch } : slot,
-      ),
-    );
-    setDirty(true);
-  };
-  const maxZ = () => slots.reduce((max, s) => Math.max(max, s.z), 0);
-
-  const onPointerDown = (
-    e: React.PointerEvent<HTMLDivElement>,
-    slot: WallSlot,
-  ) => {
-    if (!editable) return;
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    const wallRect = wallRef.current?.getBoundingClientRect();
-    const itemRect = e.currentTarget.getBoundingClientRect();
-    drag.current = {
-      posterId: slot.posterId,
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: slot.x,
-      origY: slot.y,
-      hPct: wallRect ? (itemRect.height / wallRect.height) * 100 : 20,
-    };
-    setDraggingId(slot.posterId);
-    setSelected(slot.posterId);
-    update(slot.posterId, { z: maxZ() + 1 });
-  };
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const state = drag.current;
-    const wall = wallRef.current;
-    if (!state || !wall) return;
-    const rect = wall.getBoundingClientRect();
-    const slot = slots.find((s) => s.posterId === state.posterId);
-    if (!slot) return;
-    const dx = ((e.clientX - state.startX) / rect.width) * 100;
-    const dy = ((e.clientY - state.startY) / rect.height) * 100;
-    // Art hangs on the wall — it never crosses onto the floor.
-    const maxY = Math.max(0, ART_BOTTOM - state.hPct);
-    update(state.posterId, {
-      x: Math.min(100 - slot.w, Math.max(0, state.origX + dx)),
-      y: Math.min(maxY, Math.max(0, state.origY + dy)),
-    });
-  };
-  /** Rendered height-% of a slot (real aspect when measured). */
-  const hPctOf = React.useCallback(
-    (slot: WallSlot) => (slot.w / aspectOf(slot.posterId)) * WALL_ASPECT,
-    [aspectOf],
+  const widthOf = React.useCallback(
+    (item: WallPosterItem) => sizeOverride.get(item.posterId) ?? wallWidthFor(item),
+    [sizeOverride],
   );
 
-  /**
-   * Released pieces snap into place: magnetic alignment to neighbors'
-   * edges and centers first, then a fine grid — no free floating.
-   */
-  const snapIntoPlace = (posterId: string, hPct: number) => {
-    setSlots((list) => {
-      const slot = list.find((s) => s.posterId === posterId);
-      if (!slot) return list;
-      const others = list.filter((s) => s.posterId !== posterId);
+  const onWall = React.useMemo(
+    () => order.map((id) => itemById.get(id)).filter((i): i is WallPosterItem => Boolean(i)),
+    [order, itemById],
+  );
 
-      const snapAxis = (value: number, targets: number[]) => {
-        let best: number | null = null;
-        for (const target of targets) {
-          const distance = Math.abs(target - value);
-          if (
-            distance <= SNAP_TOLERANCE &&
-            (best === null || distance < Math.abs(best - value))
-          ) {
-            best = target;
-          }
-        }
-        return best ?? Math.round(value / SNAP_GRID) * SNAP_GRID;
-      };
+  // Positions derived from order + sizes. Recomputed on any of those (or a
+  // new measurement) — this is what makes the wall reflow on reorder.
+  const layout = React.useMemo(
+    () => {
+      const slots = autoArrangeWall(onWall, aspectOf, widthOf);
+      return new Map(slots.map((s) => [s.posterId, s]));
+    },
+    // measured is a dep so tidy heights refine as art loads
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [onWall, widthOf, measured],
+  );
+  const hPctOf = (slot: WallSlot) => (slot.w / aspectOf(slot.posterId)) * WALL_ASPECT;
 
-      const xTargets = others.flatMap((o) => [
-        o.x, // left edges align
-        o.x + o.w - slot.w, // right edges align
-        o.x + (o.w - slot.w) / 2, // centers align
-      ]);
-      const yTargets = others.flatMap((o) => {
-        const oh = hPctOf(o);
-        return [
-          o.y, // tops align
-          o.y + oh - hPct, // bottoms align
-          o.y + (oh - hPct) / 2, // middles align
-        ];
-      });
+  const markDirty = () => setDirty(true);
 
-      const x = Math.min(100 - slot.w, Math.max(0, snapAxis(slot.x, xTargets)));
-      const y = Math.min(
-        Math.max(0, ART_BOTTOM - hPct),
-        Math.max(0, snapAxis(slot.y, yTargets)),
-      );
-      return list.map((s) => (s.posterId === posterId ? { ...s, x, y } : s));
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>, posterId: string) => {
+    const wall = wallRef.current;
+    const slot = layout.get(posterId);
+    if (!wall || !slot) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const rect = wall.getBoundingClientRect();
+    const px = ((e.clientX - rect.left) / rect.width) * 100;
+    const py = ((e.clientY - rect.top) / rect.height) * 100;
+    pointerOffset.current = { x: px - slot.x, y: py - slot.y };
+    lastSwap.current = null;
+    setDragId(posterId);
+    setDragPos({ x: slot.x, y: slot.y });
+    setSelected(posterId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const wall = wallRef.current;
+    if (!dragId || !wall) return;
+    const rect = wall.getBoundingClientRect();
+    const px = ((e.clientX - rect.left) / rect.width) * 100;
+    const py = ((e.clientY - rect.top) / rect.height) * 100;
+    const dragged = layout.get(dragId);
+    const dragW = dragged?.w ?? 15;
+    const dragH = dragged ? hPctOf(dragged) : 20;
+    // The dragged piece follows the pointer (clamped to wall + floor).
+    setDragPos({
+      x: Math.min(100 - dragW, Math.max(0, px - pointerOffset.current.x)),
+      y: Math.min(Math.max(0, ART_BOTTOM - dragH), Math.max(0, py - pointerOffset.current.y)),
     });
+
+    // Which other piece is the pointer over? Swap with it, once per hover.
+    let over: string | null = null;
+    for (const [id, slot] of layout) {
+      if (id === dragId) continue;
+      const h = hPctOf(slot);
+      if (px >= slot.x && px <= slot.x + slot.w && py >= slot.y && py <= slot.y + h) {
+        over = id;
+        break;
+      }
+    }
+    if (over && over !== lastSwap.current) {
+      lastSwap.current = over;
+      setOrder((list) => {
+        const from = list.indexOf(dragId);
+        const to = list.indexOf(over as string);
+        if (from < 0 || to < 0) return list;
+        const next = [...list];
+        [next[from], next[to]] = [next[to], next[from]];
+        return next;
+      });
+      markDirty();
+    } else if (!over) {
+      lastSwap.current = null;
+    }
   };
 
   const onPointerUp = () => {
-    const state = drag.current;
-    drag.current = null;
-    setDraggingId(null);
-    if (state) snapIntoPlace(state.posterId, state.hPct);
+    // Release: the piece animates from its free drag position into its
+    // (possibly new) tidy slot.
+    setDragId(null);
+    setDragPos(null);
+    lastSwap.current = null;
   };
 
-  const selectedSlot = slots.find((s) => s.posterId === selected);
-  const offWall = items.filter(
-    (item) => !slots.some((slot) => slot.posterId === item.posterId),
-  );
+  const resize = (posterId: string, delta: number) => {
+    const item = itemById.get(posterId);
+    if (!item) return;
+    const current = sizeOverride.get(posterId) ?? wallWidthFor(item);
+    const next = Math.min(MAX_W, Math.max(MIN_W, current + delta));
+    setSizeOverride((map) => new Map(map).set(posterId, next));
+    markDirty();
+  };
+
+  const removeFromWall = (posterId: string) => {
+    setOrder((list) => list.filter((id) => id !== posterId));
+    setSelected(null);
+    markDirty();
+  };
+
+  const offWall = items.filter((item) => !order.includes(item.posterId));
 
   const save = async () => {
     if (!onSave) return;
     setSaving(true);
     try {
-      await onSave(slots);
+      await onSave(autoArrangeWall(onWall, aspectOf, widthOf));
       setDirty(false);
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 2500);
@@ -335,99 +379,50 @@ export function GalleryWall({
 
   return (
     <div className="space-y-3">
-      {editable ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => void save()}
-            disabled={!dirty || saving || !onSave}
-          >
-            {saving ? <Loader2 className="animate-spin" /> : <Check />}
-            {saving ? "Saving…" : savedFlash ? "Saved" : "Save wall"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setSlots(autoArrangeWall(items, aspectOf));
-              setDirty(true);
-            }}
-          >
-            <LayoutGrid />
-            Tidy wall
-          </Button>
-          {selectedSlot ? (
-            <div className="flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1">
-              <span className="max-w-32 truncate px-1 text-xs text-muted-foreground">
-                {itemById.get(selectedSlot.posterId)?.title}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Smaller"
-                onClick={() =>
-                  update(selectedSlot.posterId, {
-                    w: Math.max(MIN_W, selectedSlot.w - 2),
-                  })
-                }
-              >
-                <Minus />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Bigger"
-                onClick={() =>
-                  update(selectedSlot.posterId, {
-                    w: Math.min(MAX_W, selectedSlot.w + 2),
-                  })
-                }
-              >
-                <Plus />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Bring forward"
-                onClick={() => update(selectedSlot.posterId, { z: maxZ() + 1 })}
-              >
-                <ArrowUpToLine />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Send backward"
-                onClick={() =>
-                  update(selectedSlot.posterId, {
-                    z: Math.max(0, selectedSlot.z - 2),
-                  })
-                }
-              >
-                <ArrowDownToLine />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Take off the wall"
-                className="text-muted-foreground hover:text-destructive"
-                onClick={() => {
-                  setSlots((list) =>
-                    list.filter((s) => s.posterId !== selectedSlot.posterId),
-                  );
-                  setSelected(null);
-                  setDirty(true);
-                }}
-              >
-                <X />
-              </Button>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Drag posters to arrange them. Tap one to resize or layer it.
-            </p>
-          )}
-        </div>
-      ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" onClick={() => void save()} disabled={!dirty || saving || !onSave}>
+          {saving ? <Loader2 className="animate-spin" /> : <Check />}
+          {saving ? "Saving…" : savedFlash ? "Saved" : "Save wall"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setOrder(items.map((i) => i.posterId));
+            setSizeOverride(new Map());
+            markDirty();
+          }}
+        >
+          <LayoutGrid />
+          Tidy wall
+        </Button>
+        {selected && order.includes(selected) ? (
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1">
+            <span className="max-w-32 truncate px-1 text-xs text-muted-foreground">
+              {itemById.get(selected)?.title}
+            </span>
+            <Button variant="ghost" size="icon" aria-label="Smaller" onClick={() => resize(selected, -2)}>
+              <Minus />
+            </Button>
+            <Button variant="ghost" size="icon" aria-label="Bigger" onClick={() => resize(selected, 2)}>
+              <Plus />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Take off the wall"
+              className="text-muted-foreground hover:text-destructive"
+              onClick={() => removeFromWall(selected)}
+            >
+              <X />
+            </Button>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Drag a poster onto another to swap them — the wall re-tidies itself.
+          </p>
+        )}
+      </div>
 
       {/* The wall */}
       <div
@@ -440,33 +435,32 @@ export function GalleryWall({
           background: `linear-gradient(180deg, #efedea 0%, #e7e4df ${FLOOR_Y - 0.5}%, #cfccc6 ${FLOOR_Y}%, #b9b6b0 100%)`,
         }}
       >
-        {/* soft gallery lighting */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_60%_at_50%_0%,rgba(255,255,255,0.55),transparent_60%)]" />
-        {slots.map((slot) => {
-          const item = itemById.get(slot.posterId);
-          if (!item) return null;
-          const isSelected = editable && selected === slot.posterId;
+        {onWall.map((item, index) => {
+          const slot = layout.get(item.posterId);
+          if (!slot) return null;
+          const isDragging = dragId === item.posterId;
+          const pos = isDragging && dragPos ? dragPos : slot;
           return (
             <div
-              key={slot.posterId}
-              onPointerDown={(e) => onPointerDown(e, slot)}
+              key={item.posterId}
+              onPointerDown={(e) => onPointerDown(e, item.posterId)}
               style={{
-                left: `${slot.x}%`,
-                top: `${slot.y}%`,
+                left: `${pos.x}%`,
+                top: `${pos.y}%`,
                 width: `${slot.w}%`,
-                zIndex: slot.z,
+                zIndex: isDragging ? 999 : index + 1,
                 touchAction: "none",
-                // Pieces settle into their snapped spot; while dragging
-                // they track the pointer 1:1.
-                transition:
-                  draggingId === slot.posterId
-                    ? "none"
-                    : "left 0.25s cubic-bezier(0.22, 1, 0.36, 1), top 0.25s cubic-bezier(0.22, 1, 0.36, 1), width 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
+                transition: isDragging
+                  ? "none"
+                  : "left 0.3s cubic-bezier(0.22, 1, 0.36, 1), top 0.3s cubic-bezier(0.22, 1, 0.36, 1), width 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
               }}
               className={cn(
-                "absolute",
-                editable && "cursor-grab active:cursor-grabbing",
-                isSelected && "outline outline-2 outline-offset-2 outline-[#8b5cf6]",
+                "absolute cursor-grab active:cursor-grabbing",
+                isDragging && "scale-[1.04] shadow-2xl",
+                selected === item.posterId &&
+                  !isDragging &&
+                  "outline outline-2 outline-offset-2 outline-[#8b5cf6]",
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -477,10 +471,7 @@ export function GalleryWall({
                 onLoad={(e) => {
                   const img = e.currentTarget;
                   if (img.naturalWidth && img.naturalHeight) {
-                    aspects.current.set(
-                      slot.posterId,
-                      img.naturalWidth / img.naturalHeight,
-                    );
+                    aspects.current.set(item.posterId, img.naturalWidth / img.naturalHeight);
                     setMeasured((n) => n + 1);
                   }
                 }}
@@ -489,7 +480,7 @@ export function GalleryWall({
             </div>
           );
         })}
-        {slots.length === 0 ? (
+        {onWall.length === 0 ? (
           <p className="absolute inset-0 flex items-center justify-center text-sm text-zinc-500">
             An empty wall — add posters below.
           </p>
@@ -497,7 +488,7 @@ export function GalleryWall({
       </div>
 
       {/* Off-wall tray */}
-      {editable && offWall.length > 0 ? (
+      {offWall.length > 0 ? (
         <div>
           <p className="mb-1.5 text-xs text-muted-foreground">
             Not on the wall — tap to hang:
@@ -509,18 +500,9 @@ export function GalleryWall({
                 type="button"
                 title={item.title}
                 onClick={() => {
-                  setSlots((list) => [
-                    ...list,
-                    {
-                      posterId: item.posterId,
-                      x: 42,
-                      y: 30,
-                      w: wallWidthFor(item),
-                      z: maxZ() + 1,
-                    },
-                  ]);
+                  setOrder((list) => [...list, item.posterId]);
                   setSelected(item.posterId);
-                  setDirty(true);
+                  markDirty();
                 }}
                 className="shrink-0 cursor-pointer overflow-hidden rounded-md opacity-70 ring-1 ring-border transition-opacity hover:opacity-100"
               >
