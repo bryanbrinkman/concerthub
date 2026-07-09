@@ -2,21 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { currentUserId } from "@/auth";
 import { getDb, type Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { gradientFor } from "@/lib/archive";
-import {
-  addToShowLineup,
-  setShowLineup,
-  upsertArtist,
-  upsertTour,
-  upsertVenue,
-  type LineupEntry,
-} from "@/lib/upserts";
+import { setShowLineup, upsertTour, type LineupEntry } from "@/lib/upserts";
 import { parseSetlistFmUrl } from "@/lib/setlistfm";
+import { createShow } from "@/lib/show-create";
 import type { Edition, EphemeraKind } from "@/lib/types";
 
 /** Server actions behind the add-item forms (/add/...). */
@@ -115,95 +109,25 @@ export async function addShowAction(formData: FormData) {
   const { userId, db } = await requireUserDb();
   const artistName = str(formData, "artistName");
   const venueName = str(formData, "venueName");
-  const city = str(formData, "city");
   const date = str(formData, "date"); // yyyy-mm-dd from <input type="date">
   if (!artistName || !venueName || !date) return;
 
-  const artistId = await upsertArtist(db, artistName);
-  const venueId = await upsertVenue(
-    db,
+  const showId = await createShow(db, userId, {
+    artistName,
     venueName,
-    city,
-    optional(str(formData, "region")),
-    optional(str(formData, "country")),
-  );
-  const tourName = optional(str(formData, "tourName"));
-  const tourId = tourName
-    ? await upsertTour(db, artistId, tourName, date.slice(0, 4))
-    : undefined;
-
-  // Reuse an identical canonical show if one already exists.
-  const existing = await db
-    .select({ id: t.shows.id })
-    .from(t.shows)
-    .where(
-      and(
-        eq(t.shows.artistId, artistId),
-        eq(t.shows.venueId, venueId),
-        eq(t.shows.date, date),
-      ),
-    );
-  const setlistFmUrl = optional(str(formData, "setlistFmUrl"));
-  const setlistFmId = setlistFmUrl
-    ? await claimSetlistFmId(db, setlistFmUrl)
-    : undefined;
-
-  const eventTypeInput = str(formData, "eventType");
-  const eventType = EVENT_TYPES.has(eventTypeInput) ? eventTypeInput : "concert";
-  const eventName = optional(str(formData, "eventName"));
-  const endDateInput = str(formData, "endDate");
-  const endDate = endDateInput && endDateInput > date ? endDateInput : undefined;
-  const lineup = parseLineup(formData, artistName);
-
-  let showId = existing[0]?.id;
-  if (!showId) {
-    const inserted = await db
-      .insert(t.shows)
-      .values({
-        artistId,
-        venueId,
-        tourId,
-        name: eventName,
-        eventType,
-        date,
-        endDate,
-        showTime: optional(str(formData, "showTime")),
-        gradient: gradientFor((eventName ?? artistName) + date),
-        setlistFmId,
-        setlistFmUrl: setlistFmId ? setlistFmUrl : undefined,
-      })
-      .returning({ id: t.shows.id });
-    showId = inserted[0].id;
-    // The primary act is billed first; the rest follow in form order.
-    await setShowLineup(db, showId, [
-      { name: artistName, role: "headliner" },
-      ...lineup,
-    ]);
-  } else {
-    if (setlistFmId) {
-      // Attaching to an existing canonical show — link the setlist if it
-      // doesn't have one yet.
-      await db
-        .update(t.shows)
-        .set({ setlistFmId, setlistFmUrl })
-        .where(and(eq(t.shows.id, showId), isNull(t.shows.setlistFmId)));
-    }
-    // Never clobber an existing event's bill — only add what's new.
-    await addToShowLineup(db, showId, [
-      { name: artistName, role: "headliner" },
-      ...lineup,
-    ]);
-  }
-
-  await db
-    .insert(t.userShows)
-    .values({
-      userId,
-      showId,
-      attended: true,
-      favorite: formData.get("favorite") !== null,
-    })
-    .onConflictDoNothing();
+    city: str(formData, "city"),
+    region: str(formData, "region"),
+    country: str(formData, "country"),
+    date,
+    showTime: str(formData, "showTime"),
+    eventType: str(formData, "eventType"),
+    eventName: str(formData, "eventName"),
+    endDate: str(formData, "endDate"),
+    tourName: str(formData, "tourName"),
+    lineup: parseLineup(formData, artistName),
+    setlistFmUrl: str(formData, "setlistFmUrl"),
+    favorite: formData.get("favorite") !== null,
+  });
 
   revalidatePath("/", "layout");
   redirect(`/shows/${showId}`);

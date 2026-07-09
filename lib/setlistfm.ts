@@ -118,6 +118,60 @@ export function parseSetlistFmUrl(url: string): string | undefined {
   return match?.[1];
 }
 
+/** A lightweight match preview for the stepped add-show flow. */
+export interface SetlistPreview {
+  setlistFmId: string;
+  url?: string;
+  artistName: string;
+  venueName?: string;
+  city?: string;
+  region?: string;
+  country?: string;
+  tourName?: string;
+  songCount: number;
+  /** ISO date. */
+  date: string;
+}
+
+/**
+ * Best setlist.fm match for an artist on a date — used to auto-confirm a
+ * show and pre-fill venue/tour/setlist in the add-show wizard. Prefers a
+ * result that actually has songs. Returns null when the key is missing,
+ * the API fails, or nothing matches.
+ */
+export async function lookupSetlistPreview(
+  artistName: string,
+  isoDate: string,
+): Promise<SetlistPreview | null> {
+  try {
+    const results = await searchSetlists(artistName, isoDate);
+    if (results.length === 0) return null;
+    const withSongs = results.find(
+      (r) => (r.sets?.set ?? []).some((s) => (s.song?.length ?? 0) > 0),
+    );
+    const raw = withSongs ?? results[0];
+    const city = raw.venue?.city;
+    return {
+      setlistFmId: raw.id,
+      url: raw.url,
+      artistName: raw.artist?.name ?? artistName,
+      venueName: raw.venue?.name,
+      city: city?.name,
+      region: city?.stateCode ?? city?.state,
+      country: city?.country?.name,
+      tourName: raw.tour?.name,
+      songCount: (raw.sets?.set ?? []).reduce(
+        (n, set) => n + (set.song?.length ?? 0),
+        0,
+      ),
+      date: fromSetlistFmDate(raw.eventDate),
+    };
+  } catch (error) {
+    console.warn(`[setlistfm] preview lookup failed for "${artistName}":`, error);
+    return null;
+  }
+}
+
 /* ---- Fetching ---- */
 
 async function searchSetlists(
