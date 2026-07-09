@@ -1,13 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { ImagePlus, Loader2, Plus, X } from "lucide-react";
+import { ImagePlus, Link2, Loader2, Plus, X } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 
 /**
- * Multiple-image input for the add-poster form. The first image is the
- * cover; the rest are detail shots. Uploads go straight to Cloudinary when
- * an unsigned preset is configured; pasting URLs always works. Each image
- * is submitted as a repeated hidden input (formData.getAll(name)).
+ * Multiple-image input for the poster forms. The first image is the
+ * cover; the rest are detail shots. Two ways to add:
+ *  - Upload: drag & drop, click to pick, or paste an image from the
+ *    clipboard — files go straight to Cloudinary (unsigned preset).
+ *  - URL: paste an image link (always available).
+ * Each image submits as a repeated hidden input (formData.getAll(name)).
  */
 
 const CLOUD = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
@@ -27,7 +31,9 @@ export function MultiImageField({
   const [urls, setUrls] = React.useState<string[]>(defaultUrls ?? []);
   const [draft, setDraft] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  const [dragging, setDragging] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [showUrl, setShowUrl] = React.useState(false);
   const canUpload = Boolean(CLOUD && PRESET);
 
   const add = (url: string) => {
@@ -36,13 +42,13 @@ export function MultiImageField({
     setUrls((list) => (list.includes(trimmed) ? list : [...list, trimmed]));
   };
 
-  async function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length === 0) return;
+  const uploadFiles = React.useCallback(async (files: File[]) => {
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    if (images.length === 0) return;
     setBusy(true);
     setError(null);
     try {
-      for (const file of files) {
+      for (const file of images) {
         const body = new FormData();
         body.append("file", file);
         body.append("upload_preset", PRESET as string);
@@ -59,21 +65,31 @@ export function MultiImageField({
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setBusy(false);
-      event.target.value = "";
     }
-  }
+  }, []);
+
+  // Paste an image straight from the clipboard while the field is focused.
+  const onPaste = (e: React.ClipboardEvent) => {
+    if (!canUpload) return;
+    const files = Array.from(e.clipboardData.files ?? []);
+    if (files.some((f) => f.type.startsWith("image/"))) {
+      e.preventDefault();
+      void uploadFiles(files);
+    }
+  };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" onPaste={onPaste}>
       {urls.map((url) => (
         <input key={url} type="hidden" name={name} value={url} />
       ))}
-      {/* A pasted-but-not-yet-added URL still submits with the form, so
-          "paste then hit Save" works without clicking +. */}
+      {/* A pasted-but-not-yet-added URL still submits, so "paste then Save"
+          works without clicking +. */}
       {draft.trim() && !urls.includes(draft.trim()) ? (
         <input type="hidden" name={name} value={draft.trim()} />
       ) : null}
 
+      {/* Thumbnails */}
       {urls.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {urls.map((url, index) => (
@@ -102,19 +118,42 @@ export function MultiImageField({
         </div>
       ) : null}
 
+      {/* Upload dropzone */}
       {canUpload ? (
-        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground">
+        <label
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            void uploadFiles(Array.from(e.dataTransfer.files ?? []));
+          }}
+          className={cn(
+            "flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border border-dashed px-3 py-5 text-center text-sm transition-colors",
+            dragging
+              ? "border-primary bg-primary/10 text-foreground"
+              : "border-border text-muted-foreground hover:border-white/25 hover:text-foreground",
+          )}
+        >
           {busy ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
           ) : (
-            <ImagePlus className="h-4 w-4" />
+            <ImagePlus className="h-5 w-5" />
           )}
           <span>
-            {busy
-              ? "Uploading…"
-              : urls.length === 0
-                ? "Upload the cover (add detail shots after)"
-                : "Add another detail shot"}
+            {busy ? (
+              "Uploading…"
+            ) : (
+              <>
+                <span className="font-medium text-foreground">
+                  {urls.length === 0 ? "Upload the cover" : "Add a detail shot"}
+                </span>{" "}
+                — drop an image, click to browse, or paste
+              </>
+            )}
           </span>
           <input
             type="file"
@@ -122,40 +161,55 @@ export function MultiImageField({
             multiple
             className="hidden"
             disabled={busy}
-            onChange={onFileChange}
+            onChange={(e) => {
+              void uploadFiles(Array.from(e.target.files ?? []));
+              e.target.value = "";
+            }}
           />
         </label>
       ) : null}
 
-      <div className="flex gap-2">
-        <input
-          type="url"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              add(draft);
-              setDraft("");
-            }
-          }}
-          placeholder={
-            canUpload ? "…or paste an image URL (res.cloudinary.com/…)" : "Paste an image URL (res.cloudinary.com/…)"
-          }
-          className={inputClass}
-        />
+      {/* URL fallback (always available; primary when uploads are off) */}
+      {canUpload && !showUrl ? (
         <button
           type="button"
-          aria-label="Add image URL"
-          onClick={() => {
-            add(draft);
-            setDraft("");
-          }}
-          className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          onClick={() => setShowUrl(true)}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
-          <Plus className="h-4 w-4" />
+          <Link2 className="h-3.5 w-3.5" />
+          or paste an image URL
         </button>
-      </div>
+      ) : null}
+      {!canUpload || showUrl ? (
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                add(draft);
+                setDraft("");
+              }
+            }}
+            placeholder="Paste an image URL (https://…)"
+            className={inputClass}
+          />
+          <button
+            type="button"
+            aria-label="Add image URL"
+            onClick={() => {
+              add(draft);
+              setDraft("");
+            }}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+      ) : null}
+
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
