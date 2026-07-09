@@ -9,7 +9,7 @@ import {
   getArchive,
   showTitleFor,
 } from "@/lib/archive";
-import { formatShortDate } from "@/lib/utils";
+import { formatShortDate, posterArtistSlug } from "@/lib/utils";
 import { Sidebar } from "@/components/sidebar";
 import { Onboarding } from "@/components/onboarding";
 import { WelcomeSplash } from "@/components/welcome-splash";
@@ -88,7 +88,21 @@ export default async function RootLayout({
         group: "Posters",
       };
     }),
+    // Distinct poster artists (designers) — deduped by slug.
+    ...Array.from(
+      new Map(
+        archive.posters
+          .filter((p) => p.designer && p.designer !== "Unknown")
+          .map((p) => [posterArtistSlug(p.designer), p.designer] as const),
+      ).entries(),
+    ).map(([slug, name]) => ({
+      label: name,
+      sublabel: "Poster artist",
+      href: `/poster-artists/${slug}`,
+      group: "Poster Artists",
+    })),
     { label: "Explore the archive", href: "/explore", group: "Pages" },
+    { label: "Poster Artists", href: "/poster-artists", group: "Pages" },
     { label: "Poster Database", href: "/posters", group: "Pages" },
     { label: "My poster rack", href: "/my-posters", group: "Pages" },
     { label: "My Gallery wall", href: "/my-gallery", group: "Pages" },

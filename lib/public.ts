@@ -14,6 +14,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 
 import { getDb, type Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
+import { posterArtistSlug } from "@/lib/utils";
 import type { BillingRole, EventType } from "@/lib/types";
 
 export interface PublicPerformer {
@@ -392,6 +393,127 @@ export interface PublicPoster {
   venueName?: string;
   venueCity?: string;
   showDate?: string;
+}
+
+export interface PosterArtistCard {
+  slug: string;
+  name: string;
+  posterCount: number;
+  thumbs: string[];
+}
+
+/**
+ * Poster artists (print designers) across the public archive. Designers
+ * are free text on posters, so they're grouped by slug; "Unknown" and
+ * blanks are excluded. Viewer-independent.
+ */
+export async function listPublicPosterArtists(): Promise<
+  PosterArtistCard[] | null
+> {
+  const db = getDb();
+  if (!db) return null;
+  try {
+    const rows = await db
+      .select({ designer: t.posters.designer, imageUrl: t.posters.imageUrl })
+      .from(t.posters)
+      .limit(20000);
+    const byslug = new Map<
+      string,
+      { name: string; count: number; thumbs: string[] }
+    >();
+    for (const row of rows) {
+      const name = (row.designer ?? "").trim();
+      if (!name || name.toLowerCase() === "unknown") continue;
+      const slug = posterArtistSlug(name);
+      if (!slug) continue;
+      const entry = byslug.get(slug) ?? { name, count: 0, thumbs: [] };
+      entry.count += 1;
+      if (row.imageUrl && entry.thumbs.length < 4) entry.thumbs.push(row.imageUrl);
+      byslug.set(slug, entry);
+    }
+    return [...byslug.entries()]
+      .map(([slug, e]) => ({
+        slug,
+        name: e.name,
+        posterCount: e.count,
+        thumbs: e.thumbs,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch (error) {
+    console.warn("[public] poster-artist list failed:", error);
+    return null;
+  }
+}
+
+export interface PosterArtistWork {
+  id: string;
+  title: string;
+  imageUrl?: string;
+  year: number;
+  artistName?: string;
+  venueName?: string;
+  showDate?: string;
+}
+
+export interface PosterArtistDetail {
+  slug: string;
+  name: string;
+  works: PosterArtistWork[];
+  years: string;
+}
+
+/** Every print by a poster artist (matched by slug), newest first. */
+export async function getPosterArtistBySlug(
+  slug: string,
+): Promise<PosterArtistDetail | null> {
+  const db = getDb();
+  if (!db) return null;
+  try {
+    const rows = await db
+      .select({
+        id: t.posters.id,
+        title: t.posters.title,
+        designer: t.posters.designer,
+        year: t.posters.year,
+        imageUrl: t.posters.imageUrl,
+        artistName: t.artists.name,
+        venueName: t.venues.name,
+        showDate: t.shows.date,
+      })
+      .from(t.posters)
+      .leftJoin(t.shows, eq(t.posters.showId, t.shows.id))
+      .leftJoin(t.artists, eq(t.shows.artistId, t.artists.id))
+      .leftJoin(t.venues, eq(t.shows.venueId, t.venues.id))
+      .limit(20000);
+
+    const matches = rows.filter(
+      (r) => r.designer && posterArtistSlug(r.designer) === slug,
+    );
+    if (matches.length === 0) return null;
+    const name = matches[0].designer as string;
+    const works = matches
+      .map((r) => ({
+        id: r.id,
+        title: r.title,
+        imageUrl: r.imageUrl ?? undefined,
+        year: r.year,
+        artistName: r.artistName ?? undefined,
+        venueName: r.venueName ?? undefined,
+        showDate: r.showDate ?? undefined,
+      }))
+      .sort((a, b) => b.year - a.year);
+    const yearsList = works.map((w) => w.year).filter(Boolean);
+    const years =
+      yearsList.length === 0
+        ? ""
+        : Math.min(...yearsList) === Math.max(...yearsList)
+          ? String(yearsList[0])
+          : `${Math.min(...yearsList)}–${Math.max(...yearsList)}`;
+    return { slug, name, works, years };
+  } catch (error) {
+    console.warn("[public] poster-artist detail failed:", error);
+    return null;
+  }
 }
 
 export async function getPublicPoster(id: string): Promise<PublicPoster | null> {

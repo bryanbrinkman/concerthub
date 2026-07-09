@@ -11,7 +11,7 @@ import { PosterGallery } from "@/components/poster-gallery";
 import { EmptyState } from "@/components/empty-state";
 import { StateBadge } from "@/components/state-badge";
 import { posterState } from "@/lib/archive";
-import { formatEditionSize } from "@/lib/utils";
+import { formatEditionSize, posterArtistSlug } from "@/lib/utils";
 
 /** Collector metadata for the show's poster/print. */
 export function PosterDetailsCard({
@@ -92,7 +92,18 @@ export function PosterDetailsCard({
           {rows.map(([label, value]) => (
             <div key={label} className="flex gap-3">
               <dt className="w-24 shrink-0 text-muted-foreground">{label}</dt>
-              <dd className="min-w-0 flex-1 font-medium">{value}</dd>
+              <dd className="min-w-0 flex-1 font-medium">
+                {label === "Poster Artist" && value && value !== "Unknown" ? (
+                  <Link
+                    href={`/poster-artists/${posterArtistSlug(value)}`}
+                    className="text-primary hover:underline"
+                  >
+                    {value}
+                  </Link>
+                ) : (
+                  value
+                )}
+              </dd>
             </div>
           ))}
           {poster.editions.length > 1 ? (

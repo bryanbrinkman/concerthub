@@ -18,6 +18,7 @@ import {
   LogOut,
   MapPin,
   Menu,
+  Paintbrush,
   Search,
   Shirt,
   StickyNote,
@@ -64,6 +65,7 @@ const MAIN_NAV: NavItem[] = [
 const MORE_NAV: NavItem[] = [
   { label: "Shows", href: "/shows", icon: CalendarDays },
   { label: "Artists", href: "/artists", icon: Users },
+  { label: "Poster Artists", href: "/poster-artists", icon: Paintbrush },
   { label: "Venues", href: "/venues", icon: MapPin },
   { label: "Trading Post", href: "/prints", icon: ArrowLeftRight },
   { label: "Import", href: "/import", icon: Download },

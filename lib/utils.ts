@@ -55,6 +55,21 @@ export function formatEditionSize(edition?: {
   return edition?.dimensions || undefined;
 }
 
+/**
+ * URL slug for a poster artist (free-text designer name). Poster artists
+ * aren't their own DB entity, so the slug is the stable public key that
+ * groups every print sharing a designer name.
+ */
+export function posterArtistSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 /** "2014-06-06".."2014-06-08" → "June 6–8, 2014" (multi-day events). */
 export function formatDateRange(startIso: string, endIso: string): string {
   const [sy, sm, sd] = startIso.split("-").map(Number);

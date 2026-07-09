@@ -8,7 +8,7 @@ import { getDb } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { getArchive, posterState } from "@/lib/archive";
 import type { Edition, PosterState, PosterType } from "@/lib/types";
-import { formatEditionSize, formatShortDate } from "@/lib/utils";
+import { formatEditionSize, formatShortDate, posterArtistSlug } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -403,7 +403,20 @@ export default async function PosterRecordPage({
                     <dt className="w-32 shrink-0 text-muted-foreground">
                       {label}
                     </dt>
-                    <dd className="min-w-0 flex-1 font-medium">{value}</dd>
+                    <dd className="min-w-0 flex-1 font-medium">
+                      {label === "Poster Artist" &&
+                      value &&
+                      value !== "Unknown" ? (
+                        <Link
+                          href={`/poster-artists/${posterArtistSlug(value)}`}
+                          className="text-primary hover:underline"
+                        >
+                          {value}
+                        </Link>
+                      ) : (
+                        value
+                      )}
+                    </dd>
                   </div>
                 ))}
                 {record.ownerName ? (
