@@ -80,6 +80,17 @@ export function autoArrangeWall(
   const gapY = gapX * WALL_ASPECT;
   const heightOf = (w: number, aspect: number) => (w / aspect) * WALL_ASPECT;
   const maxColumnH = ART_BOTTOM - ART_TOP;
+  // A single piece can never be taller than the whole art band — a very
+  // tall/narrow print is width-clamped so it fits instead of clipping the
+  // floor or its neighbors.
+  const fit = (w: number, aspect: number): { w: number; h: number } => {
+    let height = heightOf(w, aspect);
+    if (height > maxColumnH) {
+      w = (w * maxColumnH) / height;
+      height = maxColumnH;
+    }
+    return { w, h: height };
+  };
 
   interface ColumnEntry { item: WallPosterItem; w: number; h: number }
 
@@ -89,10 +100,13 @@ export function autoArrangeWall(
     while (index < items.length) {
       const entries: ColumnEntry[] = [];
       let columnH = 0;
-      while (index < items.length && entries.length < 3) {
-        // True-to-size: width comes from the print's physical dimensions.
-        const w = Math.max(4.5, widthOf(items[index]) * scale);
-        const h = heightOf(w, aspectOf(items[index].posterId));
+      // Organic column heights: vary the target height per column so rows
+      // don't line up into a grid. Deterministic from the leading poster.
+      const maxThisColumn = 2 + Math.round(rand01(items[index].posterId) * 1);
+      while (index < items.length && entries.length < maxThisColumn) {
+        // True-to-size: width from physical dimensions, height-clamped.
+        const rawW = Math.max(4.5, widthOf(items[index]) * scale);
+        const { w, h } = fit(rawW, aspectOf(items[index].posterId));
         if (entries.length > 0 && columnH + gapY + h > maxColumnH) break;
         entries.push({ item: items[index], w, h });
         columnH += (entries.length > 1 ? gapY : 0) + h;
@@ -118,10 +132,15 @@ export function autoArrangeWall(
   const slots: WallSlot[] = [];
   let x = Math.max(1, (100 - totalW) / 2);
   for (const column of columns) {
-    let y = Math.min(
-      Math.max(ART_TOP, MIDLINE - column.h / 2),
-      Math.max(ART_TOP, ART_BOTTOM - column.h),
-    );
+    // Vertical anchor: near the eye-level midline, then a deterministic
+    // stagger within the column's slack so the wall reads salon-hung, not
+    // gridded — bounded so nothing crosses the top or the floor.
+    const lo = ART_TOP;
+    const hi = Math.max(ART_TOP, ART_BOTTOM - column.h);
+    const centered = Math.min(hi, Math.max(lo, MIDLINE - column.h / 2));
+    const slack = hi - lo;
+    const jitter = (rand01(`${column.entries[0].posterId}y`) - 0.5) * slack * 0.7;
+    let y = Math.min(hi, Math.max(lo, centered + jitter));
     for (const entry of column.entries) {
       slots.push({
         posterId: entry.item.posterId,
@@ -135,6 +154,17 @@ export function autoArrangeWall(
     x += column.w + gapX;
   }
   return slots;
+}
+
+/** Deterministic 0–1 pseudo-random from a string (stable across renders;
+ * Math.random is unavailable here and would reshuffle every paint). */
+function rand01(seed: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 10000) / 10000;
 }
 
 /** Reading order (left-to-right by column, then top-to-bottom) from saved
