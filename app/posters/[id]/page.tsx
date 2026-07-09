@@ -7,7 +7,7 @@ import { currentUserId } from "@/auth";
 import { getDb } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { getArchive, posterState } from "@/lib/archive";
-import type { Edition, PosterState } from "@/lib/types";
+import type { Edition, PosterState, PosterType } from "@/lib/types";
 import { formatEditionSize, formatShortDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,8 @@ interface PosterRecord {
   images: string[];
   editions: Edition[];
   state: PosterState;
+  posterType: PosterType;
+  tourName?: string;
   ownerId?: string;
   ownerName?: string;
   showId?: string;
@@ -106,6 +108,10 @@ export default async function PosterRecordPage({
       ],
       editions: mine.editions,
       state: posterState(mine),
+      posterType: mine.posterType ?? "show",
+      tourName: mine.tourId
+        ? archive.tours.find((tr) => tr.id === mine.tourId)?.name
+        : undefined,
       showId: show?.id,
       showDate: show?.date,
       artistName: artist?.name,
@@ -156,6 +162,9 @@ export default async function PosterRecordPage({
           state: (row.state ?? (row.owned ? "own" : "want")) as PosterState,
           ownerId: row.ownerId,
           ownerName: row.ownerName ?? undefined,
+          // Defaults; enriched below in an isolated query so a pending
+          // poster_type migration can't 404 the public page.
+          posterType: "show",
           showId: row.showId ?? undefined,
           showDate: row.showDate ?? undefined,
           artistName: row.artistName ?? undefined,
@@ -169,6 +178,27 @@ export default async function PosterRecordPage({
     }
   }
   if (!record) notFound();
+
+  // Poster type + tour name for DB-loaded records (isolated: a pending
+  // migration must not break the page).
+  if (!mine && db) {
+    try {
+      const [meta] = await db
+        .select({
+          posterType: t.posters.posterType,
+          tourName: t.tours.name,
+        })
+        .from(t.posters)
+        .leftJoin(t.tours, eq(t.posters.tourId, t.tours.id))
+        .where(eq(t.posters.id, record.id));
+      if (meta) {
+        record.posterType = (meta.posterType ?? "show") as PosterType;
+        record.tourName = meta.tourName ?? undefined;
+      }
+    } catch {
+      // poster_type not migrated yet — stays "show"
+    }
+  }
 
   // Related records (best effort; shared catalog only).
   let sameBand: Array<{ id: string; title: string; imageUrl: string | null; year: number }> = [];
@@ -214,7 +244,10 @@ export default async function PosterRecordPage({
   }
 
   const edition = record.editions[0];
+  const isTour = record.posterType === "tour";
   const rows: Array<[string, string]> = [["Poster Artist", record.designer]];
+  rows.push(["Type", isTour ? "Tour poster (multiple dates)" : "Show poster"]);
+  if (isTour && record.tourName) rows.push(["Tour", record.tourName]);
   if (record.artistName) rows.push(["Artist / Band", record.artistName]);
   if (record.showDate) rows.push(["Show date", formatShortDate(record.showDate)]);
   if (record.venueName)
@@ -306,7 +339,7 @@ export default async function PosterRecordPage({
 
       <PageHeader
         title={record.title}
-        subtitle={`Poster record · art by ${record.designer}`}
+        subtitle={`${isTour ? "Tour poster" : "Show poster"} · art by ${record.designer}`}
         actions={
           record.isOwner ? (
             <Button variant="outline" asChild>

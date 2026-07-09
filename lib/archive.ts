@@ -31,6 +31,7 @@ import type {
   MediaLinkKind,
   Poster,
   PosterState,
+  PosterType,
   Show,
   ShowPerformer,
   ShowPhoto,
@@ -200,6 +201,50 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
     ...new Set(showRows.map((s) => s.tourId).filter((x): x is string => !!x)),
   ];
 
+  // Posters resiliently: try the full row, fall back to legacy columns
+  // if a column migration (e.g. poster_type) hasn't been applied — so a
+  // deploy ahead of the DB never vanishes the user's posters.
+  type PosterRow = typeof t.posters.$inferSelect;
+  const postersPromise: Promise<PosterRow[]> = (async () => {
+    try {
+      return await db
+        .select()
+        .from(t.posters)
+        .where(eq(t.posters.userId, userId));
+    } catch (error) {
+      console.warn(
+        "[archive] full poster query failed (migration pending?) — legacy columns:",
+        error,
+      );
+      try {
+        const legacy = await db
+          .select({
+            id: t.posters.id,
+            userId: t.posters.userId,
+            showId: t.posters.showId,
+            tourId: t.posters.tourId,
+            title: t.posters.title,
+            designer: t.posters.designer,
+            year: t.posters.year,
+            notes: t.posters.notes,
+            gradient: t.posters.gradient,
+            owned: t.posters.owned,
+            state: t.posters.state,
+            imageUrl: t.posters.imageUrl,
+            imageUrls: t.posters.imageUrls,
+            expressoBeansId: t.posters.expressoBeansId,
+            editions: t.posters.editions,
+          })
+          .from(t.posters)
+          .where(eq(t.posters.userId, userId));
+        return legacy.map((r) => ({ ...r, posterType: "show" })) as PosterRow[];
+      } catch (err2) {
+        console.warn("[archive] legacy poster query also failed:", err2);
+        return [];
+      }
+    }
+  })();
+
   const [
     artistRows,
     venueRows,
@@ -229,10 +274,7 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
           "tours",
         )
       : Promise.resolve([]),
-    safeRows(
-      db.select().from(t.posters).where(eq(t.posters.userId, userId)),
-      "posters",
-    ),
+    postersPromise,
     safeRows(
       db
         .select()
@@ -307,6 +349,7 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
       id: row.id,
       showId: row.showId ?? undefined,
       tourId: row.tourId ?? undefined,
+      posterType: (row.posterType ?? "show") as PosterType,
       title: row.title,
       designer: row.designer,
       year: row.year,

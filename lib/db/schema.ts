@@ -264,6 +264,11 @@ export const posters = pgTable("poster", {
   owned: boolean("owned").notNull().default(true),
   /** Collection state: own | want | trade | sell. */
   state: text("state").notNull().default("own"),
+  /**
+   * What the print documents: "show" (a specific date/venue, tied to a
+   * showId) or "tour" (multiple dates, tied to a tourId).
+   */
+  posterType: text("poster_type").notNull().default("show"),
   imageUrl: text("image_url"),
   /** Additional detail shots (numbering, signature, foil, condition). */
   imageUrls: text("image_urls").array(),

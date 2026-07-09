@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { Field, inputClass, selectClass } from "@/components/form-controls";
 import { MultiImageField } from "@/components/multi-image-field";
+import { PosterTargetField } from "@/components/poster-target-field";
 import { addPosterAction } from "../actions";
 
 export const metadata = { title: "Add poster" };
@@ -49,22 +50,15 @@ export default async function AddPosterPage({
         </CardHeader>
         <CardContent>
           <form action={addPosterAction} className="space-y-4">
-            <Field label="Show (optional)">
-              <select
-                name="showId"
-                defaultValue={preselectedShow ?? ""}
-                className={selectClass}
-              >
-                <option value="">Not tied to a show</option>
-                {shows.map((show) => (
-                  <option key={show.id} value={show.id}>
-                    {findArtist(archive, show.artistId)?.name ?? "Unknown"} —{" "}
-                    {findVenue(archive, show.venueId)?.name ?? ""} (
-                    {formatShortDate(show.date)})
-                  </option>
-                ))}
-              </select>
-            </Field>
+            <PosterTargetField
+              shows={shows.map((show) => ({
+                id: show.id,
+                label: `${findArtist(archive, show.artistId)?.name ?? "Unknown"} — ${
+                  findVenue(archive, show.venueId)?.name ?? ""
+                } (${formatShortDate(show.date)})`,
+              }))}
+              defaultShowId={preselectedShow ?? ""}
+            />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Title">
                 <input

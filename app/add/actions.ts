@@ -8,7 +8,12 @@ import { currentUserId } from "@/auth";
 import { getDb, type Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { gradientFor } from "@/lib/archive";
-import { setShowLineup, upsertTour, type LineupEntry } from "@/lib/upserts";
+import {
+  setShowLineup,
+  upsertArtist,
+  upsertTour,
+  type LineupEntry,
+} from "@/lib/upserts";
 import { parseSetlistFmUrl } from "@/lib/setlistfm";
 import { createShow } from "@/lib/show-create";
 import type { Edition, EphemeraKind } from "@/lib/types";
@@ -230,14 +235,42 @@ export async function addEphemeraAction(formData: FormData) {
   redirect(`/shows/${showId}`);
 }
 
+/** Resolve a poster's target: a specific show, or a tour (upserting the
+ * artist + tour so tour posters group correctly). */
+async function resolvePosterTarget(
+  db: Db,
+  userId: string,
+  formData: FormData,
+  year: number,
+): Promise<{ posterType: string; showId?: string; tourId?: string }> {
+  const posterType = str(formData, "posterType") === "tour" ? "tour" : "show";
+  if (posterType === "tour") {
+    const tourArtist = str(formData, "tourArtist");
+    const tourName = str(formData, "tourName");
+    let tourId: string | undefined;
+    if (tourArtist && tourName) {
+      const artistId = await upsertArtist(db, tourArtist);
+      tourId = await upsertTour(db, artistId, tourName, String(year || ""));
+    }
+    return { posterType, tourId };
+  }
+  const showId = optional(str(formData, "showId"));
+  if (showId) await assertOwnsShow(db, userId, showId);
+  return { posterType, showId };
+}
+
 export async function addPosterAction(formData: FormData) {
   const { userId, db } = await requireUserDb();
   const title = str(formData, "title");
   const year = Number(str(formData, "year"));
   if (!title || !Number.isFinite(year)) return;
 
-  const showId = optional(str(formData, "showId"));
-  if (showId) await assertOwnsShow(db, userId, showId);
+  const { posterType, showId, tourId } = await resolvePosterTarget(
+    db,
+    userId,
+    formData,
+    year,
+  );
 
   const runSize = Number(str(formData, "runSize"));
   const copyNumber = Number(str(formData, "copyNumber"));
@@ -264,6 +297,8 @@ export async function addPosterAction(formData: FormData) {
   await db.insert(t.posters).values({
     userId,
     showId,
+    tourId,
+    posterType,
     title,
     designer: str(formData, "designer") || "Unknown",
     year,
@@ -293,8 +328,14 @@ export async function updatePosterAction(formData: FormData) {
 
   const title = str(formData, "title") || existing.title;
   const yearInput = Number(str(formData, "year"));
-  const showId = optional(str(formData, "showId"));
-  if (showId) await assertOwnsShow(db, userId, showId);
+  const year =
+    Number.isFinite(yearInput) && yearInput > 0 ? yearInput : existing.year;
+  const { posterType, showId, tourId } = await resolvePosterTarget(
+    db,
+    userId,
+    formData,
+    year,
+  );
 
   const runSize = Number(str(formData, "runSize"));
   const copyNumber = Number(str(formData, "copyNumber"));
@@ -322,11 +363,13 @@ export async function updatePosterAction(formData: FormData) {
     .set({
       title,
       designer: str(formData, "designer") || "Unknown",
-      year: Number.isFinite(yearInput) && yearInput > 0 ? yearInput : existing.year,
+      year,
       notes: optional(str(formData, "notes")) ?? null,
       owned: str(formData, "state") !== "want",
       state: str(formData, "state") || "own",
+      posterType,
       showId: showId ?? null,
+      tourId: tourId ?? null,
       imageUrl: imageUrls[0] ?? null,
       imageUrls: imageUrls.length > 1 ? imageUrls.slice(1) : null,
       editions: [edition],

@@ -99,10 +99,15 @@ export interface Edition {
   markings?: string; // e.g. "Signed & numbered in pencil"
 }
 
+/** Whether a print documents one show or a whole tour. */
+export type PosterType = "show" | "tour";
+
 export interface Poster {
   id: string;
   showId?: string;
   tourId?: string;
+  /** "show" (specific date/venue) or "tour" (multiple dates). */
+  posterType?: PosterType;
   title: string;
   /** The print artist / designer, not the band. */
   designer: string;
