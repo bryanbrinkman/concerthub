@@ -1,49 +1,47 @@
 import Link from "next/link";
 import { MapPin, Users } from "lucide-react";
 
-import { getArchive, showsByArtist } from "@/lib/archive";
+import type { GradientKey } from "@/lib/types";
+import { listPublicArtists } from "@/lib/public";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { GradientArt } from "@/components/gradient-art";
 import { EmptyState } from "@/components/empty-state";
+import { routeMetadata } from "@/lib/seo";
 
-export const metadata = { title: "Artists" };
+export const metadata = routeMetadata({
+  title: "Artists — Concert Posters & Show History | Concert Collect",
+  description:
+    "Browse artists in the Concert Collect archive — their documented shows, posters, and posterographies from the live music community.",
+  path: "/artists",
+});
 
+/** Public artist index: everyone in the shared archive with submitted
+ * posters or documented shows. */
 export default async function ArtistsPage() {
-  const archive = await getArchive();
-  const sorted = [...archive.artists].sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  const artists = (await listPublicArtists()) ?? [];
 
   return (
     <div>
       <PageHeader
         title="Artists"
-        subtitle="Everyone you've seen live, and how many times."
+        subtitle="Performers documented in the archive — with posters and shows contributed by the community."
       />
-      {sorted.length === 0 ? (
+      {artists.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No artists yet"
-          description="Artists appear here automatically as you add or import shows."
+          description="Artists appear here as the community adds posters and shows."
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sorted.map((artist) => {
-            const attended = showsByArtist(archive, artist.id).filter(
-              (s) => s.attended,
-            );
-            return (
-              <Link
-                key={artist.id}
-                href={`/artists/${artist.id}`}
-                className="block"
-              >
-                <Card className="h-full transition-colors hover:border-white/20">
-                  <CardContent className="flex items-start gap-4 p-4">
+          {artists.map((artist) => (
+            <Link key={artist.id} href={`/artists/${artist.id}`} className="block">
+              <Card className="h-full transition-colors hover:border-white/20">
+                <CardContent className="flex items-start gap-4 p-4">
                   <GradientArt
-                    gradient={artist.gradient}
+                    gradient={artist.gradient as GradientKey}
                     className="h-14 w-14 shrink-0 rounded-full"
                   >
                     <div className="flex w-full items-center justify-center">
@@ -70,16 +68,14 @@ export default async function ArtistsPage() {
                       </div>
                     ) : null}
                     <p className="mt-3 text-xs text-muted-foreground">
-                      {attended.length > 0
-                        ? `Seen ${attended.length} ${attended.length === 1 ? "time" : "times"} →`
-                        : "Not seen yet — on the list"}
+                      {artist.showCount}{" "}
+                      {artist.showCount === 1 ? "documented show" : "documented shows"} →
                     </p>
                   </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
         </div>
       )}
     </div>

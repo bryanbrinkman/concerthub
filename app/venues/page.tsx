@@ -1,49 +1,46 @@
 import Link from "next/link";
 import { MapPin, Users } from "lucide-react";
 
-import { getArchive, showsByVenue } from "@/lib/archive";
+import type { GradientKey } from "@/lib/types";
+import { listPublicVenues } from "@/lib/public";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { GradientArt } from "@/components/gradient-art";
 import { EmptyState } from "@/components/empty-state";
+import { routeMetadata } from "@/lib/seo";
 
-export const metadata = { title: "Venues" };
+export const metadata = routeMetadata({
+  title: "Venues — Concert History & Posters | Concert Collect",
+  description:
+    "Browse venues in the Concert Collect archive — documented shows and concert posters from rooms, sheds, and amphitheatres around the world.",
+  path: "/venues",
+});
 
+/** Public venue index: rooms hosting a documented show in the archive. */
 export default async function VenuesPage() {
-  const archive = await getArchive();
-  const sorted = [...archive.venues].sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  const venues = (await listPublicVenues()) ?? [];
 
   return (
     <div>
       <PageHeader
         title="Venues"
-        subtitle="Rooms, sheds, and amphitheatres you've stood in."
+        subtitle="Rooms, sheds, and amphitheatres documented in the archive."
       />
-      {sorted.length === 0 ? (
+      {venues.length === 0 ? (
         <EmptyState
           icon={MapPin}
           title="No venues yet"
-          description="Venues appear here automatically as you add or import shows."
+          description="Venues appear here as the community adds posters and shows."
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {sorted.map((venue) => {
-            const attended = showsByVenue(archive, venue.id).filter(
-              (s) => s.attended,
-            ).length;
-            return (
-              <Link
-                key={venue.id}
-                href={`/venues/${venue.id}`}
-                className="block"
-              >
-                <Card className="h-full transition-colors hover:border-white/20">
-                  <CardContent className="flex items-center gap-4 p-4">
+          {venues.map((venue) => (
+            <Link key={venue.id} href={`/venues/${venue.id}`} className="block">
+              <Card className="h-full transition-colors hover:border-white/20">
+                <CardContent className="flex items-center gap-4 p-4">
                   <GradientArt
-                    gradient={venue.gradient}
+                    gradient={venue.gradient as GradientKey}
                     className="h-16 w-16 shrink-0 rounded-xl"
                   >
                     <div className="flex w-full items-center justify-center">
@@ -64,16 +61,13 @@ export default async function VenuesPage() {
                       </p>
                     ) : null}
                   </div>
-                  <Badge variant={attended > 0 ? "default" : "outline"}>
-                    {attended > 0
-                      ? `${attended} ${attended === 1 ? "show" : "shows"}`
-                      : "Tracked"}
+                  <Badge variant="default">
+                    {venue.showCount} {venue.showCount === 1 ? "show" : "shows"}
                   </Badge>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
         </div>
       )}
     </div>

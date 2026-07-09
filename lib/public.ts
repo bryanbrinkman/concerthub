@@ -10,7 +10,7 @@
  * migration) so pages can fall back to the viewer archive.
  */
 
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
 import * as t from "@/lib/db/schema";
@@ -171,6 +171,112 @@ export async function getPublicArtist(id: string): Promise<PublicArtist | null> 
   }
 }
 
+/**
+ * Canonical show ids that carry public content — any poster, photo,
+ * memory, or ephemera item. Mirrors the public show database's bar for
+ * "documented enough to appear."
+ */
+async function publicShowIds(db: Db): Promise<Set<string>> {
+  const ids = new Set<string>();
+  const collect = async (
+    table:
+      | typeof t.posters
+      | typeof t.showPhotos
+      | typeof t.memories
+      | typeof t.ephemeraItems,
+  ) => {
+    const rows = await db
+      .select({ showId: table.showId })
+      .from(table)
+      .groupBy(table.showId);
+    for (const row of rows) if (row.showId) ids.add(row.showId as string);
+  };
+  await Promise.all([
+    collect(t.posters),
+    collect(t.showPhotos),
+    collect(t.memories),
+    collect(t.ephemeraItems),
+  ]);
+  return ids;
+}
+
+export interface PublicArtistCard {
+  id: string;
+  name: string;
+  hometown?: string;
+  genres: string[];
+  gradient: string;
+  showCount: number;
+}
+
+/**
+ * Artists in the public archive: anyone who headlines/performs a show
+ * that has submitted content (a poster, photo, memory, or ephemera).
+ * Viewer-independent, so logged-out visitors see the real database
+ * rather than the seeded demo.
+ */
+export async function listPublicArtists(): Promise<PublicArtistCard[] | null> {
+  const db = getDb();
+  if (!db) return null;
+  try {
+    const showIds = [...(await publicShowIds(db))];
+    if (showIds.length === 0) return [];
+
+    const shows = await db
+      .select({ id: t.shows.id, artistId: t.shows.artistId })
+      .from(t.shows)
+      .where(inArray(t.shows.id, showIds));
+
+    // Every performer on those shows counts, not just the headliner.
+    const artistShowCount = new Map<string, Set<string>>();
+    const bump = (artistId: string, showId: string) => {
+      const set = artistShowCount.get(artistId) ?? new Set<string>();
+      set.add(showId);
+      artistShowCount.set(artistId, set);
+    };
+    for (const s of shows) bump(s.artistId, s.id);
+    try {
+      const bill = await db
+        .select({
+          showId: t.showPerformers.showId,
+          artistId: t.showPerformers.artistId,
+        })
+        .from(t.showPerformers)
+        .where(inArray(t.showPerformers.showId, showIds));
+      for (const p of bill) bump(p.artistId, p.showId);
+    } catch {
+      // lineup table pending migration — headliners alone still populate
+    }
+
+    const artistIds = [...artistShowCount.keys()];
+    if (artistIds.length === 0) return [];
+    const rows = await db
+      .select({
+        id: t.artists.id,
+        name: t.artists.name,
+        hometown: t.artists.hometown,
+        genres: t.artists.genres,
+        gradient: t.artists.gradient,
+      })
+      .from(t.artists)
+      .where(inArray(t.artists.id, artistIds));
+
+    return rows
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        hometown: row.hometown ?? undefined,
+        genres: row.genres ?? [],
+        gradient: row.gradient ?? "midnight",
+        showCount: artistShowCount.get(row.id)?.size ?? 0,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch (error) {
+    console.warn("[public] artist list failed:", error);
+    return null;
+  }
+}
+
 export interface PublicVenue {
   id: string;
   name: string;
@@ -178,6 +284,60 @@ export interface PublicVenue {
   region?: string;
   country?: string;
   capacity?: number;
+}
+
+export interface PublicVenueCard extends PublicVenue {
+  gradient: string;
+  showCount: number;
+}
+
+/** Venues in the public archive: those hosting a documented show. */
+export async function listPublicVenues(): Promise<PublicVenueCard[] | null> {
+  const db = getDb();
+  if (!db) return null;
+  try {
+    const showIds = [...(await publicShowIds(db))];
+    if (showIds.length === 0) return [];
+    const shows = await db
+      .select({ id: t.shows.id, venueId: t.shows.venueId })
+      .from(t.shows)
+      .where(inArray(t.shows.id, showIds));
+
+    const venueShows = new Map<string, number>();
+    for (const s of shows) {
+      venueShows.set(s.venueId, (venueShows.get(s.venueId) ?? 0) + 1);
+    }
+    const venueIds = [...venueShows.keys()];
+    if (venueIds.length === 0) return [];
+    const rows = await db
+      .select({
+        id: t.venues.id,
+        name: t.venues.name,
+        city: t.venues.city,
+        region: t.venues.region,
+        country: t.venues.country,
+        capacity: t.venues.capacity,
+        gradient: t.venues.gradient,
+      })
+      .from(t.venues)
+      .where(inArray(t.venues.id, venueIds));
+
+    return rows
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        city: row.city,
+        region: row.region ?? undefined,
+        country: row.country ?? undefined,
+        capacity: row.capacity ?? undefined,
+        gradient: row.gradient ?? "midnight",
+        showCount: venueShows.get(row.id) ?? 0,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch (error) {
+    console.warn("[public] venue list failed:", error);
+    return null;
+  }
 }
 
 export async function getPublicVenue(id: string): Promise<PublicVenue | null> {

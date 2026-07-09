@@ -139,7 +139,7 @@ export function autoArrangeWall(
     const hi = Math.max(ART_TOP, ART_BOTTOM - column.h);
     const centered = Math.min(hi, Math.max(lo, MIDLINE - column.h / 2));
     const slack = hi - lo;
-    const jitter = (rand01(`${column.entries[0].posterId}y`) - 0.5) * slack * 0.7;
+    const jitter = (rand01(`${column.entries[0].item.posterId}y`) - 0.5) * slack * 0.7;
     let y = Math.min(hi, Math.max(lo, centered + jitter));
     for (const entry of column.entries) {
       slots.push({
