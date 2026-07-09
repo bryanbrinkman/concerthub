@@ -14,7 +14,6 @@ import { formatDateRange, formatShowDate, parseTicketStub } from "@/lib/utils";
 import { toggleAttendedAction } from "@/app/show-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PosterImage } from "@/components/poster-image";
 import { TicketArt } from "@/components/ticket-art";
 import { SetlistCard } from "@/components/setlist-card";
 
@@ -67,11 +66,12 @@ export function ShowHero({
         {/* Poster — pinned top-left; ticket-stub art when no print exists */}
         {poster?.resolvedImageUrl ? (
           <div className="mx-auto w-full max-w-[250px] space-y-2 self-start lg:mx-0">
-            <PosterImage
-              imageUrl={poster.resolvedImageUrl}
-              gradient={show.gradient}
-              title={artist?.name ?? "Unknown artist"}
-              className="shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)]"
+            {/* Natural aspect — the real poster, no fixed 3:4 letterbox. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={poster.resolvedImageUrl}
+              alt={`Poster: ${artist?.name ?? "Unknown artist"}`}
+              className="w-full rounded-lg border border-white/10 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)]"
             />
             {posterVariants.length > 1 ? (
               <div className="flex flex-wrap gap-1.5">
