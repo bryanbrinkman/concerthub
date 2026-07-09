@@ -207,7 +207,7 @@ function StaticWall({
               src={item.imageUrl}
               alt={item.title}
               loading="lazy"
-              className="w-full shadow-[0_10px_24px_-8px_rgba(0,0,0,0.35)]"
+              className="w-full border-[3px] border-white bg-white shadow-[0_9px_22px_-6px_rgba(0,0,0,0.5)] ring-1 ring-black/15"
             />
           </div>
         );
@@ -505,7 +505,7 @@ function EditableWall({
                     setMeasured((n) => n + 1);
                   }
                 }}
-                className="w-full shadow-[0_10px_24px_-8px_rgba(0,0,0,0.35)]"
+                className="w-full border-[3px] border-white bg-white shadow-[0_9px_22px_-6px_rgba(0,0,0,0.5)] ring-1 ring-black/15"
               />
             </div>
           );
