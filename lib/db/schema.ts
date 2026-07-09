@@ -417,3 +417,18 @@ export const collections = pgTable("collection", {
   itemCount: integer("item_count").notNull().default(0),
   gradient: text("gradient").notNull().default("midnight"),
 });
+
+/** Posters grouped into a user's custom collection (binder/wishlist). */
+export const collectionPosters = pgTable(
+  "collection_poster",
+  {
+    collectionId: text("collection_id")
+      .notNull()
+      .references(() => collections.id, { onDelete: "cascade" }),
+    posterId: text("poster_id")
+      .notNull()
+      .references(() => posters.id, { onDelete: "cascade" }),
+    addedAt: timestamp("added_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.collectionId, t.posterId] })],
+);

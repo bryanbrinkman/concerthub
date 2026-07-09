@@ -1,23 +1,16 @@
 import Link from "next/link";
-import {
-  ArrowLeftRight,
-  Frame,
-  Heart,
-  Library,
-  LogIn,
-  Plus,
-  Tag,
-} from "lucide-react";
+import { ArrowLeftRight, Frame, Heart, Library, LogIn, Tag } from "lucide-react";
+import { eq, inArray } from "drizzle-orm";
 
-import { posterState } from "@/lib/archive";
-
-import { getArchive } from "@/lib/archive";
+import { getArchive, posterState } from "@/lib/archive";
+import { getDb } from "@/lib/db";
+import * as t from "@/lib/db/schema";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { GradientArt } from "@/components/gradient-art";
 import { EmptyState } from "@/components/empty-state";
+import { NewCollectionForm } from "@/components/new-collection-form";
 
 export const metadata = { title: "Collections" };
 
@@ -35,7 +28,6 @@ export default async function CollectionsPage() {
     );
   }
 
-  const { collections } = archive;
   const stateCount = (state: string) =>
     archive.posters.filter((p) => posterState(p) === state).length;
   const smart = [
@@ -44,17 +36,44 @@ export default async function CollectionsPage() {
     { label: "For Trade", icon: ArrowLeftRight, count: stateCount("trade"), href: "/my-posters?state=trade" },
     { label: "For Sale", icon: Tag, count: stateCount("sell"), href: "/my-posters?state=sell" },
   ];
+
+  // Live membership: counts + up to 3 cover thumbnails per collection.
+  const collections = archive.collections;
+  const posterById = new Map(archive.posters.map((p) => [p.id, p]));
+  const membership = new Map<string, { count: number; covers: string[] }>();
+  const db = getDb();
+  if (db && collections.length > 0) {
+    try {
+      const rows = await db
+        .select({
+          collectionId: t.collectionPosters.collectionId,
+          posterId: t.collectionPosters.posterId,
+        })
+        .from(t.collectionPosters)
+        .where(
+          inArray(
+            t.collectionPosters.collectionId,
+            collections.map((c) => c.id),
+          ),
+        );
+      for (const row of rows) {
+        const entry = membership.get(row.collectionId) ?? { count: 0, covers: [] };
+        entry.count += 1;
+        const img = posterById.get(row.posterId)?.imageUrl;
+        if (img && entry.covers.length < 3) entry.covers.push(img);
+        membership.set(row.collectionId, entry);
+      }
+    } catch (error) {
+      console.warn("[collections] membership query failed (migration pending?):", error);
+    }
+  }
+
   return (
     <div>
       <PageHeader
         title="Collections"
         subtitle="Curated groupings — binders, wishlists, and tour runs."
-        actions={
-          <Button>
-            <Plus />
-            New collection
-          </Button>
-        }
+        actions={<NewCollectionForm />}
       />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {smart.map((item) => (
@@ -77,35 +96,52 @@ export default async function CollectionsPage() {
         <EmptyState
           icon={Library}
           title="No collections yet"
-          description="Group shows and ephemera into binders, wishlists, or tour runs."
-          actionLabel="New collection"
+          description="Create a collection, then add posters to it from any poster record. Group your prints into binders, wishlists, or tour runs."
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {collections.map((collection) => (
-            <Card
-              key={collection.id}
-              className="overflow-hidden transition-colors hover:border-white/20"
-            >
-              <GradientArt gradient={collection.gradient} className="h-24">
-                <div className="flex w-full items-end p-4">
-                  <Library className="h-5 w-5 text-white/85" />
-                </div>
-              </GradientArt>
-              <CardContent className="space-y-2 p-5">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="truncate font-medium">{collection.name}</p>
-                  <Badge variant="secondary">
-                    {collection.itemCount}{" "}
-                    {collection.itemCount === 1 ? "item" : "items"}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {collection.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+          {collections.map((collection) => {
+            const info = membership.get(collection.id) ?? { count: 0, covers: [] };
+            return (
+              <Link key={collection.id} href={`/collections/${collection.id}`} className="block">
+                <Card className="h-full overflow-hidden transition-colors hover:border-white/20">
+                  {info.covers.length > 0 ? (
+                    <div className="flex h-24 gap-0.5 bg-black/40">
+                      {info.covers.map((cover) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={cover}
+                          src={cover}
+                          alt=""
+                          loading="lazy"
+                          className="h-full flex-1 object-cover"
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <GradientArt gradient={collection.gradient} className="h-24">
+                      <div className="flex w-full items-end p-4">
+                        <Library className="h-5 w-5 text-white/85" />
+                      </div>
+                    </GradientArt>
+                  )}
+                  <CardContent className="space-y-2 p-5">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate font-medium">{collection.name}</p>
+                      <Badge variant="secondary">
+                        {info.count} {info.count === 1 ? "poster" : "posters"}
+                      </Badge>
+                    </div>
+                    {collection.description ? (
+                      <p className="text-xs text-muted-foreground">
+                        {collection.description}
+                      </p>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
