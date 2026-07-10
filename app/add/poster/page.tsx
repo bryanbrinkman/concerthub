@@ -50,6 +50,12 @@ export default async function AddPosterPage({
         </CardHeader>
         <CardContent>
           <form action={addPosterAction} className="space-y-4">
+            <Field
+              label="Artwork"
+              hint="First image is the cover. Add close-ups of the numbering, signature, foil, or condition — collectors love the details."
+            >
+              <MultiImageField />
+            </Field>
             <PosterTargetField
               shows={shows.map((show) => ({
                 id: show.id,
@@ -162,12 +168,6 @@ export default async function AddPosterPage({
                 placeholder="Official show poster"
                 className={inputClass}
               />
-            </Field>
-            <Field
-              label="Artwork (optional)"
-              hint="First image is the cover. Add close-ups of the numbering, signature, foil, or condition — collectors love the details."
-            >
-              <MultiImageField />
             </Field>
             <Field label="Collection status">
               <select name="state" defaultValue="own" className={selectClass}>

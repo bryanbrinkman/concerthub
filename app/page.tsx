@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, Download, Search, Sparkles, UserPlus } from "lucide-react";
+import { CalendarDays, Download, Plus, Search, Sparkles, UserPlus } from "lucide-react";
 
 import { seedDemoAction } from "@/app/seed-actions";
 import {
@@ -105,11 +105,14 @@ export default async function HomePage() {
           ))}
         </div>
 
-        <p className="text-sm">
-          <Link href="#build" className="text-primary hover:underline">
-            Build your archive ↓
-          </Link>
-        </p>
+        <div className="pt-1">
+          <Button size="lg" variant="secondary" asChild>
+            <Link href="/add">
+              <Plus />
+              Build your archive
+            </Link>
+          </Button>
+        </div>
       </section>
 
       {/* ---- 2 · Poster wall: discover concert posters ---- */}
