@@ -81,6 +81,13 @@ interface PosterArtProps {
   footer?: string;
   /** Real poster artwork — replaces the typographic placeholder entirely. */
   imageUrl?: string;
+  /**
+   * Render real art at its true aspect ratio (width-constrained, height
+   * auto) instead of letterboxing it into a fixed 3/4 portrait frame — so
+   * a landscape poster shows wide and a tall poster shows tall. Grids that
+   * need uniform tiles leave this off.
+   */
+  naturalAspect?: boolean;
   className?: string;
 }
 
@@ -91,8 +98,24 @@ export function PosterArt({
   subtitle,
   footer,
   imageUrl,
+  naturalAspect,
   className,
 }: PosterArtProps) {
+  // True aspect ratio — the whole print, never cropped, never letterboxed.
+  if (imageUrl && naturalAspect) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={imageUrl}
+        alt={`Poster: ${title}`}
+        draggable={false}
+        className={cn(
+          "block h-auto w-full rounded-lg border border-white/10",
+          className,
+        )}
+      />
+    );
+  }
   if (imageUrl) {
     return (
       <GradientArt

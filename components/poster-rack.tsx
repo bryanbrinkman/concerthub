@@ -176,6 +176,7 @@ export function PosterRack({ posters }: { posters: RackPoster[] }) {
                 <PosterArt
                   gradient={p.gradient}
                   imageUrl={p.imageUrl}
+                  naturalAspect
                   title={p.title}
                   subtitle={p.designer}
                   footer={String(p.year)}
