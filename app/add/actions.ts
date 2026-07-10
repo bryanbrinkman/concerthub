@@ -257,7 +257,10 @@ async function resolvePosterTarget(
   formData: FormData,
   year: number,
 ): Promise<{ posterType: string; showId?: string; tourId?: string }> {
-  const posterType = str(formData, "posterType") === "tour" ? "tour" : "show";
+  const raw = str(formData, "posterType");
+  const posterType =
+    raw === "tour" ? "tour" : raw === "festival" ? "festival" : "show";
+
   if (posterType === "tour") {
     const tourArtist = str(formData, "tourArtist");
     const tourName = str(formData, "tourName");
@@ -268,6 +271,37 @@ async function resolvePosterTarget(
     }
     return { posterType, tourId };
   }
+
+  // Festival: create (or reuse) a festival show with its full lineup, then
+  // tie the poster to it. The first act is billed at the top; the rest are
+  // festival performers — every name becomes a searchable artist.
+  if (posterType === "festival") {
+    const festivalName = str(formData, "festivalName");
+    const venueName = str(formData, "festivalVenue");
+    const date = str(formData, "festivalDate"); // yyyy-mm-dd
+    const lineupNames = String(formData.get("festivalLineup") ?? "")
+      .split(/[\n,]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    // Need a name, place, date, and at least one act to make a real event.
+    if (festivalName && venueName && date && lineupNames.length > 0) {
+      const [primary, ...rest] = lineupNames;
+      const showId = await createShow(db, userId, {
+        artistName: primary,
+        venueName,
+        city: str(formData, "festivalCity"),
+        date,
+        endDate: str(formData, "festivalEndDate"),
+        eventType: "festival",
+        eventName: festivalName,
+        lineup: rest.map((name) => ({ name, role: "festival_performer" })),
+      });
+      return { posterType, showId };
+    }
+    // Incomplete festival details — keep the poster, just unlinked.
+    return { posterType };
+  }
+
   const showId = optional(str(formData, "showId"));
   if (showId) await assertOwnsShow(db, userId, showId);
   return { posterType, showId };

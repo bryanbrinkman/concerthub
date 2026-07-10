@@ -47,6 +47,22 @@ export default async function EditPosterPage({
   const tourArtist = tour
     ? findArtist(archive, tour.artistId)?.name ?? ""
     : "";
+  // Festival posters link to a festival show; prefill its fields so an edit
+  // round-trips (createShow is idempotent on artist+venue+date).
+  const festivalShow =
+    poster.posterType === "festival" && poster.showId
+      ? archive.shows.find((s) => s.id === poster.showId)
+      : undefined;
+  const festivalVenue = festivalShow
+    ? findVenue(archive, festivalShow.venueId)
+    : undefined;
+  const festivalLineup = festivalShow
+    ? [...(festivalShow.performers ?? [])]
+        .sort((a, b) => a.billingOrder - b.billingOrder)
+        .map((p) => findArtist(archive, p.artistId)?.name)
+        .filter(Boolean)
+        .join("\n")
+    : "";
   const edition = poster.editions[0];
   const legacySize =
     edition?.widthIn && edition?.heightIn
@@ -77,10 +93,22 @@ export default async function EditPosterPage({
                   findVenue(archive, show.venueId)?.name ?? ""
                 } (${formatShortDate(show.date)})`,
               }))}
-              defaultType={poster.posterType === "tour" ? "tour" : "show"}
+              defaultType={
+                poster.posterType === "tour"
+                  ? "tour"
+                  : poster.posterType === "festival"
+                    ? "festival"
+                    : "show"
+              }
               defaultShowId={poster.showId ?? ""}
               defaultTourArtist={tourArtist}
               defaultTourName={tour?.name ?? ""}
+              defaultFestivalName={festivalShow?.name ?? ""}
+              defaultFestivalVenue={festivalVenue?.name ?? ""}
+              defaultFestivalCity={festivalVenue?.city ?? ""}
+              defaultFestivalDate={festivalShow?.date ?? ""}
+              defaultFestivalEndDate={festivalShow?.endDate ?? ""}
+              defaultFestivalLineup={festivalLineup}
             />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Title">

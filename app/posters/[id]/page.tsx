@@ -245,8 +245,14 @@ export default async function PosterRecordPage({
 
   const edition = record.editions[0];
   const isTour = record.posterType === "tour";
+  const isFestival = record.posterType === "festival";
+  const typeLabel = isTour
+    ? "Tour poster (multiple dates)"
+    : isFestival
+      ? "Festival poster"
+      : "Show poster";
   const rows: Array<[string, string]> = [["Poster Artist", record.designer]];
-  rows.push(["Type", isTour ? "Tour poster (multiple dates)" : "Show poster"]);
+  rows.push(["Type", typeLabel]);
   if (isTour && record.tourName) rows.push(["Tour", record.tourName]);
   if (record.artistName) rows.push(["Artist / Band", record.artistName]);
   if (record.showDate) rows.push(["Show date", formatShortDate(record.showDate)]);
@@ -339,7 +345,9 @@ export default async function PosterRecordPage({
 
       <PageHeader
         title={record.title}
-        subtitle={`${isTour ? "Tour poster" : "Show poster"} · art by ${record.designer}`}
+        subtitle={`${
+          isTour ? "Tour poster" : isFestival ? "Festival poster" : "Show poster"
+        } · art by ${record.designer}`}
         actions={
           record.isOwner ? (
             <Button variant="outline" asChild>

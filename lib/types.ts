@@ -99,8 +99,8 @@ export interface Edition {
   markings?: string; // e.g. "Signed & numbered in pencil"
 }
 
-/** Whether a print documents one show or a whole tour. */
-export type PosterType = "show" | "tour";
+/** Whether a print documents one show, a whole tour, or a festival. */
+export type PosterType = "show" | "tour" | "festival";
 
 export interface Poster {
   id: string;
