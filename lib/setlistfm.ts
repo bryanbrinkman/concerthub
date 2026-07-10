@@ -51,6 +51,9 @@ interface SfmSetlist {
 
 interface SfmSearchResponse {
   setlist?: SfmSetlist[];
+  total?: number;
+  page?: number;
+  itemsPerPage?: number;
 }
 
 interface SfmAttendedResponse {
@@ -133,6 +136,26 @@ export interface SetlistPreview {
   date: string;
 }
 
+/** Normalize a raw setlist.fm setlist into a lightweight preview. */
+function toPreview(raw: SfmSetlist): SetlistPreview {
+  const city = raw.venue?.city;
+  return {
+    setlistFmId: raw.id,
+    url: raw.url,
+    artistName: raw.artist?.name ?? "Unknown artist",
+    venueName: raw.venue?.name,
+    city: city?.name,
+    region: city?.stateCode ?? city?.state,
+    country: city?.country?.name,
+    tourName: raw.tour?.name,
+    songCount: (raw.sets?.set ?? []).reduce(
+      (n, set) => n + (set.song?.length ?? 0),
+      0,
+    ),
+    date: fromSetlistFmDate(raw.eventDate),
+  };
+}
+
 /**
  * Best setlist.fm match for an artist on a date — used to auto-confirm a
  * show and pre-fill venue/tour/setlist in the add-show wizard. Prefers a
@@ -150,25 +173,79 @@ export async function lookupSetlistPreview(
       (r) => (r.sets?.set ?? []).some((s) => (s.song?.length ?? 0) > 0),
     );
     const raw = withSongs ?? results[0];
-    const city = raw.venue?.city;
-    return {
-      setlistFmId: raw.id,
-      url: raw.url,
-      artistName: raw.artist?.name ?? artistName,
-      venueName: raw.venue?.name,
-      city: city?.name,
-      region: city?.stateCode ?? city?.state,
-      country: city?.country?.name,
-      tourName: raw.tour?.name,
-      songCount: (raw.sets?.set ?? []).reduce(
-        (n, set) => n + (set.song?.length ?? 0),
-        0,
-      ),
-      date: fromSetlistFmDate(raw.eventDate),
-    };
+    return { ...toPreview(raw), artistName: raw.artist?.name ?? artistName };
   } catch (error) {
     console.warn(`[setlistfm] preview lookup failed for "${artistName}":`, error);
     return null;
+  }
+}
+
+export interface ConcertSearchResult {
+  results: SetlistPreview[];
+  total: number;
+  page: number;
+  itemsPerPage: number;
+}
+
+const EMPTY_SEARCH: ConcertSearchResult = {
+  results: [],
+  total: 0,
+  page: 1,
+  itemsPerPage: 20,
+};
+
+/**
+ * Search setlist.fm for concerts by artist (+ optional year and city) —
+ * the universal "add any show" path: no attendance history or username
+ * needed. Returns a page of candidates the user picks from; each carries
+ * the venue, date, tour, and setlist link so one click archives a fully
+ * populated show. Degrades to an empty result on any failure.
+ */
+export async function searchConcerts(query: {
+  artistName: string;
+  year?: string;
+  cityName?: string;
+  page?: number;
+}): Promise<ConcertSearchResult> {
+  const apiKey = process.env.SETLISTFM_API_KEY;
+  const artistName = query.artistName.trim();
+  if (!apiKey || !artistName) return EMPTY_SEARCH;
+
+  const params = new URLSearchParams({
+    artistName,
+    p: String(Math.max(1, query.page ?? 1)),
+  });
+  const year = query.year?.trim();
+  if (year && /^\d{4}$/.test(year)) params.set("year", year);
+  const cityName = query.cityName?.trim();
+  if (cityName) params.set("cityName", cityName);
+
+  try {
+    const res = await fetch(`${API_BASE}/search/setlists?${params}`, {
+      headers: { "x-api-key": apiKey, Accept: "application/json" },
+      next: { revalidate: REVALIDATE_SECONDS },
+    });
+    if (!res.ok) {
+      if (res.status !== 404) {
+        console.warn(
+          `[setlistfm] concert search failed for "${artistName}": HTTP ${res.status}`,
+        );
+      }
+      return EMPTY_SEARCH;
+    }
+    const data = (await res.json()) as SfmSearchResponse;
+    // Keep setlist.fm's ordering (most recent first) so dates read in order
+    // when someone is hunting a specific night.
+    const all = (data.setlist ?? []).map(toPreview);
+    return {
+      results: all,
+      total: data.total ?? all.length,
+      page: data.page ?? query.page ?? 1,
+      itemsPerPage: data.itemsPerPage ?? 20,
+    };
+  } catch (error) {
+    console.warn(`[setlistfm] concert search error for "${artistName}":`, error);
+    return EMPTY_SEARCH;
   }
 }
 

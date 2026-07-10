@@ -105,7 +105,7 @@ export function Onboarding({ enabled }: { enabled: boolean }) {
           <Button variant="secondary" className="w-full justify-start" asChild>
             <Link href="/add/show" onClick={dismiss}>
               <CalendarDays />
-              Add your first show by hand
+              Search &amp; add your first show
             </Link>
           </Button>
           <form action={seedDemoAction} onSubmit={dismiss}>

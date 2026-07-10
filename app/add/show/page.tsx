@@ -24,7 +24,7 @@ export default async function AddShowPage() {
     <div className="mx-auto max-w-xl">
       <PageHeader
         title="Add a show"
-        subtitle="A few quick steps — we'll check setlist.fm and fill in what we can."
+        subtitle="Search any concert — we'll attach the real setlist and fill in the details. Or add one by hand."
       />
       <AddShowWizard />
     </div>
