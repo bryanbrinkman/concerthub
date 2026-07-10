@@ -181,7 +181,12 @@ export function PosterRack({ posters }: { posters: RackPoster[] }) {
                   subtitle={p.designer}
                   footer={String(p.year)}
                   className={cn(
-                    "w-44 sm:w-56 lg:w-64",
+                    // Real art: bound by BOTH width and height so tall
+                    // portraits scale down to fit the stage (max-h < stage h)
+                    // instead of clipping. Placeholders keep a fixed width.
+                    p.imageUrl
+                      ? "max-h-[280px] max-w-[176px] sm:max-h-[356px] sm:max-w-[224px] lg:max-h-[396px] lg:max-w-[256px]"
+                      : "w-44 sm:w-56 lg:w-64",
                     focused
                       ? "shadow-[0_30px_70px_-22px_rgba(0,0,0,0.95)]"
                       : "shadow-[0_16px_40px_-18px_rgba(0,0,0,0.8)]",

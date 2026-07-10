@@ -102,6 +102,8 @@ export function PosterArt({
   className,
 }: PosterArtProps) {
   // True aspect ratio — the whole print, never cropped, never letterboxed.
+  // width/height auto + caller-supplied max-w/max-h let the image scale down
+  // to fit its bounding box (so tall portraits aren't clipped).
   if (imageUrl && naturalAspect) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -110,7 +112,7 @@ export function PosterArt({
         alt={`Poster: ${title}`}
         draggable={false}
         className={cn(
-          "block h-auto w-full rounded-lg border border-white/10",
+          "block h-auto w-auto rounded-lg border border-white/10",
           className,
         )}
       />
