@@ -73,8 +73,8 @@ export default async function HomePage() {
           Every show. Everything it left behind.
         </h1>
         <p className="mx-auto max-w-xl text-muted-foreground sm:text-lg">
-          Explore concerts, collect posters, and preserve the artifacts of
-          live music history.
+          Your personal archive for the concerts you&apos;ve been to — posters,
+          ticket stubs, setlists, and the memories behind them.
         </p>
 
         <form action="/shows" method="get" className="mx-auto flex max-w-2xl gap-2 pt-2">
@@ -106,10 +106,10 @@ export default async function HomePage() {
         </div>
 
         <div className="pt-1">
-          <Button size="lg" variant="secondary" asChild>
-            <Link href="/add">
+          <Button size="lg" asChild>
+            <Link href={signedIn ? "/add" : "/login?mode=signup"}>
               <Plus />
-              Build your archive
+              {signedIn ? "Add to your archive" : "Start your free archive"}
             </Link>
           </Button>
         </div>

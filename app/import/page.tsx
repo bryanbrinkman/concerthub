@@ -55,7 +55,9 @@ export default async function ImportPage({
         <EmptyState
           icon={Download}
           title="Enter your setlist.fm username"
-          description="It's the name in your profile URL: setlist.fm/user/<username>. We'll list every show you've marked as attended."
+          description="It's the name in your profile URL: setlist.fm/user/<username>. We'll list every show you've marked as attended. Don't use setlist.fm? You can add shows by hand instead."
+          actionLabel="Add a show by hand"
+          actionHref="/add/show"
         />
       ) : !result || !result.ok ? (
         <EmptyState
