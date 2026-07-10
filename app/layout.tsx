@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { Session } from "next-auth";
 
 import "./globals.css";
 import { auth, authEnabled, googleEnabled, missingAuthEnv } from "@/auth";
@@ -49,7 +50,7 @@ export default async function RootLayout({
   // auth() renders on every route via this layout — a throw here (malformed
   // JWT, adapter hiccup) would take the whole site down, not just one page.
   // Degrade to signed-out UI instead, mirroring getArchive's demo fallback.
-  let session: Awaited<ReturnType<typeof auth>> | null = null;
+  let session: Session | null = null;
   if (authEnabled) {
     try {
       session = await auth();
