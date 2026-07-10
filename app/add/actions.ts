@@ -50,6 +50,20 @@ const posInches = (formData: FormData, key: string): number | undefined => {
   return Number.isFinite(value) && value > 3 && value < 100 ? value : undefined;
 };
 
+/**
+ * True when an error is Postgres "column ... does not exist" (42703) —
+ * i.e. a schema migration hasn't been applied yet. Mirrors the resilient
+ * read fallbacks in lib/archive.ts so poster writes never crash when a
+ * pending migration (e.g. 0011 poster_type) lags behind a deploy.
+ */
+function isUndefinedColumn(error: unknown): boolean {
+  const e = error as { code?: string; message?: string } | null;
+  return (
+    e?.code === "42703" ||
+    Boolean(e?.message && /column .* does not exist/i.test(e.message))
+  );
+}
+
 const BILLING_ROLES = new Set([
   "headliner",
   "co_headliner",
@@ -294,7 +308,7 @@ export async function addPosterAction(formData: FormData) {
     .filter(Boolean);
   const cover = imageUrls[0] ?? optional(str(formData, "imageUrl"));
 
-  await db.insert(t.posters).values({
+  const values = {
     userId,
     showId,
     tourId,
@@ -309,7 +323,15 @@ export async function addPosterAction(formData: FormData) {
     imageUrls: imageUrls.length > 1 ? imageUrls.slice(1) : undefined,
     gradient: gradientFor(title),
     editions: [edition],
-  });
+  };
+  try {
+    await db.insert(t.posters).values(values);
+  } catch (error) {
+    // poster_type column not yet migrated (0011) — insert without it.
+    if (!isUndefinedColumn(error)) throw error;
+    const { posterType: _omit, ...legacy } = values;
+    await db.insert(t.posters).values(legacy);
+  }
 
   revalidatePath("/", "layout");
   redirect(showId ? `/shows/${showId}` : "/my-posters");
@@ -358,23 +380,29 @@ export async function updatePosterAction(formData: FormData) {
     .map((v) => String(v).trim())
     .filter(Boolean);
 
-  await db
-    .update(t.posters)
-    .set({
-      title,
-      designer: str(formData, "designer") || "Unknown",
-      year,
-      notes: optional(str(formData, "notes")) ?? null,
-      owned: str(formData, "state") !== "want",
-      state: str(formData, "state") || "own",
-      posterType,
-      showId: showId ?? null,
-      tourId: tourId ?? null,
-      imageUrl: imageUrls[0] ?? null,
-      imageUrls: imageUrls.length > 1 ? imageUrls.slice(1) : null,
-      editions: [edition],
-    })
-    .where(and(eq(t.posters.id, posterId), eq(t.posters.userId, userId)));
+  const set = {
+    title,
+    designer: str(formData, "designer") || "Unknown",
+    year,
+    notes: optional(str(formData, "notes")) ?? null,
+    owned: str(formData, "state") !== "want",
+    state: str(formData, "state") || "own",
+    posterType,
+    showId: showId ?? null,
+    tourId: tourId ?? null,
+    imageUrl: imageUrls[0] ?? null,
+    imageUrls: imageUrls.length > 1 ? imageUrls.slice(1) : null,
+    editions: [edition],
+  };
+  const where = and(eq(t.posters.id, posterId), eq(t.posters.userId, userId));
+  try {
+    await db.update(t.posters).set(set).where(where);
+  } catch (error) {
+    // poster_type column not yet migrated (0011) — update without it.
+    if (!isUndefinedColumn(error)) throw error;
+    const { posterType: _omit, ...legacy } = set;
+    await db.update(t.posters).set(legacy).where(where);
+  }
 
   revalidatePath("/", "layout");
   redirect(showId ? `/shows/${showId}` : "/my-posters");
