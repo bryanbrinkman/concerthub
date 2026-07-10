@@ -46,7 +46,17 @@ export default async function RootLayout({
 }>) {
   const archive = await getArchive();
   const counts = archiveCounts(archive);
-  const session = authEnabled ? await auth() : null;
+  // auth() renders on every route via this layout — a throw here (malformed
+  // JWT, adapter hiccup) would take the whole site down, not just one page.
+  // Degrade to signed-out UI instead, mirroring getArchive's demo fallback.
+  let session: Awaited<ReturnType<typeof auth>> | null = null;
+  if (authEnabled) {
+    try {
+      session = await auth();
+    } catch (error) {
+      console.warn("[layout] auth() failed — rendering signed-out:", error);
+    }
+  }
 
   // ⌘K search index: the viewer's archive + app pages.
   const searchItems: SearchItem[] = [
