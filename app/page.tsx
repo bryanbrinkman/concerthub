@@ -126,19 +126,19 @@ export default async function HomePage() {
               Browse all posters →
             </Link>
           </div>
-          <div className="columns-2 gap-3 sm:columns-3 lg:columns-4 xl:columns-5">
+          <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 scrollbar-none sm:-mx-5 sm:px-5 lg:-mx-6 lg:px-6">
             {wall.map((poster) => (
               <Link
                 key={poster.id}
                 href={`/posters/${poster.id}`}
-                className="group relative mb-3 block break-inside-avoid overflow-hidden rounded-md border border-white/[0.06]"
+                className="group relative block h-56 shrink-0 snap-start overflow-hidden rounded-md border border-white/[0.06] sm:h-64 lg:h-72"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={poster.imageUrl}
                   alt={`${poster.artistName ?? "Concert poster"} — art by ${poster.designer}`}
                   loading="lazy"
-                  className="w-full transition-transform duration-500 group-hover:scale-[1.03]"
+                  className="h-full w-auto max-w-none transition-transform duration-500 group-hover:scale-[1.03]"
                 />
                 <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/25 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                   {poster.artistName ? (
