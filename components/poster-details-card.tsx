@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowUpRight, FolderPlus, Frame, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpRight, Frame, Pencil, Trash2 } from "lucide-react";
 
 import type { EnrichedPoster } from "@/lib/expressobeans";
 import { deletePosterAction } from "@/app/manage-actions";
+import { AddToCollection, type CollectionOption } from "@/components/add-to-collection";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +19,15 @@ export function PosterDetailsCard({
   poster,
   addHref,
   canEdit,
+  collections,
 }: {
   poster?: EnrichedPoster;
   /** Link to the add-poster form; when unset the CTA is decorative. */
   addHref?: string;
   /** Viewer owns this archive — show the remove control. */
   canEdit?: boolean;
+  /** The viewer's collections — enables the add-to-collection picker. */
+  collections?: CollectionOption[];
 }) {
   if (!poster) {
     return (
@@ -128,10 +132,9 @@ export function PosterDetailsCard({
             View poster record
           </Link>
         </Button>
-        <Button variant="secondary" size="sm">
-          <FolderPlus />
-          Add to collection
-        </Button>
+        {canEdit && collections ? (
+          <AddToCollection posterId={poster.id} collections={collections} size="sm" />
+        ) : null}
         {canEdit ? (
           <div className="ml-auto flex items-center gap-1">
             <Button variant="ghost" size="sm" asChild>

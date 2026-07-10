@@ -15,7 +15,9 @@ export default async function AddShowPage() {
       <EmptyState
         icon={LogIn}
         title="Sign in to add shows"
-        description="Shows are saved to your own archive — sign in or create an account from the sidebar first."
+        description="Shows are saved to your own archive. Create a free account — it takes a moment."
+        actionLabel="Create an account"
+        actionHref="/login?mode=signup"
       />
     );
   }

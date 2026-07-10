@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   ChevronLeft,
   ChevronRight,
-  FolderPlus,
   Pencil,
 } from "lucide-react";
 
@@ -15,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { PosterArt } from "@/components/gradient-art";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AddToCollection, type CollectionOption } from "@/components/add-to-collection";
 
 /** Serializable poster data prepared server-side (see app/posters/page.tsx). */
 export interface RackPoster {
@@ -43,7 +43,14 @@ const VISIBLE = 5;
  * a side poster to focus it, arrow keys / buttons to step. The center
  * poster links to its record.
  */
-export function PosterRack({ posters }: { posters: RackPoster[] }) {
+export function PosterRack({
+  posters,
+  collections,
+}: {
+  posters: RackPoster[];
+  /** The viewer's collections — enables the add-to-collection picker. */
+  collections?: CollectionOption[];
+}) {
   const [index, setIndex] = React.useState(0);
   const [dragX, setDragX] = React.useState(0);
   const [dragging, setDragging] = React.useState(false);
@@ -320,10 +327,13 @@ export function PosterRack({ posters }: { posters: RackPoster[] }) {
             </Link>
           ) : null}
           <div className="flex flex-wrap gap-2 pt-1">
-            <Button variant="secondary" size="sm">
-              <FolderPlus />
-              Add to collection
-            </Button>
+            {collections ? (
+              <AddToCollection
+                posterId={poster.id}
+                collections={collections}
+                size="sm"
+              />
+            ) : null}
             {poster.editHref ? (
               <Button variant="ghost" size="sm" asChild>
                 <Link href={poster.editHref}>

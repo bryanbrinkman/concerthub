@@ -76,6 +76,7 @@ export function AddShowWizard() {
   const [searched, setSearched] = React.useState(false);
   const [results, setResults] = React.useState<SetlistPreview[]>([]);
   const [total, setTotal] = React.useState(0);
+  const [configured, setConfigured] = React.useState(true);
   const [addingId, setAddingId] = React.useState<string | null>(null);
 
   // Manual setlist.fm cross-reference (match step).
@@ -105,6 +106,7 @@ export function AddShowWizard() {
       const res = await fetch(`/api/setlist-search?${params}`);
       const data = (await res.json()) as ConcertSearchResult;
       setTotal(data.total ?? 0);
+      setConfigured(data.configured !== false);
       setResults((prev) => (append ? [...prev, ...data.results] : data.results));
     } catch {
       if (!append) setResults([]);
@@ -406,6 +408,13 @@ export function AddShowWizard() {
                       Show more
                     </Button>
                   ) : null}
+                </div>
+              ) : !configured ? (
+                <div className="rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 p-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Concert search isn&apos;t set up on this site yet. You can
+                    still add your show by hand below — everything else works.
+                  </p>
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-border p-4 text-center">

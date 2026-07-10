@@ -132,6 +132,9 @@ export default async function ShowDetailPage({
   ]);
 
   const canEdit = !archive.demo;
+  const collectionOptions = canEdit
+    ? archive.collections.map((c) => ({ id: c.id, name: c.name }))
+    : undefined;
   const ephemeraItems = ephemeraForShow(archive, show.id);
   const ticketDetail = ephemeraItems.find((e) => e.kind === "ticket")?.detail;
   const memory = memoryForShow(archive, show.id);
@@ -251,11 +254,11 @@ export default async function ShowDetailPage({
               </Button>
             </form>
           ) : (
-            <Button variant="outline" size="sm">
-              <Heart
-                className={show.favorite ? "fill-primary text-primary" : ""}
-              />
-              Save
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/login?mode=signup">
+                <Heart />
+                Save
+              </Link>
             </Button>
           )}
           <Button variant="outline" size="sm" asChild>
@@ -324,6 +327,7 @@ export default async function ShowDetailPage({
         displayTitle={displayTitle}
         openers={openersForShow(archive, show)}
         canEdit={canEdit}
+        collections={collectionOptions}
       />
 
       {showLineupCard ? <LineupCard items={lineup} /> : null}
@@ -347,7 +351,7 @@ export default async function ShowDetailPage({
 
             <TabsContent value="overview" className="space-y-5">
               <div className="grid gap-5 lg:grid-cols-2">
-                <PosterDetailsCard poster={poster} addHref={`/add/poster?show=${show.id}`} canEdit={canEdit} />
+                <PosterDetailsCard poster={poster} addHref={`/add/poster?show=${show.id}`} canEdit={canEdit} collections={collectionOptions} />
                 <section>
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-base font-semibold">
@@ -400,7 +404,9 @@ export default async function ShowDetailPage({
         <aside className="min-w-0 space-y-5">
           <EphemeraGrid items={ephemeraItems} addHref={`/add/ephemera?show=${show.id}`} canEdit={canEdit} />
           <OnTheMarket showId={show.id} />
-          {memoryPanel}
+          <div id="memory" className="scroll-mt-20">
+            {memoryPanel}
+          </div>
           <MediaLinksCard links={links} />
         </aside>
       </div>

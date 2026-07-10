@@ -33,7 +33,9 @@ export default async function AddPage() {
       <EmptyState
         icon={LogIn}
         title="Sign in to build your archive"
-        description="Shows and posters are saved to your own archive — sign in or create an account from the sidebar first."
+        description="Shows and posters are saved to your own archive. Create a free account — it takes a moment."
+        actionLabel="Create an account"
+        actionHref="/login?mode=signup"
       />
     );
   }

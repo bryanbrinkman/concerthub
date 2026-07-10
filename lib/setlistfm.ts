@@ -185,14 +185,20 @@ export interface ConcertSearchResult {
   total: number;
   page: number;
   itemsPerPage: number;
+  /**
+   * False when SETLISTFM_API_KEY is unset — lets the UI show "search
+   * unavailable / not configured" instead of a misleading "no matches."
+   */
+  configured: boolean;
 }
 
-const EMPTY_SEARCH: ConcertSearchResult = {
+const emptyResult = (configured: boolean): ConcertSearchResult => ({
   results: [],
   total: 0,
   page: 1,
   itemsPerPage: 20,
-};
+  configured,
+});
 
 /**
  * Search setlist.fm for concerts by artist (+ optional year and city) —
@@ -209,7 +215,8 @@ export async function searchConcerts(query: {
 }): Promise<ConcertSearchResult> {
   const apiKey = process.env.SETLISTFM_API_KEY;
   const artistName = query.artistName.trim();
-  if (!apiKey || !artistName) return EMPTY_SEARCH;
+  if (!apiKey) return emptyResult(false);
+  if (!artistName) return emptyResult(true);
 
   const params = new URLSearchParams({
     artistName,
@@ -231,7 +238,7 @@ export async function searchConcerts(query: {
           `[setlistfm] concert search failed for "${artistName}": HTTP ${res.status}`,
         );
       }
-      return EMPTY_SEARCH;
+      return emptyResult(true);
     }
     const data = (await res.json()) as SfmSearchResponse;
     // Keep setlist.fm's ordering (most recent first) so dates read in order
@@ -242,10 +249,11 @@ export async function searchConcerts(query: {
       total: data.total ?? all.length,
       page: data.page ?? query.page ?? 1,
       itemsPerPage: data.itemsPerPage ?? 20,
+      configured: true,
     };
   } catch (error) {
     console.warn(`[setlistfm] concert search error for "${artistName}":`, error);
-    return EMPTY_SEARCH;
+    return emptyResult(true);
   }
 }
 

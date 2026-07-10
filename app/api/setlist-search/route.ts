@@ -21,7 +21,13 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const artistName = (searchParams.get("artist") ?? "").trim();
   if (!artistName) {
-    return NextResponse.json({ results: [], total: 0, page: 1, itemsPerPage: 20 });
+    return NextResponse.json({
+      results: [],
+      total: 0,
+      page: 1,
+      itemsPerPage: 20,
+      configured: true,
+    });
   }
 
   const result = await searchConcerts({

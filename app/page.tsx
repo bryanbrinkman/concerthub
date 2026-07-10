@@ -21,12 +21,15 @@ import { TicketArt } from "@/components/ticket-art";
  * The database-completeness views live on /explore.
  */
 
-const EXAMPLE_SEARCHES = [
-  "Rilo Kiley Capitol Theatre",
-  "Daniel Danger",
-  "Foil poster",
-  "Jeff Lynne's ELO",
-  "Franz Ferdinand",
+// Each chip routes to the index that can actually answer it — poster
+// artists and editions go to /posters (which searches designer/title),
+// bands/venues to /shows.
+const EXAMPLE_SEARCHES: Array<{ label: string; href: string }> = [
+  { label: "Rilo Kiley Capitol Theatre", href: `/shows?q=${encodeURIComponent("Rilo Kiley Capitol Theatre")}` },
+  { label: "Daniel Danger", href: `/posters?q=${encodeURIComponent("Daniel Danger")}` },
+  { label: "Foil poster", href: `/posters?q=${encodeURIComponent("Foil")}` },
+  { label: "Jeff Lynne's ELO", href: `/shows?q=${encodeURIComponent("Jeff Lynne's ELO")}` },
+  { label: "Franz Ferdinand", href: `/shows?q=${encodeURIComponent("Franz Ferdinand")}` },
 ];
 
 export default async function HomePage() {
@@ -94,13 +97,13 @@ export default async function HomePage() {
 
         <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-xs text-muted-foreground">
           <span>Try:</span>
-          {EXAMPLE_SEARCHES.map((q) => (
+          {EXAMPLE_SEARCHES.map((ex) => (
             <Link
-              key={q}
-              href={`/shows?q=${encodeURIComponent(q)}`}
+              key={ex.label}
+              href={ex.href}
               className="rounded-full border border-border px-2.5 py-1 transition-colors hover:border-primary/50 hover:text-foreground"
             >
-              {q}
+              {ex.label}
             </Link>
           ))}
         </div>

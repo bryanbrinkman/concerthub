@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   BadgeCheck,
   CalendarDays,
-  FolderPlus,
   MapPin,
   NotebookPen,
   Upload,
@@ -13,6 +12,7 @@ import type { EnrichedPoster } from "@/lib/expressobeans";
 import { formatDateRange, formatShowDate, parseTicketStub } from "@/lib/utils";
 import { toggleAttendedAction } from "@/app/show-actions";
 import { Button } from "@/components/ui/button";
+import { AddToCollection, type CollectionOption } from "@/components/add-to-collection";
 import { Badge } from "@/components/ui/badge";
 import { TicketArt } from "@/components/ticket-art";
 import { SetlistCard } from "@/components/setlist-card";
@@ -39,6 +39,8 @@ interface ShowHeroProps {
   openers?: Artist[];
   /** Viewer owns this archive: "I was there" becomes a real toggle. */
   canEdit?: boolean;
+  /** The viewer's collections — enables the add-to-collection picker. */
+  collections?: CollectionOption[];
 }
 
 /** Hero band: poster, title block, meta, CTAs, and (on wide screens) the setlist. */
@@ -54,6 +56,7 @@ export function ShowHero({
   displayTitle,
   openers = [],
   canEdit,
+  collections,
 }: ShowHeroProps) {
   const stub = parseTicketStub(ticketDetail);
   const title = displayTitle ?? artist?.name ?? "Unknown artist";
@@ -219,36 +222,45 @@ export function ShowHero({
           </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
-            {!show.attended ? (
-              canEdit ? (
-                <form action={toggleAttendedAction}>
-                  <input type="hidden" name="showId" value={show.id} />
-                  <Button type="submit">
-                    <BadgeCheck />
-                    I was there
-                  </Button>
-                </form>
-              ) : (
-                <Button>
-                  <BadgeCheck />
-                  I was there
+            {canEdit ? (
+              <>
+                {!show.attended ? (
+                  <form action={toggleAttendedAction}>
+                    <input type="hidden" name="showId" value={show.id} />
+                    <Button type="submit">
+                      <BadgeCheck />
+                      I was there
+                    </Button>
+                  </form>
+                ) : null}
+                <Button variant={show.attended ? "default" : "secondary"} asChild>
+                  <Link href="#memory">
+                    <NotebookPen />
+                    Add memory
+                  </Link>
                 </Button>
-              )
-            ) : null}
-            <Button variant={show.attended ? "default" : "secondary"}>
-              <NotebookPen />
-              Add memory
-            </Button>
-            <Button variant="secondary">
-              <FolderPlus />
-              Add to collection
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href={`/add/ephemera?show=${show.id}`}>
-                <Upload />
-                Upload ephemera
-              </Link>
-            </Button>
+                {poster && collections ? (
+                  <AddToCollection
+                    posterId={poster.id}
+                    collections={collections}
+                    size="default"
+                  />
+                ) : null}
+                <Button variant="outline" asChild>
+                  <Link href={`/add/ephemera?show=${show.id}`}>
+                    <Upload />
+                    Upload ephemera
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <Button asChild>
+                <Link href="/login?mode=signup">
+                  <BadgeCheck />
+                  Sign up to track your shows
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 
