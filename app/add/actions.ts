@@ -9,7 +9,7 @@ import { getDb, type Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { gradientFor } from "@/lib/archive";
 import {
-  setShowLineup,
+  addToShowLineup,
   upsertArtist,
   upsertTour,
   type LineupEntry,
@@ -174,48 +174,65 @@ export async function updateShowAction(formData: FormData) {
     .where(eq(t.artists.id, show.artistId));
   const primaryName = artistRow?.name ?? "";
 
-  const tourName = optional(str(formData, "tourName"));
-  const tourId = tourName
-    ? await upsertTour(db, show.artistId, tourName, show.date.slice(0, 4))
-    : null;
+  // A show record is COMMUNAL — many attendees share the same canonical row.
+  // So edits only FILL blanks; they never overwrite or erase a value another
+  // attendee already contributed. (Your own posters/memories stay yours to
+  // edit and delete.) This keeps one bad actor from wiping the archive.
+  const set: Partial<typeof t.shows.$inferInsert> = {};
 
-  // setlist.fm link: cleared field unlinks; a new URL relinks (unless the
-  // setlist id already belongs to another show).
-  const urlInput = str(formData, "setlistFmUrl");
-  let setlistFmId = show.setlistFmId;
-  let setlistFmUrl = show.setlistFmUrl;
-  if (!urlInput) {
-    setlistFmId = null;
-    setlistFmUrl = null;
-  } else if (urlInput !== show.setlistFmUrl) {
-    const claimed = await claimSetlistFmId(db, urlInput, showId);
-    if (claimed) {
-      setlistFmId = claimed;
-      setlistFmUrl = urlInput;
+  if (!show.name) {
+    const eventName = optional(str(formData, "eventName"));
+    if (eventName) set.name = eventName;
+  }
+  // Upgrade the default "concert" to a more specific type, but don't change
+  // a type someone already set (e.g. don't flip a festival back).
+  if (show.eventType === "concert") {
+    const eventTypeInput = str(formData, "eventType");
+    if (EVENT_TYPES.has(eventTypeInput) && eventTypeInput !== "concert") {
+      set.eventType = eventTypeInput;
+    }
+  }
+  if (!show.endDate) {
+    const endDateInput = str(formData, "endDate");
+    if (endDateInput && endDateInput > show.date) set.endDate = endDateInput;
+  }
+  if (!show.showTime) {
+    const showTime = optional(str(formData, "showTime"));
+    if (showTime) set.showTime = showTime;
+  }
+  if (!show.tourId) {
+    const tourName = optional(str(formData, "tourName"));
+    if (tourName) {
+      set.tourId = await upsertTour(
+        db,
+        show.artistId,
+        tourName,
+        show.date.slice(0, 4),
+      );
+    }
+  }
+  // setlist.fm: link only when not already linked. Never unlink or relink
+  // over an existing link someone else attached.
+  if (!show.setlistFmId) {
+    const urlInput = str(formData, "setlistFmUrl");
+    if (urlInput) {
+      const claimed = await claimSetlistFmId(db, urlInput, showId);
+      if (claimed) {
+        set.setlistFmId = claimed;
+        set.setlistFmUrl = urlInput;
+      }
     }
   }
 
-  const eventTypeInput = str(formData, "eventType");
-  const endDateInput = str(formData, "endDate");
+  if (Object.keys(set).length > 0) {
+    await db.update(t.shows).set(set).where(eq(t.shows.id, showId));
+  }
+
+  // The bill is ADDITIVE: add the primary act + any performers the form
+  // lists, keeping everything others already contributed. Nothing is ever
+  // removed — a user can add support acts, not delete them.
   const primaryRole = str(formData, "primaryRole");
-
-  await db
-    .update(t.shows)
-    .set({
-      name: optional(str(formData, "eventName")) ?? null,
-      eventType: EVENT_TYPES.has(eventTypeInput) ? eventTypeInput : "concert",
-      endDate: endDateInput && endDateInput > show.date ? endDateInput : null,
-      showTime: optional(str(formData, "showTime")) ?? null,
-      tourId,
-      setlistFmId,
-      setlistFmUrl,
-    })
-    .where(eq(t.shows.id, showId));
-
-  // Full bill replacement: primary act first, then the form's rows in
-  // order. Per-performer setlist links survive (setShowLineup re-attaches
-  // them by artist).
-  await setShowLineup(db, showId, [
+  await addToShowLineup(db, showId, [
     {
       name: primaryName,
       role: BILLING_ROLES.has(primaryRole) ? primaryRole : "headliner",
