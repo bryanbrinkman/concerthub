@@ -23,6 +23,9 @@ const ERRORS: Record<string, string> = {
   weak: "Passwords need at least 8 characters.",
   taken: "That username is taken — try another.",
   unavailable: "Accounts are temporarily unavailable. Try again shortly.",
+  code: "That invite code isn't valid — ask whoever invited you for it.",
+  AccessDenied:
+    "Sign-ups are invite-only right now. Create an account below with your invite code.",
 };
 
 export default async function LoginPage({
@@ -50,7 +53,7 @@ export default async function LoginPage({
         title={signup ? "Create your account" : "Sign in"}
         subtitle={
           signup
-            ? "A username and password is all it takes to start your archive."
+            ? "Invite-only while we test. Enter your code, pick a username and password, and your archive is live."
             : "Pick up where your archive left off."
         }
       />
@@ -70,6 +73,22 @@ export default async function LoginPage({
             action={signup ? registerAction : credentialsSignInAction}
             className="space-y-4"
           >
+            {signup ? (
+              <Field
+                label="Invite code"
+                hint="Concert Collect is invite-only while we test — enter the code you were given."
+              >
+                <input
+                  name="inviteCode"
+                  required
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="e.g. BUDDY"
+                  className={inputClass}
+                />
+              </Field>
+            ) : null}
             <Field
               label="Username"
               hint={
@@ -121,6 +140,12 @@ export default async function LoginPage({
                   Continue with Google
                 </Button>
               </form>
+              {signup ? (
+                <p className="text-center text-[11px] text-muted-foreground">
+                  Google is for existing accounts. New testers: use an invite
+                  code above.
+                </p>
+              ) : null}
             </>
           ) : null}
 

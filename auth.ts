@@ -38,6 +38,20 @@ export function missingAuthEnv(): string[] {
   );
 }
 
+/**
+ * Account creation is invite-only while onboarding testers: a new account
+ * requires this code. Override with SIGNUP_INVITE_CODE; defaults to BUDDY.
+ * Comparison is case-insensitive and trims surrounding whitespace.
+ */
+export const signupInviteCode = process.env.SIGNUP_INVITE_CODE || "BUDDY";
+
+export function inviteCodeValid(code: string | null | undefined): boolean {
+  return (
+    String(code ?? "").trim().toLowerCase() ===
+    signupInviteCode.trim().toLowerCase()
+  );
+}
+
 const db = getDb();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -85,6 +99,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: { signIn: "/login" },
   trustHost: true,
   callbacks: {
+    /**
+     * Google account creation is invite-only: only users who already have an
+     * account may sign in with Google, because the OAuth flow can't collect
+     * the invite code. New testers create an account with the code via the
+     * username/password form. (Credentials sign-in is already gated at the
+     * provider + registration action.)
+     */
+    async signIn({ account, user }) {
+      if (account?.provider !== "google") return true;
+      const email = user?.email;
+      if (!email || !db) return false;
+      const [existing] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, email));
+      return Boolean(existing);
+    },
     jwt({ token, user }) {
       if (user?.id) token.sub = user.id;
       return token;

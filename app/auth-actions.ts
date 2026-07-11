@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { eq } from "drizzle-orm";
 
-import { signIn, signOut } from "@/auth";
+import { inviteCodeValid, signIn, signOut } from "@/auth";
 import { getDb } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { users } from "@/lib/db/schema";
@@ -38,6 +38,9 @@ export async function registerAction(formData: FormData) {
   const username = displayName.toLowerCase();
   const password = String(formData.get("password") ?? "");
 
+  // Invite-only while testing: a valid code is required to create an account.
+  if (!inviteCodeValid(formData.get("inviteCode") as string))
+    redirect("/login?mode=signup&error=code");
   if (!USERNAME_RE.test(displayName))
     redirect("/login?mode=signup&error=badname");
   if (password.length < 8) redirect("/login?mode=signup&error=weak");
