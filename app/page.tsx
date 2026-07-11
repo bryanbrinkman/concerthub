@@ -18,17 +18,6 @@ import { Button } from "@/components/ui/button";
  * views live on /explore.
  */
 
-// Each chip routes to the index that can actually answer it — poster
-// artists and editions go to /posters (which searches designer/title),
-// bands/venues to /shows.
-const EXAMPLE_SEARCHES: Array<{ label: string; href: string }> = [
-  { label: "Rilo Kiley Capitol Theatre", href: `/shows?q=${encodeURIComponent("Rilo Kiley Capitol Theatre")}` },
-  { label: "Daniel Danger", href: `/posters?q=${encodeURIComponent("Daniel Danger")}` },
-  { label: "Foil poster", href: `/posters?q=${encodeURIComponent("Foil")}` },
-  { label: "Jeff Lynne's ELO", href: `/shows?q=${encodeURIComponent("Jeff Lynne's ELO")}` },
-  { label: "Franz Ferdinand", href: `/shows?q=${encodeURIComponent("Franz Ferdinand")}` },
-];
-
 export default async function HomePage() {
   const archive = await getArchive();
   const counts = archiveCounts(archive);
@@ -90,21 +79,12 @@ export default async function HomePage() {
           </Button>
         </form>
 
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-xs text-muted-foreground">
-          <span>Try:</span>
-          {EXAMPLE_SEARCHES.map((ex) => (
-            <Link
-              key={ex.label}
-              href={ex.href}
-              className="rounded-full border border-border px-2.5 py-1 transition-colors hover:border-primary/50 hover:text-foreground"
-            >
-              {ex.label}
-            </Link>
-          ))}
-        </div>
-
-        <div className="pt-1">
-          <Button size="lg" asChild>
+        <div className="pt-2">
+          <Button
+            size="lg"
+            asChild
+            className="h-14 rounded-xl border-transparent bg-gradient-to-r from-violet-600 to-fuchsia-600 px-9 text-base font-semibold text-white shadow-lg shadow-fuchsia-900/30 transition-all hover:from-violet-500 hover:to-fuchsia-500 hover:shadow-fuchsia-800/40 [&_svg]:size-5"
+          >
             <Link href={signedIn ? "/add" : "/login?mode=signup"}>
               <Plus />
               {signedIn ? "Add to your archive" : "Start your free archive"}
