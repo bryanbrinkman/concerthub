@@ -486,7 +486,7 @@ function EditableWall({
                   : "left 0.3s cubic-bezier(0.22, 1, 0.36, 1), top 0.3s cubic-bezier(0.22, 1, 0.36, 1), width 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
               }}
               className={cn(
-                "absolute cursor-grab active:cursor-grabbing",
+                "group absolute cursor-grab active:cursor-grabbing",
                 isDragging && "scale-[1.04] shadow-2xl",
                 selected === item.posterId &&
                   !isDragging &&
@@ -507,6 +507,28 @@ function EditableWall({
                 }}
                 className="w-full border-[3px] border-white bg-white shadow-[0_9px_22px_-6px_rgba(0,0,0,0.5)] ring-1 ring-black/15"
               />
+              {/* Hover delete — take the piece off the wall; the scene
+                  re-tidies around the gap. stopPropagation so the click
+                  doesn't start a drag. */}
+              {!isDragging ? (
+                <button
+                  type="button"
+                  aria-label={`Take ${item.title} off the wall`}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFromWall(item.posterId);
+                  }}
+                  className={cn(
+                    "absolute right-1 top-1 z-10 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-black/65 text-white shadow-md backdrop-blur-sm transition-opacity hover:bg-black/85 focus-visible:opacity-100 focus-visible:outline-none",
+                    selected === item.posterId
+                      ? "opacity-100"
+                      : "opacity-0 group-hover:opacity-100",
+                  )}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              ) : null}
             </div>
           );
         })}
