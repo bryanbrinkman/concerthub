@@ -215,7 +215,10 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ---- Build your archive ---- */}
+      {/* ---- Build your archive ---- (signed-in-empty is covered by the
+           first-run callout up top, so only show this for archives-in-
+           progress or signed-out visitors) */}
+      {hasArchive || !signedIn ? (
       <section
         id="build"
         className="rounded-2xl border border-border bg-card px-6 py-10 text-center sm:px-10 sm:py-14"
@@ -289,6 +292,7 @@ export default async function HomePage() {
           </>
         )}
       </section>
+      ) : null}
     </div>
   );
 }
