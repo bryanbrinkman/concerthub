@@ -1,12 +1,9 @@
 import Link from "next/link";
-import { MapPin, Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
 
-import type { GradientKey } from "@/lib/types";
 import { listPublicArtists } from "@/lib/public";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
-import { GradientArt } from "@/components/gradient-art";
 import { EmptyState } from "@/components/empty-state";
 import { routeMetadata } from "@/lib/seo";
 
@@ -17,63 +14,89 @@ export const metadata = routeMetadata({
   path: "/artists",
 });
 
-/** Public artist index: everyone in the shared archive with submitted
- * posters or documented shows. */
-export default async function ArtistsPage() {
-  const artists = (await listPublicArtists()) ?? [];
+/** Public performer index: a dense, searchable list built to scale as the
+ * community adds acts. Every performer on a documented bill appears. */
+export default async function ArtistsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const query = (q ?? "").trim().toLowerCase();
+  const all = (await listPublicArtists()) ?? [];
+  const artists = query
+    ? all.filter(
+        (a) =>
+          a.name.toLowerCase().includes(query) ||
+          (a.hometown ?? "").toLowerCase().includes(query),
+      )
+    : all;
 
   return (
     <div>
       <PageHeader
         title="Performers"
-        subtitle="Performers documented in the archive — with posters and shows contributed by the community."
+        subtitle="Everyone documented in the archive — headliners, support, and festival acts alike."
       />
+
+      {/* Search — plain GET so results are linkable and work without JS */}
+      <form action="/artists" method="get" className="mb-4 flex max-w-md gap-2">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Search performers…"
+            className="h-9 w-full rounded-lg border border-border bg-secondary pl-9 pr-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </div>
+        <Button type="submit" size="sm">
+          Search
+        </Button>
+      </form>
+
+      {all.length > 0 ? (
+        <p className="mb-3 text-xs text-muted-foreground">
+          {artists.length.toLocaleString()}{" "}
+          {query ? `of ${all.length.toLocaleString()} ` : ""}
+          performer{artists.length === 1 ? "" : "s"}
+        </p>
+      ) : null}
+
       {artists.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="No performers yet"
-          description="Performers appear here as the community adds posters and shows."
+          title={query ? "No matches" : "No performers yet"}
+          description={
+            query
+              ? `No performer matches “${q}”. Try a different spelling.`
+              : "Performers appear here as the community adds posters and shows."
+          }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {artists.map((artist) => (
-            <Link key={artist.id} href={`/artists/${artist.id}`} className="block">
-              <Card className="h-full transition-colors hover:border-white/20">
-                <CardContent className="flex items-start gap-4 p-4">
-                  <GradientArt
-                    gradient={artist.gradient as GradientKey}
-                    className="h-14 w-14 shrink-0 rounded-full"
-                  >
-                    <div className="flex w-full items-center justify-center">
-                      <span className="text-lg font-bold text-white/90">
-                        {artist.name.charAt(0)}
-                      </span>
-                    </div>
-                  </GradientArt>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{artist.name}</p>
-                    {artist.hometown ? (
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        {artist.hometown}
-                      </p>
-                    ) : null}
-                    {artist.genres.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {artist.genres.map((genre) => (
-                          <Badge key={genre} variant="secondary">
-                            {genre}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : null}
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      {artist.showCount}{" "}
-                      {artist.showCount === 1 ? "documented show" : "documented shows"} →
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+            <Link
+              key={artist.id}
+              href={`/artists/${artist.id}`}
+              title={`${artist.name} — ${artist.showCount} documented show${artist.showCount === 1 ? "" : "s"}`}
+              className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-white/20 hover:bg-white/[0.03]"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-muted-foreground">
+                {artist.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{artist.name}</p>
+                {artist.hometown ? (
+                  <p className="truncate text-xs text-muted-foreground">
+                    {artist.hometown}
+                  </p>
+                ) : null}
+              </div>
+              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                {artist.showCount}
+              </span>
             </Link>
           ))}
         </div>
