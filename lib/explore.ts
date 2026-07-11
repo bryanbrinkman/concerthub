@@ -100,7 +100,12 @@ export async function getExploreData(): Promise<ExploreData | null> {
           .from(t.posters)
           .leftJoin(t.shows, eq(t.posters.showId, t.shows.id))
           .leftJoin(t.artists, eq(t.shows.artistId, t.artists.id))
-          .leftJoin(t.venues, eq(t.shows.venueId, t.venues.id)),
+          .leftJoin(t.venues, eq(t.shows.venueId, t.venues.id))
+          // Bound the homepage/explore aggregation so it stays fast as the
+          // archive grows; the newest posters are the ones worth surfacing.
+          // (Missing-data counts become "within the most recent N" at scale.)
+          .orderBy(desc(t.posters.year))
+          .limit(1200),
         db
           .select({
             id: t.shows.id,

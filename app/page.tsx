@@ -1,5 +1,17 @@
 import Link from "next/link";
-import { CalendarDays, Download, Plus, Search, Sparkles, UserPlus } from "lucide-react";
+import {
+  ArrowLeftRight,
+  CalendarDays,
+  Download,
+  Image as ImageIcon,
+  MapPin,
+  Paintbrush,
+  Plus,
+  Search,
+  Sparkles,
+  UserPlus,
+  Users,
+} from "lucide-react";
 
 import { seedDemoAction } from "@/app/seed-actions";
 import {
@@ -13,10 +25,18 @@ import { formatShortDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 /**
- * Public homepage. Deliberately editorial, three sections only:
- * search → poster wall → build your archive. The database-completeness
- * views live on /explore.
+ * Public homepage. Deliberately editorial: search → poster wall → browse →
+ * build your archive. The database-completeness views live on /explore.
  */
+
+const BROWSE = [
+  { label: "Posters", href: "/posters", icon: ImageIcon },
+  { label: "Shows", href: "/shows", icon: CalendarDays },
+  { label: "Performers", href: "/artists", icon: Users },
+  { label: "Venues", href: "/venues", icon: MapPin },
+  { label: "Poster Artists", href: "/poster-artists", icon: Paintbrush },
+  { label: "Trading Post", href: "/prints", icon: ArrowLeftRight },
+];
 
 export default async function HomePage() {
   const archive = await getArchive();
@@ -93,6 +113,33 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* First-run: signed in with an empty archive — one clear next step */}
+      {signedIn && !hasArchive ? (
+        <section className="mx-auto max-w-3xl rounded-2xl border border-primary/30 bg-primary/[0.06] px-6 py-6 text-center">
+          <h2 className="text-lg font-semibold tracking-tight">
+            Your archive is empty — let&apos;s fix that
+          </h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+            Add the first concert you remember. Search it, pick your night, and
+            we&apos;ll attach the real setlist automatically.
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button asChild>
+              <Link href="/add/show">
+                <CalendarDays />
+                Add your first show
+              </Link>
+            </Button>
+            <Button variant="secondary" asChild>
+              <Link href="/import">
+                <Download />
+                Import from setlist.fm
+              </Link>
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
       {/* ---- 2 · Poster wall: discover concert posters ---- */}
       {wall.length > 0 ? (
         <section>
@@ -149,7 +196,26 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* ---- 3 · Build your archive ---- */}
+      {/* ---- Browse the archive ---- */}
+      <section>
+        <h2 className="mb-3 text-xl font-semibold tracking-tight">
+          Browse the archive
+        </h2>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {BROWSE.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition-colors hover:border-white/20 hover:bg-white/[0.03]"
+            >
+              <item.icon className="h-4 w-4 shrink-0 text-primary" />
+              <span className="truncate">{item.label}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ---- Build your archive ---- */}
       <section
         id="build"
         className="rounded-2xl border border-border bg-card px-6 py-10 text-center sm:px-10 sm:py-14"

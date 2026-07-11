@@ -357,9 +357,6 @@ export default async function ShowDetailPage({
                     <h2 className="text-base font-semibold">
                       Photos from the night
                     </h2>
-                    {photos.length > 4 ? (
-                      <span className="text-xs text-primary">View all</span>
-                    ) : null}
                   </div>
                   <PhotoGrid photos={photos} limit={4} addHref={`/add/photo?show=${show.id}`} canEdit={canEdit} />
                 </section>

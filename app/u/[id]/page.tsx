@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CalendarDays, MapPin } from "lucide-react";
 import { desc, eq } from "drizzle-orm";
@@ -11,7 +12,34 @@ import { PosterArt } from "@/components/gradient-art";
 import { TicketArt } from "@/components/ticket-art";
 import { GalleryWall, type WallSlot } from "@/components/gallery-wall";
 
-export const metadata = { title: "Collector profile" };
+/** Dynamic preview so a shared gallery/profile link shows the collector's
+ * name in the browser tab and social cards. */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const db = getDb();
+  if (!db) return { title: "Collector profile" };
+  try {
+    const [user] = await db
+      .select({ name: t.users.name })
+      .from(t.users)
+      .where(eq(t.users.id, id));
+    const name = user?.name ?? "A collector";
+    const title = `${name}'s archive`;
+    const description = `${name}'s concert archive on Concert Collect — their gallery wall, posters, and shows.`;
+    return {
+      title,
+      description,
+      openGraph: { title, description, type: "profile" },
+      twitter: { card: "summary", title, description },
+    };
+  } catch {
+    return { title: "Collector profile" };
+  }
+}
 
 /**
  * Public, read-only collector profile: their attended shows and poster
