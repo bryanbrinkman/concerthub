@@ -2,14 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import {
-  ArrowLeftRight,
-  Frame,
-  ListMusic,
-  LogIn,
-  NotebookPen,
-  X,
-} from "lucide-react";
+import { Frame, LogIn, X } from "lucide-react";
 
 import { signInAction } from "@/app/auth-actions";
 import { Button } from "@/components/ui/button";
@@ -25,18 +18,6 @@ const POINTS = [
   {
     icon: Frame,
     text: "Archive the posters, ticket stubs, wristbands, and merch from every concert you've attended.",
-  },
-  {
-    icon: ListMusic,
-    text: "Every show gets its real setlist automatically — with playable song previews.",
-  },
-  {
-    icon: NotebookPen,
-    text: "Keep photos and your own written memory of the night, before it fades.",
-  },
-  {
-    icon: ArrowLeftRight,
-    text: "Browse other collectors' prints on the Trading Post and raise a hand on a grail.",
   },
 ];
 
