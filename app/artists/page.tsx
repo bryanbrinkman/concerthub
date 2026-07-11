@@ -11,9 +11,9 @@ import { EmptyState } from "@/components/empty-state";
 import { routeMetadata } from "@/lib/seo";
 
 export const metadata = routeMetadata({
-  title: "Artists — Concert Posters & Show History | Concert Collect",
+  title: "Performers — Concert Posters & Show History | Concert Collect",
   description:
-    "Browse artists in the Concert Collect archive — their documented shows, posters, and posterographies from the live music community.",
+    "Browse performers in the Concert Collect archive — their documented shows, posters, and posterographies from the live music community.",
   path: "/artists",
 });
 
@@ -25,14 +25,14 @@ export default async function ArtistsPage() {
   return (
     <div>
       <PageHeader
-        title="Artists"
+        title="Performers"
         subtitle="Performers documented in the archive — with posters and shows contributed by the community."
       />
       {artists.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="No artists yet"
-          description="Artists appear here as the community adds posters and shows."
+          title="No performers yet"
+          description="Performers appear here as the community adds posters and shows."
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

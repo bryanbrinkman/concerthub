@@ -77,7 +77,7 @@ export default async function RootLayout({
     ...archive.artists.map((artist) => ({
       label: artist.name,
       href: `/artists/${artist.id}`,
-      group: "Artists",
+      group: "Performers",
     })),
     ...archive.venues.map((venue) => ({
       label: venue.name,

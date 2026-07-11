@@ -9,16 +9,13 @@ import {
   postersForShow,
 } from "@/lib/archive";
 import { getExploreData, type ExplorePoster } from "@/lib/explore";
-import { formatShortDate, formatShowDate } from "@/lib/utils";
-import type { GradientKey } from "@/lib/types";
+import { formatShortDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { TicketArt } from "@/components/ticket-art";
 
 /**
- * Public homepage. Deliberately editorial, four sections only:
- * search → poster wall → recently archived shows → build your archive.
- * The database-completeness views live on /explore.
+ * Public homepage. Deliberately editorial, three sections only:
+ * search → poster wall → build your archive. The database-completeness
+ * views live on /explore.
  */
 
 // Each chip routes to the index that can actually answer it — poster
@@ -63,8 +60,6 @@ export default async function HomePage() {
           ];
         });
 
-  const recentShows = explore?.recentShows ?? [];
-  const myShowIds = new Set(archive.shows.map((s) => s.id));
   const signedIn = !archive.demo;
   const hasArchive = signedIn && archive.shows.length > 0;
 
@@ -174,61 +169,7 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* ---- 3 · Recently archived shows ---- */}
-      {recentShows.length > 0 ? (
-        <section>
-          <div className="mb-4 flex items-baseline justify-between">
-            <h2 className="text-xl font-semibold tracking-tight">
-              Recently Archived
-            </h2>
-            <Link
-              href="/shows"
-              className="text-sm text-primary transition-colors hover:text-primary/80"
-            >
-              Explore shows →
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {recentShows.map((show) => {
-              const href = myShowIds.has(show.id)
-                ? `/shows/${show.id}`
-                : show.posterId
-                  ? `/posters/${show.posterId}`
-                  : `/shows?q=${encodeURIComponent(show.artistName)}`;
-              return (
-                <Link key={show.id} href={href} className="group block">
-                  <TicketArt
-                    seedId={show.id}
-                    gradient={(show.gradient ?? "midnight") as GradientKey}
-                    artist={show.artistName}
-                    venue={show.venueName}
-                    cityLine={show.venueCity}
-                    dateLine={formatShowDate(show.date)}
-                    tourLine="Archived Show"
-                    className="transition-transform duration-300 group-hover:-translate-y-1"
-                  />
-                  <div className="mt-2 flex items-center justify-between gap-2 px-0.5">
-                    <Badge variant="outline">
-                      {show.artifacts} artifact{show.artifacts === 1 ? "" : "s"}
-                    </Badge>
-                    {show.posterImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={show.posterImage}
-                        alt=""
-                        loading="lazy"
-                        className="h-10 w-8 rounded-sm border border-white/10 bg-black/40 object-contain"
-                      />
-                    ) : null}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
-      {/* ---- 4 · Build your archive ---- */}
+      {/* ---- 3 · Build your archive ---- */}
       <section
         id="build"
         className="rounded-2xl border border-border bg-card px-6 py-10 text-center sm:px-10 sm:py-14"

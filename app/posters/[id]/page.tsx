@@ -370,13 +370,7 @@ export default async function PosterRecordPage({
             <Button variant="outline" size="sm" asChild>
               <Link href={`/edit/poster/${record.id}`}>Complete the record</Link>
             </Button>
-          ) : (
-            <Button variant="outline" size="sm" asChild>
-              <a href="mailto:hello@concertcollect.com?subject=Poster%20record%20details">
-                Share what you know
-              </a>
-            </Button>
-          )}
+          ) : null}
         </div>
       ) : null}
 
