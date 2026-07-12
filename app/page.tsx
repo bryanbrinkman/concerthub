@@ -35,7 +35,7 @@ const BROWSE = [
   { label: "Performers", href: "/artists", icon: Users },
   { label: "Venues", href: "/venues", icon: MapPin },
   { label: "Poster Artists", href: "/poster-artists", icon: Paintbrush },
-  { label: "Trading Post", href: "/prints", icon: ArrowLeftRight },
+  { label: "Trading Post", href: "/trading", icon: ArrowLeftRight },
 ];
 
 export default async function HomePage() {

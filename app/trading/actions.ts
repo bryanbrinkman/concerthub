@@ -61,10 +61,10 @@ export async function toggleInterestAction(formData: FormData) {
       await sendEmail({
         to: owner.email,
         subject: `Someone's interested in your "${poster[0].title}" print`,
-        html: `<p>${interested?.name ?? "A collector"} raised a hand on your <strong>${poster[0].title}</strong> print on Concert Collect.</p><p>Reply to them at ${interested?.email ?? "(no email on file)"} to work out a sale or trade — Concert Collect doesn't handle payments.</p><p><a href="https://concertcollect.com/prints">See your prints on the Trading Post</a></p>`,
+        html: `<p>${interested?.name ?? "A collector"} raised a hand on your <strong>${poster[0].title}</strong> print on Concert Collect.</p><p>Reply to them at ${interested?.email ?? "(no email on file)"} to work out a sale or trade — Concert Collect doesn't handle payments.</p><p><a href="https://concertcollect.com/trading">See your prints on the Trading Post</a></p>`,
       });
     }
   }
 
-  revalidatePath("/prints");
+  revalidatePath("/trading");
 }

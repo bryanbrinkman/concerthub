@@ -27,7 +27,7 @@ export default function robots(): MetadataRoute.Robots {
           "/edit/",
           "/import",
           "/login",
-          "/prints", // Trading Post — personal interest actions
+          "/trading", // Trading Post — personal interest actions
         ],
       },
     ],

@@ -67,7 +67,7 @@ const MORE_NAV: NavItem[] = [
   { label: "Performers", href: "/artists", icon: Users },
   { label: "Poster Artists", href: "/poster-artists", icon: Paintbrush },
   { label: "Venues", href: "/venues", icon: MapPin },
-  { label: "Trading Post", href: "/prints", icon: ArrowLeftRight },
+  { label: "Trading Post", href: "/trading", icon: ArrowLeftRight },
   { label: "Import", href: "/import", icon: Download },
 ];
 

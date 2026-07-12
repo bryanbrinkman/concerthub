@@ -8,7 +8,7 @@ export const metadata = { title: "Trading Post" };
 /**
  * Trading Post is paused while we work out the logistics of trading and
  * selling prints safely. The community listing + interest flow live in git
- * history (and app/prints/actions.ts) for when we turn it back on.
+ * history (and app/trading/actions.ts) for when we turn it back on.
  */
 export default function PrintsPage() {
   return (
