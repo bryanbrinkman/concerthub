@@ -22,7 +22,9 @@ import {
 } from "@/lib/archive";
 import { getExploreData, type ExplorePoster } from "@/lib/explore";
 import { formatShortDate } from "@/lib/utils";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
+import { JsonLd } from "@/components/json-ld";
 
 /**
  * Public homepage. Deliberately editorial: search → poster wall → browse →
@@ -74,6 +76,8 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-14 pb-6">
+      <JsonLd data={[websiteJsonLd(), organizationJsonLd()]} />
+
       {/* ---- 1 · Hero: search live music history ---- */}
       <section className="mx-auto max-w-3xl space-y-5 pt-8 text-center sm:pt-14">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">

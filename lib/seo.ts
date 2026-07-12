@@ -144,6 +144,36 @@ export function posterJsonLd(input: PosterJsonLdInput): Record<string, unknown> 
   });
 }
 
+/** Site identity for the homepage — powers Google's sitelinks search box. */
+export function websiteJsonLd(): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE,
+    url: BASE_URL,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${BASE_URL}/shows?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+
+export function organizationJsonLd(): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE,
+    url: BASE_URL,
+    logo: `${BASE_URL}/logo.png`,
+    description:
+      "A community archive of live music history — concerts, posters, ticket stubs, and setlists.",
+  };
+}
+
 export function personJsonLd(
   name: string,
   path: string,

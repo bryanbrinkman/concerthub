@@ -39,25 +39,47 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const dynamicRoutes: MetadataRoute.Sitemap = [];
   try {
     const [posters, artists, venues, showPosters, designers] = await Promise.all([
-      db.select({ id: t.posters.id }).from(t.posters).limit(10000),
+      db
+        .select({ id: t.posters.id, imageUrl: t.posters.imageUrl })
+        .from(t.posters)
+        .limit(10000),
       db.select({ id: t.artists.id }).from(t.artists).limit(10000),
       db.select({ id: t.venues.id }).from(t.venues).limit(10000),
       // Only shows that carry a poster (the public show database's bar for
       // "documented enough to be worth indexing") keeps thin pages out.
       db
-        .select({ id: t.posters.showId })
+        .select({ id: t.posters.showId, imageUrl: t.posters.imageUrl })
         .from(t.posters)
         .orderBy(desc(t.posters.year))
         .limit(10000),
       db.select({ designer: t.posters.designer }).from(t.posters).limit(10000),
     ]);
-    for (const p of posters) dynamicRoutes.push(url(`/posters/${p.id}`));
+    // Poster art is the archive's key image asset — attach it so the pages
+    // surface in Google Images (image sitemap extension).
+    for (const p of posters)
+      dynamicRoutes.push({
+        ...url(`/posters/${p.id}`),
+        images: p.imageUrl ? [p.imageUrl] : undefined,
+      });
     for (const a of artists) dynamicRoutes.push(url(`/artists/${a.id}`));
     for (const v of venues) dynamicRoutes.push(url(`/venues/${v.id}`));
+    // First poster image per show, for the show page's image entry.
+    const showImage = new Map<string, string>();
+    for (const s of showPosters) {
+      if (s.id && s.imageUrl && !showImage.has(s.id)) {
+        showImage.set(s.id, s.imageUrl);
+      }
+    }
     const showIds = new Set(
       showPosters.map((s) => s.id).filter((id): id is string => Boolean(id)),
     );
-    for (const id of showIds) dynamicRoutes.push(url(`/shows/${id}`));
+    for (const id of showIds) {
+      const img = showImage.get(id);
+      dynamicRoutes.push({
+        ...url(`/shows/${id}`),
+        images: img ? [img] : undefined,
+      });
+    }
     const artistSlugs = new Set(
       designers
         .map((d) => d.designer)

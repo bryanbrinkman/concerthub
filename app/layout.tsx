@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Concert Collect",
     description:
       "Your shows. Your story. A personal archive for live music memories.",
