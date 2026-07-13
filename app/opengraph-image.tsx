@@ -34,7 +34,7 @@ export default function OpengraphImage() {
             fontSize: 32,
             letterSpacing: 8,
             textTransform: "uppercase",
-            color: "#a78bfa",
+            color: "#fbbf24",
           }}
         >
           Concert Collect
@@ -70,7 +70,7 @@ export default function OpengraphImage() {
             height: 12,
             width: 260,
             borderRadius: 9999,
-            background: "linear-gradient(90deg, #7c3aed, #db2777)",
+            background: "linear-gradient(90deg, #f59e0b, #ea580c)",
           }}
         />
       </div>

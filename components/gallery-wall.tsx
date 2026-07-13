@@ -490,7 +490,7 @@ function EditableWall({
                 isDragging && "scale-[1.04] shadow-2xl",
                 selected === item.posterId &&
                   !isDragging &&
-                  "outline outline-2 outline-offset-2 outline-[#8b5cf6]",
+                  "outline outline-2 outline-offset-2 outline-[#f5a524]",
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -167,7 +167,7 @@ export default async function AddPosterPage({
               <input
                 type="checkbox"
                 name="signed"
-                className="h-4 w-4 accent-[#8b5cf6]"
+                className="h-4 w-4 accent-[#f5a524]"
               />
               Signed / autographed
             </label>

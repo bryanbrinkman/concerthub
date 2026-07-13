@@ -107,7 +107,7 @@ export default async function HomePage() {
           <Button
             size="lg"
             asChild
-            className="h-14 rounded-xl border-transparent bg-gradient-to-r from-violet-600 to-fuchsia-600 px-9 text-base font-semibold text-white shadow-lg shadow-fuchsia-900/30 transition-all hover:from-violet-500 hover:to-fuchsia-500 hover:shadow-fuchsia-800/40 [&_svg]:size-5"
+            className="h-14 rounded-xl border-transparent bg-gradient-to-r from-amber-400 to-amber-500 px-9 text-base font-semibold text-stone-950 shadow-lg shadow-amber-900/40 transition-all hover:from-amber-300 hover:to-amber-400 hover:shadow-amber-800/50 [&_svg]:size-5"
           >
             <Link href={signedIn ? "/add" : "/login?mode=signup"}>
               <Plus />

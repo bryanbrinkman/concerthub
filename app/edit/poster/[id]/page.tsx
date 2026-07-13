@@ -217,7 +217,7 @@ export default async function EditPosterPage({
                 type="checkbox"
                 name="signed"
                 defaultChecked={edition?.signed ?? false}
-                className="h-4 w-4 accent-[#8b5cf6]"
+                className="h-4 w-4 accent-[#f5a524]"
               />
               Signed / autographed
             </label>

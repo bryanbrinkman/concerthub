@@ -689,7 +689,7 @@ export function AddShowWizard() {
                 type="checkbox"
                 checked={favorite}
                 onChange={(e) => setFavorite(e.target.checked)}
-                className="h-4 w-4 accent-[#8b5cf6]"
+                className="h-4 w-4 accent-[#f5a524]"
               />
               Mark as a favorite
             </label>

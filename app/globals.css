@@ -11,8 +11,8 @@
   --card-foreground: #ececf0;
   --popover: #141419;
   --popover-foreground: #ececf0;
-  --primary: #8b5cf6;
-  --primary-foreground: #f5f3ff;
+  --primary: #f5a524;
+  --primary-foreground: #1b1305;
   --secondary: #1a1a20;
   --secondary-foreground: #c9c9d2;
   --muted: #17171c;
@@ -23,7 +23,7 @@
   --destructive-foreground: #fef2f2;
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: rgba(139, 92, 246, 0.5);
+  --ring: rgba(245, 165, 36, 0.45);
   --radius: 0.7rem;
 }
 

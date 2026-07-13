@@ -162,7 +162,7 @@ function UserFooter({
             className="h-9 w-9 shrink-0 rounded-full border border-border object-cover"
           />
         ) : (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 text-sm font-semibold text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-sm font-semibold text-stone-900">
             {initial}
           </div>
         )}
