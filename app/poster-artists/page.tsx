@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Frame, Paintbrush } from "lucide-react";
+import { Frame, Globe, Paintbrush } from "lucide-react";
 
 import { listPublicPosterArtists } from "@/lib/public";
+import { displayHost } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
@@ -90,6 +91,12 @@ export default async function PosterArtistsPage({
                       {artist.posterCount === 1 ? "print" : "prints"}
                     </Badge>
                   </div>
+                  {artist.website ? (
+                    <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                      <Globe className="h-3 w-3 shrink-0 text-primary/80" />
+                      {displayHost(artist.website)}
+                    </p>
+                  ) : null}
                 </CardContent>
               </Card>
             </Link>

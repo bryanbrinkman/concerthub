@@ -400,6 +400,22 @@ export interface PosterArtistCard {
   name: string;
   posterCount: number;
   thumbs: string[];
+  website?: string;
+}
+
+/** slug → website for poster artists that have one recorded. Best-effort:
+ * returns an empty map if the poster_artist table isn't migrated yet. */
+async function posterArtistWebsites(db: Db): Promise<Map<string, string>> {
+  try {
+    const rows = await db
+      .select({ slug: t.posterArtists.slug, website: t.posterArtists.website })
+      .from(t.posterArtists);
+    return new Map(
+      rows.filter((r) => r.website).map((r) => [r.slug, r.website as string]),
+    );
+  } catch {
+    return new Map();
+  }
 }
 
 /**
@@ -431,12 +447,14 @@ export async function listPublicPosterArtists(): Promise<
       if (row.imageUrl && entry.thumbs.length < 4) entry.thumbs.push(row.imageUrl);
       byslug.set(slug, entry);
     }
+    const websites = await posterArtistWebsites(db);
     return [...byslug.entries()]
       .map(([slug, e]) => ({
         slug,
         name: e.name,
         posterCount: e.count,
         thumbs: e.thumbs,
+        website: websites.get(slug),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   } catch (error) {
@@ -460,6 +478,28 @@ export interface PosterArtistDetail {
   name: string;
   works: PosterArtistWork[];
   years: string;
+  website?: string;
+}
+
+/** The recorded website for a poster artist (by designer name), if any.
+ * Best-effort — undefined when the poster_artist table isn't migrated. */
+export async function getPosterArtistWebsite(
+  name?: string,
+): Promise<string | undefined> {
+  const db = getDb();
+  const clean = (name ?? "").trim();
+  if (!db || !clean || clean.toLowerCase() === "unknown") return undefined;
+  const slug = posterArtistSlug(clean);
+  if (!slug) return undefined;
+  try {
+    const [row] = await db
+      .select({ website: t.posterArtists.website })
+      .from(t.posterArtists)
+      .where(eq(t.posterArtists.slug, slug));
+    return row?.website ?? undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Every print by a poster artist (matched by slug), newest first. */
@@ -509,7 +549,8 @@ export async function getPosterArtistBySlug(
         : Math.min(...yearsList) === Math.max(...yearsList)
           ? String(yearsList[0])
           : `${Math.min(...yearsList)}–${Math.max(...yearsList)}`;
-    return { slug, name, works, years };
+    const website = await getPosterArtistWebsite(name);
+    return { slug, name, works, years, website };
   } catch (error) {
     console.warn("[public] poster-artist detail failed:", error);
     return null;

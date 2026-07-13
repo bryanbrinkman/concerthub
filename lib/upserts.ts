@@ -9,6 +9,33 @@ import { and, eq } from "drizzle-orm";
 import type { Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { gradientFor } from "@/lib/archive";
+import { posterArtistSlug } from "@/lib/utils";
+
+/**
+ * Record a poster artist (print designer) keyed by slug, optionally with a
+ * website. The name is refreshed to the latest spelling; the website is only
+ * set when provided (so a later poster with a blank field can't wipe it).
+ * Skips blank/"Unknown" credits. Throws if the poster_artist table isn't
+ * migrated yet — callers wrap this best-effort.
+ */
+export async function upsertPosterArtist(
+  db: Db,
+  name: string,
+  website?: string,
+): Promise<void> {
+  const clean = name.trim();
+  if (!clean || clean.toLowerCase() === "unknown") return;
+  const slug = posterArtistSlug(clean);
+  if (!slug) return;
+  const site = website?.trim() || undefined;
+  await db
+    .insert(t.posterArtists)
+    .values({ slug, name: clean, website: site })
+    .onConflictDoUpdate({
+      target: t.posterArtists.slug,
+      set: site ? { name: clean, website: site } : { name: clean },
+    });
+}
 
 export async function upsertArtist(db: Db, name: string): Promise<string> {
   const existing = await db

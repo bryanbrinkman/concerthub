@@ -7,6 +7,7 @@ import {
   findVenue,
   getArchive,
 } from "@/lib/archive";
+import { getPosterArtistWebsite } from "@/lib/public";
 import { formatShortDate, parsePosterSizeIn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export default async function EditPosterPage({
         .filter(Boolean)
         .join("\n")
     : "";
+  const designerWebsite = await getPosterArtistWebsite(poster.designer);
   const edition = poster.editions[0];
   const legacySize =
     edition?.widthIn && edition?.heightIn
@@ -123,6 +125,21 @@ export default async function EditPosterPage({
                 <input
                   name="designer"
                   defaultValue={poster.designer}
+                  className={inputClass}
+                />
+              </Field>
+              <Field
+                label="Poster Artist website"
+                hint="e.g. killeracid.com — shown on their poster-artist page."
+              >
+                <input
+                  name="designerWebsite"
+                  type="text"
+                  inputMode="url"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  defaultValue={designerWebsite ?? ""}
+                  placeholder="killeracid.com"
                   className={inputClass}
                 />
               </Field>

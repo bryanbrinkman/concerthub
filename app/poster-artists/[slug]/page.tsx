@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Globe } from "lucide-react";
 
 import { getPosterArtistBySlug } from "@/lib/public";
-import { formatShortDate } from "@/lib/utils";
+import { displayHost, formatShortDate } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { JsonLd } from "@/components/json-ld";
 import {
@@ -68,6 +68,19 @@ export default async function PosterArtistPage({
       <PageHeader
         title={artist.name}
         subtitle={`Poster artist · ${artist.works.length} print${artist.works.length === 1 ? "" : "s"}${artist.years ? ` · ${artist.years}` : ""}`}
+        actions={
+          artist.website ? (
+            <a
+              href={artist.website}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-accent"
+            >
+              <Globe className="h-4 w-4 text-primary" />
+              {displayHost(artist.website)}
+            </a>
+          ) : undefined
+        }
       />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

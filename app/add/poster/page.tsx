@@ -83,6 +83,20 @@ export default async function AddPosterPage({
                   className={inputClass}
                 />
               </Field>
+              <Field
+                label="Poster Artist website"
+                hint="e.g. killeracid.com — shown on their poster-artist page."
+              >
+                <input
+                  name="designerWebsite"
+                  type="text"
+                  inputMode="url"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="killeracid.com"
+                  className={inputClass}
+                />
+              </Field>
               <Field label="Year">
                 <input
                   name="year"

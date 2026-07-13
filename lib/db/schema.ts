@@ -276,6 +276,19 @@ export const posters = pgTable("poster", {
   editions: jsonb("editions").$type<Edition[]>(),
 });
 
+/**
+ * Poster artists (print designers) as a light shared entity, keyed by the
+ * same slug used in their public URLs (posterArtistSlug). Populated from the
+ * add-poster form so a designer's website is recorded once and shown across
+ * their posterography. Not user-owned — one canonical row per designer.
+ */
+export const posterArtists = pgTable("poster_artist", {
+  slug: text("slug").primaryKey(),
+  name: text("name").notNull(),
+  website: text("website"),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
 export const mediaLinks = pgTable("media_link", {
   id: text("id").primaryKey().$defaultFn(uuid),
   userId: text("user_id")

@@ -11,9 +11,11 @@ import { gradientFor } from "@/lib/archive";
 import {
   addToShowLineup,
   upsertArtist,
+  upsertPosterArtist,
   upsertTour,
   type LineupEntry,
 } from "@/lib/upserts";
+import { normalizeUrl } from "@/lib/utils";
 import { parseSetlistFmUrl } from "@/lib/setlistfm";
 import { createShow } from "@/lib/show-create";
 import type { Edition, EphemeraKind } from "@/lib/types";
@@ -324,6 +326,20 @@ async function resolvePosterTarget(
   return { posterType, showId };
 }
 
+/** Best-effort: record the poster artist (+ website from the form) so it
+ * never fails the poster write if the poster_artist table isn't migrated. */
+async function recordPosterArtist(db: Db, formData: FormData, designer: string) {
+  try {
+    await upsertPosterArtist(
+      db,
+      designer,
+      normalizeUrl(str(formData, "designerWebsite")),
+    );
+  } catch (error) {
+    console.warn("[poster] poster-artist upsert failed (migration pending?):", error);
+  }
+}
+
 export async function addPosterAction(formData: FormData) {
   const { userId, db } = await requireUserDb();
   const title = str(formData, "title");
@@ -358,6 +374,7 @@ export async function addPosterAction(formData: FormData) {
     .map((v) => String(v).trim())
     .filter(Boolean);
   const cover = imageUrls[0] ?? optional(str(formData, "imageUrl"));
+  const designer = str(formData, "designer") || "Unknown";
 
   const values = {
     userId,
@@ -365,7 +382,7 @@ export async function addPosterAction(formData: FormData) {
     tourId,
     posterType,
     title,
-    designer: str(formData, "designer") || "Unknown",
+    designer,
     year,
     notes: optional(str(formData, "notes")),
     owned: str(formData, "state") !== "want",
@@ -383,6 +400,7 @@ export async function addPosterAction(formData: FormData) {
     const { posterType: _omit, ...legacy } = values;
     await db.insert(t.posters).values(legacy);
   }
+  await recordPosterArtist(db, formData, designer);
 
   revalidatePath("/", "layout");
   redirect(showId ? `/shows/${showId}` : "/my-posters");
@@ -431,9 +449,10 @@ export async function updatePosterAction(formData: FormData) {
     .map((v) => String(v).trim())
     .filter(Boolean);
 
+  const designer = str(formData, "designer") || "Unknown";
   const set = {
     title,
-    designer: str(formData, "designer") || "Unknown",
+    designer,
     year,
     notes: optional(str(formData, "notes")) ?? null,
     owned: str(formData, "state") !== "want",
@@ -454,6 +473,7 @@ export async function updatePosterAction(formData: FormData) {
     const { posterType: _omit, ...legacy } = set;
     await db.update(t.posters).set(legacy).where(where);
   }
+  await recordPosterArtist(db, formData, designer);
 
   revalidatePath("/", "layout");
   redirect(showId ? `/shows/${showId}` : "/my-posters");

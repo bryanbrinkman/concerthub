@@ -101,6 +101,24 @@ export function parseTicketStub(detail?: string): {
   return { sec, row, seat, price };
 }
 
+/** Normalize a user-entered website into an absolute URL (adds https://
+ * when no scheme is present); undefined for blank input. */
+export function normalizeUrl(url?: string): string | undefined {
+  const value = (url ?? "").trim();
+  if (!value) return undefined;
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+}
+
+/** Bare host for display — "killeracid.com" from "https://killeracid.com/". */
+export function displayHost(url?: string): string | undefined {
+  const value = (url ?? "").trim();
+  if (!value) return undefined;
+  return value
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/\/+$/, "");
+}
+
 /** "2022-09-14" -> "Sep 14, 2022" */
 export function formatShortDate(iso: string): string {
   const [year, month, day] = iso.split("-").map(Number);
