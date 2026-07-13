@@ -58,6 +58,7 @@ interface NavItem {
 const MAIN_NAV: NavItem[] = [
   { label: "Home", href: "/", icon: Home },
   { label: "Posters", href: "/posters", icon: ImageIcon },
+  { label: "Poster Artists", href: "/poster-artists", icon: Paintbrush },
   { label: "Explore", href: "/explore", icon: Compass },
 ];
 
@@ -65,7 +66,6 @@ const MAIN_NAV: NavItem[] = [
 const MORE_NAV: NavItem[] = [
   { label: "Shows", href: "/shows", icon: CalendarDays },
   { label: "Performers", href: "/artists", icon: Users },
-  { label: "Poster Artists", href: "/poster-artists", icon: Paintbrush },
   { label: "Venues", href: "/venues", icon: MapPin },
   { label: "Trading Post", href: "/trading", icon: ArrowLeftRight },
   { label: "Import", href: "/import", icon: Download },
