@@ -15,6 +15,7 @@ import { Sidebar } from "@/components/sidebar";
 import { Onboarding } from "@/components/onboarding";
 import { WelcomeSplash } from "@/components/welcome-splash";
 import { SearchPalette, type SearchItem } from "@/components/search-palette";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://concertcollect.com"),
@@ -153,6 +154,7 @@ export default async function RootLayout({
         <Onboarding enabled={!archive.demo && archive.shows.length === 0} />
         {/* ⌘K search over the viewer's archive */}
         <SearchPalette items={searchItems} />
+        <Analytics />
       </body>
     </html>
   );
