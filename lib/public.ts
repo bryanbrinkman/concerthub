@@ -10,7 +10,7 @@
  * migration) so pages can fall back to the viewer archive.
  */
 
-import { eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 
 import { getDb, type Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
@@ -553,6 +553,86 @@ export async function getPosterArtistBySlug(
     return { slug, name, works, years, website };
   } catch (error) {
     console.warn("[public] poster-artist detail failed:", error);
+    return null;
+  }
+}
+
+export interface PublicCollectionPoster {
+  id: string;
+  title: string;
+  designer: string;
+  year: number;
+  imageUrl?: string;
+  gradient: string;
+}
+
+export interface PublicCollection {
+  id: string;
+  name: string;
+  description: string;
+  ownerId: string;
+  ownerName: string;
+  posters: PublicCollectionPoster[];
+}
+
+/** A shareable, read-only view of a user's collection (anyone with the
+ * link). Viewer-independent — no ownership check. */
+export async function getPublicCollection(
+  id: string,
+): Promise<PublicCollection | null> {
+  const db = getDb();
+  if (!db) return null;
+  try {
+    const [col] = await db
+      .select({
+        id: t.collections.id,
+        name: t.collections.name,
+        description: t.collections.description,
+        ownerId: t.collections.userId,
+        ownerName: t.users.name,
+      })
+      .from(t.collections)
+      .innerJoin(t.users, eq(t.collections.userId, t.users.id))
+      .where(eq(t.collections.id, id));
+    if (!col) return null;
+
+    let posters: PublicCollectionPoster[] = [];
+    try {
+      const rows = await db
+        .select({
+          id: t.posters.id,
+          title: t.posters.title,
+          designer: t.posters.designer,
+          year: t.posters.year,
+          imageUrl: t.posters.imageUrl,
+          gradient: t.posters.gradient,
+        })
+        .from(t.collectionPosters)
+        .innerJoin(t.posters, eq(t.collectionPosters.posterId, t.posters.id))
+        .where(eq(t.collectionPosters.collectionId, id))
+        .orderBy(desc(t.posters.year));
+      posters = rows.map((r) => ({
+        id: r.id,
+        title: r.title,
+        designer: r.designer,
+        year: r.year,
+        imageUrl: r.imageUrl ?? undefined,
+        gradient: r.gradient ?? "midnight",
+      }));
+    } catch (error) {
+      console.warn("[public] collection posters failed (migration pending?):", error);
+    }
+
+    return {
+      id: col.id,
+      name: col.name,
+      description: col.description ?? "",
+      ownerId: col.ownerId,
+      ownerName: col.ownerName ?? "A collector",
+      posters,
+    };
+  } catch (error) {
+    console.warn("[public] collection failed:", error);
     return null;
   }
 }

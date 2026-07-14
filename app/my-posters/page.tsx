@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { PosterRack, type RackPoster } from "@/components/poster-rack";
 import { EmptyState } from "@/components/empty-state";
+import { ShareButton } from "@/components/share-button";
 
 export const metadata = { title: "My Posters" };
 
@@ -74,12 +75,17 @@ export default async function MyPostersPage({
               : "Your flat file — fan through the collection like a poster rack."
         }
         actions={
-          <Button asChild>
-            <Link href="/add/poster">
-              <Plus />
-              Add poster
-            </Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {archive.userId ? (
+              <ShareButton path={`/u/${archive.userId}`} label="Share" />
+            ) : null}
+            <Button asChild>
+              <Link href="/add/poster">
+                <Plus />
+                Add poster
+              </Link>
+            </Button>
+          </div>
         }
       />
       {rackPosters.length === 0 ? (

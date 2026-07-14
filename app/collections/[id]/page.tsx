@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { ShareButton } from "@/components/share-button";
 
 export const metadata = { title: "Collection" };
 
@@ -73,18 +74,21 @@ export default async function CollectionDetailPage({
           `${members.length} ${members.length === 1 ? "poster" : "posters"} in this collection.`
         }
         actions={
-          <form action={deleteCollectionAction}>
-            <input type="hidden" name="collectionId" value={collection.id} />
-            <Button
-              type="submit"
-              variant="outline"
-              size="sm"
-              className="text-muted-foreground hover:text-destructive"
-            >
-              <Trash2 />
-              Delete collection
-            </Button>
-          </form>
+          <div className="flex flex-wrap items-center gap-2">
+            <ShareButton path={`/c/${collection.id}`} label="Share collection" />
+            <form action={deleteCollectionAction}>
+              <input type="hidden" name="collectionId" value={collection.id} />
+              <Button
+                type="submit"
+                variant="outline"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 />
+                Delete collection
+              </Button>
+            </form>
+          </div>
         }
       />
 
