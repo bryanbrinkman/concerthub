@@ -332,6 +332,38 @@ function EditableWall({
     [order, itemById],
   );
 
+  // Preload every poster's true aspect ratio so the layout spaces tall
+  // pieces correctly from the start (otherwise they default to 3:4, get
+  // under-spaced, and overlap). Resolves once all are known.
+  const loadAspects = React.useCallback(async () => {
+    const missing = onWall.filter((it) => !aspects.current.has(it.posterId));
+    if (missing.length === 0) return;
+    await Promise.all(
+      missing.map(
+        (it) =>
+          new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              if (img.naturalWidth && img.naturalHeight) {
+                aspects.current.set(
+                  it.posterId,
+                  img.naturalWidth / img.naturalHeight,
+                );
+              }
+              resolve();
+            };
+            img.onerror = () => resolve();
+            img.src = it.imageUrl;
+          }),
+      ),
+    );
+    setMeasured((n) => n + 1);
+  }, [onWall]);
+
+  React.useEffect(() => {
+    void loadAspects();
+  }, [loadAspects]);
+
   // Positions derived from order + sizes. Recomputed on any of those (or a
   // new measurement) — this is what makes the wall reflow on reorder.
   const layout = React.useMemo(
@@ -433,6 +465,9 @@ function EditableWall({
     if (!onSave) return;
     setSaving(true);
     try {
+      // Guarantee true aspects before computing the layout we persist, so
+      // the saved (and public) wall never has overlapping tall pieces.
+      await loadAspects();
       await onSave(autoArrangeWall(onWall, aspectOf, widthOf, perColumn ?? undefined));
       setDirty(false);
       setSavedFlash(true);
