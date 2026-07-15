@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/page-header";
 import { GradientArt } from "@/components/gradient-art";
 import { EmptyState } from "@/components/empty-state";
 import { NewCollectionForm } from "@/components/new-collection-form";
+import { ShareButton } from "@/components/share-button";
 
 export const metadata = { title: "Collections" };
 
@@ -103,8 +104,11 @@ export default async function CollectionsPage() {
           {collections.map((collection) => {
             const info = membership.get(collection.id) ?? { count: 0, covers: [] };
             return (
-              <Link key={collection.id} href={`/collections/${collection.id}`} className="block">
-                <Card className="h-full overflow-hidden transition-colors hover:border-white/20">
+              <Card
+                key={collection.id}
+                className="flex h-full flex-col overflow-hidden transition-colors hover:border-white/20"
+              >
+                <Link href={`/collections/${collection.id}`} className="block">
                   {info.covers.length > 0 ? (
                     <div className="flex h-24 gap-0.5 bg-black/40">
                       {info.covers.map((cover) => (
@@ -125,7 +129,7 @@ export default async function CollectionsPage() {
                       </div>
                     </GradientArt>
                   )}
-                  <CardContent className="space-y-2 p-5">
+                  <CardContent className="space-y-2 p-5 pb-3">
                     <div className="flex items-center justify-between gap-2">
                       <p className="truncate font-medium">{collection.name}</p>
                       <Badge variant="secondary">
@@ -138,8 +142,17 @@ export default async function CollectionsPage() {
                       </p>
                     ) : null}
                   </CardContent>
-                </Card>
-              </Link>
+                </Link>
+                <div className="mt-auto flex items-center gap-3 px-5 pb-4">
+                  <ShareButton path={`/c/${collection.id}`} label="Share" />
+                  <Link
+                    href={`/collections/${collection.id}`}
+                    className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Open →
+                  </Link>
+                </div>
+              </Card>
             );
           })}
         </div>
