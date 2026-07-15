@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, LayoutGrid, Loader2, Minus, Plus, X } from "lucide-react";
+import { Check, Download, LayoutGrid, Loader2, Minus, Plus, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -75,11 +75,15 @@ export function autoArrangeWall(
   aspectOf: (posterId: string) => number = () => POSTER_ASPECT,
   widthOf: (item: WallPosterItem) => number = wallWidthFor,
 ): WallSlot[] {
-  const gapX = 2.2;
-  // Same physical distance vertically as horizontally.
-  const gapY = gapX * WALL_ASPECT;
+  const baseGapX = 2.2;
   const heightOf = (w: number, aspect: number) => (w / aspect) * WALL_ASPECT;
   const maxColumnH = ART_BOTTOM - ART_TOP;
+  // Pack columns denser as the collection grows, so a big wall stays inside
+  // its bounds (many short columns would run off the sides) instead of being
+  // cropped. Small walls keep the loose 2–3-per-column salon look.
+  const n = items.length;
+  const perColBase =
+    n <= 12 ? 2 : n <= 24 ? 3 : n <= 40 ? 4 : n <= 64 ? 5 : n <= 96 ? 6 : 7;
   // A single piece can never be taller than the whole art band — a very
   // tall/narrow print is width-clamped so it fits instead of clipping the
   // floor or its neighbors.
@@ -95,17 +99,21 @@ export function autoArrangeWall(
   interface ColumnEntry { item: WallPosterItem; w: number; h: number }
 
   const build = (scale: number) => {
+    // Gaps scale with the composition, so shrinking to fit actually reduces
+    // total width (fixed gaps would otherwise block convergence).
+    const gapX = baseGapX * scale;
+    const gapY = gapX * WALL_ASPECT;
     const columns: Array<{ entries: ColumnEntry[]; w: number; h: number }> = [];
     let index = 0;
     while (index < items.length) {
       const entries: ColumnEntry[] = [];
       let columnH = 0;
-      // Organic column heights: vary the target height per column so rows
-      // don't line up into a grid. Deterministic from the leading poster.
-      const maxThisColumn = 2 + Math.round(rand01(items[index].posterId) * 1);
+      // Organic column heights: vary per column so rows don't line up into a
+      // grid. Deterministic from the leading poster.
+      const maxThisColumn = perColBase + Math.round(rand01(items[index].posterId));
       while (index < items.length && entries.length < maxThisColumn) {
         // True-to-size: width from physical dimensions, height-clamped.
-        const rawW = Math.max(4.5, widthOf(items[index]) * scale);
+        const rawW = Math.max(2.2, widthOf(items[index]) * scale);
         const { w, h } = fit(rawW, aspectOf(items[index].posterId));
         if (entries.length > 0 && columnH + gapY + h > maxColumnH) break;
         entries.push({ item: items[index], w, h });
@@ -120,13 +128,19 @@ export function autoArrangeWall(
     }
     const totalW =
       columns.reduce((sum, c) => sum + c.w, 0) + gapX * (columns.length - 1);
-    return { columns, totalW };
+    return { columns, totalW, gapX, gapY };
   };
 
-  let { columns, totalW } = build(1);
-  if (totalW > 94) {
-    ({ columns, totalW } = build(Math.max(0.35, 94 / totalW)));
+  // Fit-to-width: shrink until the whole composition fits the wall, iterating
+  // because the min-width floor makes one pass imperfect. Guarantees nothing
+  // is cropped, however many posters there are.
+  let scale = 1;
+  let result = build(scale);
+  for (let guard = 0; result.totalW > 94 && guard < 6; guard++) {
+    scale *= 94 / result.totalW;
+    result = build(scale);
   }
+  const { columns, totalW, gapX, gapY } = result;
 
   // Center the whole composition horizontally on the wall.
   const slots: WallSlot[] = [];
@@ -407,6 +421,86 @@ function EditableWall({
     }
   };
 
+  const [exporting, setExporting] = React.useState(false);
+
+  /** Render the current wall to a JPEG and download it. Images are re-loaded
+   * with CORS so the canvas isn't tainted; any that can't (a non-CORS host)
+   * fall back to a neutral rectangle rather than breaking the export. */
+  const downloadImage = async () => {
+    setExporting(true);
+    try {
+      const W = 2000;
+      const H = Math.round((W * 5) / 8);
+      const canvas = document.createElement("canvas");
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // Wall background + floor (mirrors the on-screen gradient).
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, "#efedea");
+      bg.addColorStop((FLOOR_Y - 0.5) / 100, "#e7e4df");
+      bg.addColorStop(FLOOR_Y / 100, "#cfccc6");
+      bg.addColorStop(1, "#b9b6b0");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      const placed = onWall
+        .map((item) => ({ item, slot: layout.get(item.posterId) }))
+        .filter(
+          (p): p is { item: WallPosterItem; slot: WallSlot } => Boolean(p.slot),
+        );
+
+      const images = await Promise.all(
+        placed.map(
+          ({ item }) =>
+            new Promise<HTMLImageElement | null>((resolve) => {
+              const img = new Image();
+              img.crossOrigin = "anonymous";
+              img.onload = () => resolve(img);
+              img.onerror = () => resolve(null);
+              img.src = item.imageUrl;
+            }),
+        ),
+      );
+
+      const frame = Math.max(2, W * 0.0022);
+      placed.forEach(({ slot }, i) => {
+        const x = (slot.x / 100) * W;
+        const y = (slot.y / 100) * H;
+        const w = (slot.w / 100) * W;
+        const h = (hPctOf(slot) / 100) * H;
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.35)";
+        ctx.shadowBlur = W * 0.006;
+        ctx.shadowOffsetY = W * 0.004;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(x - frame, y - frame, w + frame * 2, h + frame * 2);
+        ctx.restore();
+        const img = images[i];
+        if (img) ctx.drawImage(img, x, y, w, h);
+        else {
+          ctx.fillStyle = "#dedbd6";
+          ctx.fillRect(x, y, w, h);
+        }
+      });
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", 0.92),
+      );
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "my-gallery-wall.jpg";
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -425,6 +519,15 @@ function EditableWall({
         >
           <LayoutGrid />
           Tidy wall
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => void downloadImage()}
+          disabled={exporting || onWall.length === 0}
+        >
+          {exporting ? <Loader2 className="animate-spin" /> : <Download />}
+          {exporting ? "Rendering…" : "Download JPG"}
         </Button>
         {selected && order.includes(selected) ? (
           <div className="flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1">
