@@ -74,6 +74,8 @@ export function autoArrangeWall(
   items: WallPosterItem[],
   aspectOf: (posterId: string) => number = () => POSTER_ASPECT,
   widthOf: (item: WallPosterItem) => number = wallWidthFor,
+  /** Fixed posters-per-column; omit for the auto (count-based) salon look. */
+  perColumn?: number,
 ): WallSlot[] {
   const baseGapX = 2.2;
   const heightOf = (w: number, aspect: number) => (w / aspect) * WALL_ASPECT;
@@ -110,7 +112,10 @@ export function autoArrangeWall(
       let columnH = 0;
       // Organic column heights: vary per column so rows don't line up into a
       // grid. Deterministic from the leading poster.
-      const maxThisColumn = perColBase + Math.round(rand01(items[index].posterId));
+      const maxThisColumn =
+        perColumn && perColumn > 0
+          ? perColumn
+          : perColBase + Math.round(rand01(items[index].posterId));
       while (index < items.length && entries.length < maxThisColumn) {
         // True-to-size: width from physical dimensions, height-clamped.
         const rawW = Math.max(2.2, widthOf(items[index]) * scale);
@@ -282,6 +287,22 @@ function EditableWall({
   const [sizeOverride, setSizeOverride] = React.useState<Map<string, number>>(
     new Map(),
   );
+  // Posters-per-column: null = auto (count-based). A fixed value lets you
+  // stack more (or fewer) in each column than the auto amount. Remembered
+  // per browser so the editor restores your choice.
+  const [perColumn, setPerColumn] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    const saved = window.localStorage.getItem("cc-gallery-percol");
+    if (saved && saved !== "auto") {
+      const n = Number(saved);
+      if (Number.isFinite(n) && n >= 1) setPerColumn(n);
+    }
+  }, []);
+  const changePerColumn = (next: number | null) => {
+    setPerColumn(next);
+    window.localStorage.setItem("cc-gallery-percol", next === null ? "auto" : String(next));
+    setDirty(true);
+  };
   const [selected, setSelected] = React.useState<string | null>(null);
   const [dragId, setDragId] = React.useState<string | null>(null);
   const [dragPos, setDragPos] = React.useState<{ x: number; y: number } | null>(null);
@@ -315,12 +336,12 @@ function EditableWall({
   // new measurement) — this is what makes the wall reflow on reorder.
   const layout = React.useMemo(
     () => {
-      const slots = autoArrangeWall(onWall, aspectOf, widthOf);
+      const slots = autoArrangeWall(onWall, aspectOf, widthOf, perColumn ?? undefined);
       return new Map(slots.map((s) => [s.posterId, s]));
     },
     // measured is a dep so tidy heights refine as art loads
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [onWall, widthOf, measured],
+    [onWall, widthOf, measured, perColumn],
   );
   const hPctOf = (slot: WallSlot) => (slot.w / aspectOf(slot.posterId)) * WALL_ASPECT;
 
@@ -412,7 +433,7 @@ function EditableWall({
     if (!onSave) return;
     setSaving(true);
     try {
-      await onSave(autoArrangeWall(onWall, aspectOf, widthOf));
+      await onSave(autoArrangeWall(onWall, aspectOf, widthOf, perColumn ?? undefined));
       setDirty(false);
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 2500);
@@ -467,10 +488,17 @@ function EditableWall({
 
       const frame = Math.max(2, W * 0.0022);
       placed.forEach(({ slot }, i) => {
+        const img = images[i];
         const x = (slot.x / 100) * W;
         const y = (slot.y / 100) * H;
         const w = (slot.w / 100) * W;
-        const h = (hPctOf(slot) / 100) * H;
+        // Height from the image's OWN dimensions so the aspect is exact and
+        // thin posters are never stretched wider; fall back to the layout
+        // height only for images that failed to load.
+        const h =
+          img && img.naturalWidth
+            ? w * (img.naturalHeight / img.naturalWidth)
+            : (hPctOf(slot) / 100) * H;
         ctx.save();
         ctx.shadowColor = "rgba(0,0,0,0.35)";
         ctx.shadowBlur = W * 0.006;
@@ -478,7 +506,6 @@ function EditableWall({
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(x - frame, y - frame, w + frame * 2, h + frame * 2);
         ctx.restore();
-        const img = images[i];
         if (img) ctx.drawImage(img, x, y, w, h);
         else {
           ctx.fillStyle = "#dedbd6";
@@ -529,6 +556,32 @@ function EditableWall({
           {exporting ? <Loader2 className="animate-spin" /> : <Download />}
           {exporting ? "Rendering…" : "Download JPG"}
         </Button>
+        <div className="flex items-center gap-0.5 rounded-lg border border-border bg-card px-1.5 py-1">
+          <span className="px-1 text-xs text-muted-foreground">Per column</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Fewer per column"
+            onClick={() =>
+              changePerColumn(
+                perColumn === null || perColumn - 1 < 1 ? null : perColumn - 1,
+              )
+            }
+          >
+            <Minus />
+          </Button>
+          <span className="min-w-[2.25rem] text-center text-xs tabular-nums">
+            {perColumn ?? "Auto"}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="More per column"
+            onClick={() => changePerColumn(Math.min(8, (perColumn ?? 2) + 1))}
+          >
+            <Plus />
+          </Button>
+        </div>
         {selected && order.includes(selected) ? (
           <div className="flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1">
             <span className="max-w-32 truncate px-1 text-xs text-muted-foreground">
