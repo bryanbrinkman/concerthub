@@ -312,7 +312,7 @@ function EditableWall({
 
   const wallRef = React.useRef<HTMLDivElement>(null);
   const pointerOffset = React.useRef({ x: 0, y: 0 });
-  const lastSwap = React.useRef<string | null>(null);
+  const lastIndex = React.useRef<number>(-1);
 
   // Measured image aspects (drive tidy heights); recompute layout when new
   // measurements land.
@@ -389,7 +389,7 @@ function EditableWall({
     const px = ((e.clientX - rect.left) / rect.width) * 100;
     const py = ((e.clientY - rect.top) / rect.height) * 100;
     pointerOffset.current = { x: px - slot.x, y: py - slot.y };
-    lastSwap.current = null;
+    lastIndex.current = -1;
     setDragId(posterId);
     setDragPos({ x: slot.x, y: slot.y });
     setSelected(posterId);
@@ -410,29 +410,34 @@ function EditableWall({
       y: Math.min(Math.max(0, ART_BOTTOM - dragH), Math.max(0, py - pointerOffset.current.y)),
     });
 
-    // Which other piece is the pointer over? Swap with it, once per hover.
-    let over: string | null = null;
-    for (const [id, slot] of layout) {
-      if (id === dragId) continue;
-      const h = hPctOf(slot);
-      if (px >= slot.x && px <= slot.x + slot.w && py >= slot.y && py <= slot.y + h) {
-        over = id;
+    // Target insertion point in the reading-order list (columns left→right,
+    // top→bottom) from the pointer — works over pieces AND in the gaps and
+    // empty space, so you can drop into a new column (far left/right) or add
+    // to an existing one. Moving the item to that index makes the wall flow
+    // it into place and re-tidy around it.
+    const others = order.filter((id) => id !== dragId);
+    let idx = others.length; // default: new rightmost column
+    for (let i = 0; i < others.length; i++) {
+      const s = layout.get(others[i]);
+      if (!s) continue;
+      const cy = s.y + hPctOf(s) / 2;
+      if (px < s.x) {
+        idx = i; // pointer is in the gap left of this column
+        break;
+      }
+      if (px <= s.x + s.w && py < cy) {
+        idx = i; // same column, above this piece
         break;
       }
     }
-    if (over && over !== lastSwap.current) {
-      lastSwap.current = over;
+    if (idx !== lastIndex.current) {
+      lastIndex.current = idx;
       setOrder((list) => {
-        const from = list.indexOf(dragId);
-        const to = list.indexOf(over as string);
-        if (from < 0 || to < 0) return list;
-        const next = [...list];
-        [next[from], next[to]] = [next[to], next[from]];
-        return next;
+        const without = list.filter((id) => id !== dragId);
+        without.splice(idx, 0, dragId);
+        return without;
       });
       markDirty();
-    } else if (!over) {
-      lastSwap.current = null;
     }
   };
 
@@ -441,7 +446,7 @@ function EditableWall({
     // (possibly new) tidy slot.
     setDragId(null);
     setDragPos(null);
-    lastSwap.current = null;
+    lastIndex.current = -1;
   };
 
   const resize = (posterId: string, delta: number) => {
