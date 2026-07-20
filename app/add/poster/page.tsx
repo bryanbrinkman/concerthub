@@ -115,6 +115,21 @@ export default async function AddPosterPage({
                   className={inputClass}
                 />
               </Field>
+              <Field
+                label="Variant of (optional)"
+                hint="Foil, color way, AP…? Pick the parent design so variants group together."
+              >
+                <select name="variantOf" defaultValue="" className={selectClass}>
+                  <option value="">Not a variant — this is the main design</option>
+                  {archive.posters
+                    .filter((p) => !p.variantOf)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.title} ({p.year})
+                      </option>
+                    ))}
+                </select>
+              </Field>
               <Field label="Edition size">
                 <input
                   name="runSize"

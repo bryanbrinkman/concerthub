@@ -48,6 +48,25 @@ export async function deletePosterAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+const POSTER_STATES = new Set(["own", "want", "trade", "sell"]);
+
+/**
+ * One-click collection state: Have / Want / For Trade / For Sale on a
+ * poster the viewer owns. No form flow — the Level-1 participation
+ * primitive of the collection loop.
+ */
+export async function setPosterStateAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const state = String(formData.get("state") ?? "");
+  const ctx = await requireUserDb();
+  if (!ctx || !id || !POSTER_STATES.has(state)) return;
+  await ctx.db
+    .update(t.posters)
+    .set({ state, owned: state !== "want" })
+    .where(and(eq(t.posters.id, id), eq(t.posters.userId, ctx.userId)));
+  revalidatePath("/", "layout");
+}
+
 export async function deleteMemoryAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const ctx = await requireUserDb();

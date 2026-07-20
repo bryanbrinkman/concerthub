@@ -33,9 +33,9 @@ interface WallPoster {
 export default async function PostersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; year?: string; status?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, year, status } = await searchParams;
   const db = getDb();
   const archive = await getArchive();
 
@@ -99,6 +99,12 @@ export default async function PostersPage({
       return tokens.every((token) => hay.includes(token));
     });
   }
+  if (year && /^\d{4}$/.test(year.trim())) {
+    posters = posters.filter((p) => String(p.year) === year.trim());
+  }
+  if (status && ["want", "trade", "sell"].includes(status)) {
+    posters = posters.filter((p) => p.state === status);
+  }
 
   return (
     <div>
@@ -115,14 +121,35 @@ export default async function PostersPage({
         }
       />
 
-      <form action="/posters" method="get" className="mb-5 flex max-w-md gap-2">
+      <form
+        action="/posters"
+        method="get"
+        className="mb-5 flex max-w-2xl flex-wrap items-center gap-2"
+      >
         <input
           type="search"
           name="q"
           defaultValue={q ?? ""}
-          placeholder="Search — artist, poster artist, venue, year…"
-          className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-secondary px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          placeholder="Search — artist, poster artist, venue…"
+          className="h-8 min-w-0 flex-1 basis-52 rounded-lg border border-border bg-secondary px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
+        <input
+          name="year"
+          defaultValue={year ?? ""}
+          inputMode="numeric"
+          placeholder="Year"
+          className="h-8 w-20 rounded-lg border border-border bg-secondary px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <select
+          name="status"
+          defaultValue={status ?? ""}
+          className="h-8 rounded-lg border border-border bg-secondary px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <option value="">Any status</option>
+          <option value="trade">For Trade</option>
+          <option value="sell">For Sale</option>
+          <option value="want">Wanted</option>
+        </select>
         <Button type="submit" variant="outline">
           Search
         </Button>

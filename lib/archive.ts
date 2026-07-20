@@ -237,7 +237,11 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
           })
           .from(t.posters)
           .where(eq(t.posters.userId, userId));
-        return legacy.map((r) => ({ ...r, posterType: "show" })) as PosterRow[];
+        return legacy.map((r) => ({
+          ...r,
+          posterType: "show",
+          variantOf: null,
+        })) as PosterRow[];
       } catch (err2) {
         console.warn("[archive] legacy poster query also failed:", err2);
         return [];
@@ -350,6 +354,7 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
       showId: row.showId ?? undefined,
       tourId: row.tourId ?? undefined,
       posterType: (row.posterType ?? "show") as PosterType,
+      variantOf: row.variantOf ?? undefined,
       title: row.title,
       designer: row.designer,
       year: row.year,

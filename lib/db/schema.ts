@@ -269,6 +269,12 @@ export const posters = pgTable("poster", {
    * showId) or "tour" (multiple dates, tied to a tourId).
    */
   posterType: text("poster_type").notNull().default("show"),
+  /**
+   * Parent poster design when this print is a variant (foil, color way,
+   * AP, glow…). Groups variants under one design instead of fragmenting
+   * the catalog. Self-FK added in SQL (drizzle/0013).
+   */
+  variantOf: text("variant_of"),
   imageUrl: text("image_url"),
   /** Additional detail shots (numbering, signature, foil, condition). */
   imageUrls: text("image_urls").array(),

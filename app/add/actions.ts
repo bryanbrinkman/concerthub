@@ -375,12 +375,14 @@ export async function addPosterAction(formData: FormData) {
     .filter(Boolean);
   const cover = imageUrls[0] ?? optional(str(formData, "imageUrl"));
   const designer = str(formData, "designer") || "Unknown";
+  const variantOf = optional(str(formData, "variantOf"));
 
   const values = {
     userId,
     showId,
     tourId,
     posterType,
+    variantOf,
     title,
     designer,
     year,
@@ -395,9 +397,9 @@ export async function addPosterAction(formData: FormData) {
   try {
     await db.insert(t.posters).values(values);
   } catch (error) {
-    // poster_type column not yet migrated (0011) — insert without it.
+    // poster_type/variant_of not yet migrated (0011/0013) — insert without.
     if (!isUndefinedColumn(error)) throw error;
-    const { posterType: _omit, ...legacy } = values;
+    const { posterType: _p, variantOf: _v, ...legacy } = values;
     await db.insert(t.posters).values(legacy);
   }
   await recordPosterArtist(db, formData, designer);
@@ -450,6 +452,9 @@ export async function updatePosterAction(formData: FormData) {
     .filter(Boolean);
 
   const designer = str(formData, "designer") || "Unknown";
+  // A poster can't be a variant of itself.
+  const variantOfInput = optional(str(formData, "variantOf"));
+  const variantOf = variantOfInput === posterId ? undefined : variantOfInput;
   const set = {
     title,
     designer,
@@ -458,6 +463,7 @@ export async function updatePosterAction(formData: FormData) {
     owned: str(formData, "state") !== "want",
     state: str(formData, "state") || "own",
     posterType,
+    variantOf: variantOf ?? null,
     showId: showId ?? null,
     tourId: tourId ?? null,
     imageUrl: imageUrls[0] ?? null,

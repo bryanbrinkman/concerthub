@@ -341,40 +341,96 @@ export default async function ShowDetailPage({
       />
 
       {/* Posters & Prints — the show's artwork leads. The digital-exhibition
-          section: every print for this event, variants beside their parent,
-          before any supporting memorabilia. (Single-poster shows are already
-          led by the hero's large poster.) */}
-      {showPosters.length > 1 ? (
-        <section>
-          <h2 className="mb-3 text-lg font-semibold">Posters &amp; Prints</h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {showPosters.map((p) => (
-              <Link key={p.id} href={`/posters/${p.id}`} className="group block">
-                {p.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={p.imageUrl}
-                    alt={`${p.title} — poster art by ${p.designer}`}
-                    loading="lazy"
-                    className="aspect-[3/4] w-full rounded-lg border border-white/10 bg-black/40 object-contain transition-transform duration-300 group-hover:scale-[1.02]"
-                  />
-                ) : (
-                  <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-border bg-secondary p-2 text-center font-mono text-[10px] uppercase text-muted-foreground">
-                    {p.title}
-                  </div>
-                )}
-                <div className="mt-1.5 space-y-0.5 px-0.5">
-                  <p className="truncate text-sm font-medium">{p.title}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {p.designer !== "Unknown" ? `${p.designer} · ` : ""}
-                    {p.year}
-                  </p>
+          section: every print for this event, variants grouped beneath their
+          parent design, before any supporting memorabilia. (Single-poster
+          shows are already led by the hero's large poster.) */}
+      {showPosters.length > 1
+        ? (() => {
+            const variantsOf = new Map<string, typeof showPosters>();
+            for (const p of showPosters) {
+              if (p.variantOf && showPosters.some((x) => x.id === p.variantOf)) {
+                const list = variantsOf.get(p.variantOf) ?? [];
+                list.push(p);
+                variantsOf.set(p.variantOf, list);
+              }
+            }
+            const parents = showPosters.filter(
+              (p) =>
+                !(p.variantOf && showPosters.some((x) => x.id === p.variantOf)),
+            );
+            return (
+              <section>
+                <h2 className="mb-3 text-lg font-semibold">
+                  Posters &amp; Prints
+                </h2>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                  {parents.map((p) => {
+                    const variants = variantsOf.get(p.id) ?? [];
+                    return (
+                      <div key={p.id}>
+                        <Link href={`/posters/${p.id}`} className="group block">
+                          {p.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={p.imageUrl}
+                              alt={`${p.title} — poster art by ${p.designer}`}
+                              loading="lazy"
+                              className="aspect-[3/4] w-full rounded-lg border border-white/10 bg-black/40 object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                            />
+                          ) : (
+                            <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-border bg-secondary p-2 text-center font-mono text-[10px] uppercase text-muted-foreground">
+                              {p.title}
+                            </div>
+                          )}
+                          <div className="mt-1.5 space-y-0.5 px-0.5">
+                            <p className="truncate text-sm font-medium">
+                              {p.title}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {p.designer !== "Unknown"
+                                ? `${p.designer} · `
+                                : ""}
+                              {p.year}
+                            </p>
+                          </div>
+                        </Link>
+                        {variants.length > 0 ? (
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 px-0.5">
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                              Variants
+                            </span>
+                            {variants.map((v) => (
+                              <Link
+                                key={v.id}
+                                href={`/posters/${v.id}`}
+                                title={v.title}
+                                className="block overflow-hidden rounded-sm ring-1 ring-border transition-opacity hover:opacity-80"
+                              >
+                                {v.imageUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={v.imageUrl}
+                                    alt={v.title}
+                                    loading="lazy"
+                                    className="h-12 w-9 bg-black/40 object-contain"
+                                  />
+                                ) : (
+                                  <span className="flex h-12 w-9 items-center justify-center bg-secondary font-mono text-[7px] uppercase text-muted-foreground">
+                                    {v.title.slice(0, 4)}
+                                  </span>
+                                )}
+                              </Link>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
+              </section>
+            );
+          })()
+        : null}
 
       {showLineupCard ? <LineupCard items={lineup} /> : null}
 

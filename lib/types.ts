@@ -108,6 +108,8 @@ export interface Poster {
   tourId?: string;
   /** "show" (specific date/venue) or "tour" (multiple dates). */
   posterType?: PosterType;
+  /** Parent poster design when this print is a variant (foil, AP, …). */
+  variantOf?: string;
   title: string;
   /** The print artist / designer, not the band. */
   designer: string;

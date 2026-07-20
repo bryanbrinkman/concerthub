@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowUpRight, ChevronLeft, Pencil } from "lucide-react";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, or } from "drizzle-orm";
 
 import { currentUserId } from "@/auth";
 import { getDb } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { getArchive, posterState } from "@/lib/archive";
+import { setPosterStateAction } from "@/app/manage-actions";
 import type { Edition, PosterState, PosterType } from "@/lib/types";
 import { formatEditionSize, formatShortDate, posterArtistSlug } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +59,7 @@ interface PosterRecord {
   editions: Edition[];
   state: PosterState;
   posterType: PosterType;
+  variantOf?: string;
   tourName?: string;
   ownerId?: string;
   ownerName?: string;
@@ -109,6 +111,7 @@ export default async function PosterRecordPage({
       editions: mine.editions,
       state: posterState(mine),
       posterType: mine.posterType ?? "show",
+      variantOf: mine.variantOf,
       tourName: mine.tourId
         ? archive.tours.find((tr) => tr.id === mine.tourId)?.name
         : undefined,
@@ -198,6 +201,44 @@ export default async function PosterRecordPage({
     } catch {
       // poster_type not migrated yet — stays "show"
     }
+    try {
+      const [v] = await db
+        .select({ variantOf: t.posters.variantOf })
+        .from(t.posters)
+        .where(eq(t.posters.id, record.id));
+      record.variantOf = v?.variantOf ?? undefined;
+    } catch {
+      // variant_of not migrated yet (0013) — no grouping
+    }
+  }
+
+  // Variant family: the parent design + every variant of it, so foils and
+  // color ways read as one design instead of fragmenting the catalog.
+  let parentPoster: { id: string; title: string; imageUrl: string | null; year: number } | null = null;
+  let variantFamily: Array<{ id: string; title: string; imageUrl: string | null; year: number }> = [];
+  if (db) {
+    try {
+      const rootId = record.variantOf ?? record.id;
+      const family = await db
+        .select({
+          id: t.posters.id,
+          title: t.posters.title,
+          imageUrl: t.posters.imageUrl,
+          year: t.posters.year,
+        })
+        .from(t.posters)
+        .where(
+          and(
+            or(eq(t.posters.id, rootId), eq(t.posters.variantOf, rootId)),
+            ne(t.posters.id, record.id),
+          ),
+        )
+        .limit(12);
+      parentPoster = family.find((p) => p.id === record.variantOf) ?? null;
+      variantFamily = family;
+    } catch {
+      // variant_of not migrated yet — section stays hidden
+    }
   }
 
   // Related records (best effort; shared catalog only).
@@ -262,6 +303,7 @@ export default async function PosterRecordPage({
       `${record.venueName}${record.venueCity ? ` · ${record.venueCity}` : ""}`,
     ]);
   rows.push(["Year", String(record.year)]);
+  if (parentPoster) rows.push(["Variant of", parentPoster.title]);
   if (edition?.name) rows.push(["Variant", edition.name]);
   const editionSize = formatEditionSize(edition);
   if (editionSize) rows.push(["Dimensions", editionSize]);
@@ -415,6 +457,13 @@ export default async function PosterRecordPage({
                         >
                           {value}
                         </Link>
+                      ) : label === "Variant of" && parentPoster ? (
+                        <Link
+                          href={`/posters/${parentPoster.id}`}
+                          className="text-primary hover:underline"
+                        >
+                          {value}
+                        </Link>
                       ) : (
                         value
                       )}
@@ -441,6 +490,33 @@ export default async function PosterRecordPage({
                   </div>
                 ) : null}
               </dl>
+              {record.isOwner ? (
+                <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-border pt-4">
+                  <span className="mr-1 text-xs text-muted-foreground">
+                    In my collection:
+                  </span>
+                  {(
+                    [
+                      ["own", "Have"],
+                      ["want", "Want"],
+                      ["trade", "For Trade"],
+                      ["sell", "For Sale"],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <form key={value} action={setPosterStateAction}>
+                      <input type="hidden" name="id" value={record.id} />
+                      <input type="hidden" name="state" value={value} />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        variant={record.state === value ? "default" : "outline"}
+                      >
+                        {label}
+                      </Button>
+                    </form>
+                  ))}
+                </div>
+              ) : null}
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" asChild>
                   <a href="mailto:hello@concertcollect.com?subject=Report%20a%20poster%20record">
@@ -484,6 +560,7 @@ export default async function PosterRecordPage({
         </div>
       </div>
 
+      {relatedGrid(variantFamily, "Variants of this design")}
       {relatedGrid(sameBand, `More posters — ${record.artistName ?? "this band"}`)}
       {relatedGrid(samePosterArtist, `More by ${record.designer}`)}
     </div>
