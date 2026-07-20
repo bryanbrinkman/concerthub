@@ -60,11 +60,24 @@ const posInches = (formData: FormData, key: string): number | undefined => {
  * pending migration (e.g. 0011 poster_type) lags behind a deploy.
  */
 function isUndefinedColumn(error: unknown): boolean {
-  const e = error as { code?: string; message?: string } | null;
-  return (
-    e?.code === "42703" ||
-    Boolean(e?.message && /column .* does not exist/i.test(e.message))
-  );
+  // Drizzle wraps driver errors (DrizzleQueryError with the Postgres error
+  // as `cause`), so walk the cause chain — checking only the top level
+  // misses the 42703 and lets a lagging migration crash the action.
+  let e = error as
+    | { code?: string; message?: string; cause?: unknown }
+    | null
+    | undefined;
+  for (let depth = 0; e && depth < 5; depth++) {
+    if (
+      e.code === "42703" ||
+      (typeof e.message === "string" &&
+        /column .* does not exist/i.test(e.message))
+    ) {
+      return true;
+    }
+    e = e.cause as typeof e;
+  }
+  return false;
 }
 
 const BILLING_ROLES = new Set([
@@ -449,8 +462,15 @@ export async function updatePosterAction(formData: FormData) {
   const posterId = str(formData, "posterId");
   if (!posterId) return;
 
+  // Explicit columns: a full select() would reference newer columns and
+  // throw on a lagging schema before the guarded update even runs.
   const [existing] = await db
-    .select()
+    .select({
+      id: t.posters.id,
+      title: t.posters.title,
+      year: t.posters.year,
+      editions: t.posters.editions,
+    })
     .from(t.posters)
     .where(and(eq(t.posters.id, posterId), eq(t.posters.userId, userId)));
   if (!existing) return;
