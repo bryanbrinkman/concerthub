@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CalendarDays, MapPin } from "lucide-react";
+import { Award, CalendarDays, MapPin } from "lucide-react";
 import { desc, eq } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
@@ -89,9 +89,17 @@ export default async function ProfilePage({
       imageUrl: t.posters.imageUrl,
       gradient: t.posters.gradient,
       editions: t.posters.editions,
+      state: t.posters.state,
+      owned: t.posters.owned,
     })
     .from(t.posters)
     .where(eq(t.posters.userId, user.id));
+
+  // Founding Collector: one of the first archives to catalog 10+ prints.
+  const ownedCount = posterRows.filter(
+    (p) => (p.state ?? (p.owned ? "own" : "want")) !== "want",
+  ).length;
+  const isFoundingCollector = ownedCount >= 10;
 
   const wall = posterRows.filter((p) => p.imageUrl);
   const name = user.name ?? "A collector";
@@ -124,9 +132,17 @@ export default async function ProfilePage({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {name}&apos;s archive
-        </h1>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {name}&apos;s archive
+          </h1>
+          {isFoundingCollector ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs text-primary">
+              <Award className="h-3.5 w-3.5" />
+              Founding Collector
+            </span>
+          ) : null}
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           {showRows.length} {showRows.length === 1 ? "show" : "shows"} ·{" "}
           {posterRows.length} {posterRows.length === 1 ? "print" : "prints"} —
