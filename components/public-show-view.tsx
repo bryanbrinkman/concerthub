@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, ChevronLeft, MapPin } from "lucide-react";
 
-import type { GradientKey } from "@/lib/types";
+import type { GradientKey, Setlist } from "@/lib/types";
 import type { PublicShow } from "@/lib/public";
 import { BILLING_ROLE_LABELS } from "@/lib/billing";
 import { formatDateRange, formatShowDate } from "@/lib/utils";
@@ -11,6 +11,7 @@ import {
 } from "@/lib/seo";
 import { PosterArt } from "@/components/gradient-art";
 import { TicketArt } from "@/components/ticket-art";
+import { SetlistCard } from "@/components/setlist-card";
 import { Badge } from "@/components/ui/badge";
 import { JsonLd } from "@/components/json-ld";
 
@@ -21,7 +22,13 @@ import { JsonLd } from "@/components/json-ld";
  * date, location) is in the initial HTML, plus MusicEvent + breadcrumb
  * JSON-LD. Owners get the richer interactive page instead.
  */
-export function PublicShowView({ show }: { show: PublicShow }) {
+export function PublicShowView({
+  show,
+  setlist,
+}: {
+  show: PublicShow;
+  setlist?: Setlist;
+}) {
   const isFestival =
     show.eventType === "festival" || show.eventType === "festival_day";
   const headliners = show.performers.filter(
@@ -126,6 +133,15 @@ export function PublicShowView({ show }: { show: PublicShow }) {
           </div>
         </div>
       </section>
+
+      {/* Setlist — the real songs, viewable by everyone */}
+      {setlist && setlist.sets.length > 0 ? (
+        <SetlistCard
+          setlist={setlist}
+          artistName={show.primaryArtistName}
+          variant="full"
+        />
+      ) : null}
 
       {/* Lineup — crawlable performer links */}
       {show.performers.length > 0 ? (

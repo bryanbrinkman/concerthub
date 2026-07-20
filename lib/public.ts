@@ -43,6 +43,7 @@ export interface PublicShow {
   performers: PublicPerformer[];
   posterImage?: string;
   posterId?: string;
+  setlistFmId?: string;
 }
 
 export async function getPublicShow(id: string): Promise<PublicShow | null> {
@@ -65,6 +66,7 @@ export async function getPublicShow(id: string): Promise<PublicShow | null> {
         venueCountry: t.venues.country,
         primaryArtistId: t.shows.artistId,
         primaryArtistName: t.artists.name,
+        setlistFmId: t.shows.setlistFmId,
       })
       .from(t.shows)
       .innerJoin(t.artists, eq(t.shows.artistId, t.artists.id))
@@ -132,6 +134,7 @@ export async function getPublicShow(id: string): Promise<PublicShow | null> {
       performers,
       posterImage: withImage?.imageUrl ?? undefined,
       posterId: withImage?.id,
+      setlistFmId: row.setlistFmId ?? undefined,
     };
   } catch (error) {
     console.warn("[public] show read failed:", error);

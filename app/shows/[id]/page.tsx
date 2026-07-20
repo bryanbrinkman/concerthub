@@ -30,6 +30,7 @@ import {
   showsForTour,
 } from "@/lib/archive";
 import { isFestival } from "@/lib/billing";
+import type { Show } from "@/lib/types";
 import { LineupCard } from "@/components/lineup-card";
 import { OnTheMarket } from "@/components/on-the-market";
 import { getSetlistForShow } from "@/lib/data";
@@ -106,10 +107,19 @@ export default async function ShowDetailPage({
   const show = findShow(archive, id);
   if (!show) {
     // Not in the viewer's archive — serve the genuinely-public, fully
-    // server-rendered view (logged-out visitors, crawlers, other users).
+    // server-rendered view (logged-out visitors, crawlers, other users),
+    // including the real setlist so it's viewable by all.
     const publicShow = await getPublicShow(id);
     if (!publicShow) notFound();
-    return <PublicShowView show={publicShow} />;
+    const publicSetlist = await resolveSetlist(
+      {
+        id: publicShow.id,
+        date: publicShow.date,
+        setlistFmId: publicShow.setlistFmId,
+      } as Show,
+      publicShow.primaryArtistName,
+    );
+    return <PublicShowView show={publicShow} setlist={publicSetlist} />;
   }
 
   const artist = findArtist(archive, show.artistId);
