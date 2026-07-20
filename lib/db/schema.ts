@@ -280,7 +280,51 @@ export const posters = pgTable("poster", {
   imageUrls: text("image_urls").array(),
   expressoBeansId: integer("expresso_beans_id"),
   editions: jsonb("editions").$type<Edition[]>(),
+  /* --- Copy-level collector fields (drizzle/0014). Price and private
+     notes are owner-only — never rendered on public surfaces. --- */
+  condition: text("condition"),
+  framed: boolean("framed").notNull().default(false),
+  acquiredOn: date("acquired_on", { mode: "string" }),
+  acquiredPrice: text("acquired_price"),
+  privateNotes: text("private_notes"),
+  /**
+   * Canonical design this copy belongs to (drizzle/0015) — the Discogs
+   * split: poster_design is the shared catalog record, this row is one
+   * collector's copy. Deterministic id (md5 of show|title|designer) so the
+   * SQL backfill and app writes agree.
+   */
+  designId: text("design_id"),
 });
+
+/**
+ * Canonical poster designs — one row per design; user copies (posters
+ * rows) point here via design_id. Enables cross-collector have/want
+ * counts and, later, verification states + field-level credit.
+ */
+export const posterDesigns = pgTable("poster_design", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  designer: text("designer").notNull().default("Unknown"),
+  year: integer("year"),
+  showId: text("show_id").references(() => shows.id, { onDelete: "set null" }),
+  tourId: text("tour_id").references(() => tours.id, { onDelete: "set null" }),
+  posterType: text("poster_type").notNull().default("show"),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
+/** Permanent collector recognition (e.g. founding_collector). */
+export const userBadges = pgTable(
+  "user_badge",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    badge: text("badge").notNull(),
+    awardedAt: timestamp("awarded_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.badge] })],
+);
 
 /**
  * Poster artists (print designers) as a light shared entity, keyed by the

@@ -12,6 +12,7 @@ import {
   addToShowLineup,
   upsertArtist,
   upsertPosterArtist,
+  upsertPosterDesign,
   upsertTour,
   type LineupEntry,
 } from "@/lib/upserts";
@@ -377,12 +378,29 @@ export async function addPosterAction(formData: FormData) {
   const designer = str(formData, "designer") || "Unknown";
   const variantOf = optional(str(formData, "variantOf"));
 
+  // Canonical design link (best-effort until 0015 runs).
+  let designId: string | undefined;
+  try {
+    designId = await upsertPosterDesign(db, {
+      showId,
+      tourId,
+      posterType,
+      title,
+      designer,
+      year,
+      imageUrl: cover,
+    });
+  } catch {
+    // poster_design not migrated yet — copy stays unlinked for now
+  }
+
   const values = {
     userId,
     showId,
     tourId,
     posterType,
     variantOf,
+    designId,
     title,
     designer,
     year,
@@ -393,13 +411,31 @@ export async function addPosterAction(formData: FormData) {
     imageUrls: imageUrls.length > 1 ? imageUrls.slice(1) : undefined,
     gradient: gradientFor(title),
     editions: [edition],
+    // Copy-level collector fields (0014). Price + private notes stay
+    // owner-only in every read surface.
+    condition: optional(str(formData, "condition")),
+    framed: formData.get("framed") !== null,
+    acquiredOn: optional(str(formData, "acquiredOn")),
+    acquiredPrice: optional(str(formData, "acquiredPrice")),
+    privateNotes: optional(str(formData, "privateNotes")),
   };
   try {
     await db.insert(t.posters).values(values);
   } catch (error) {
-    // poster_type/variant_of not yet migrated (0011/0013) — insert without.
+    // Newer columns not migrated yet (0011/0013/0014/0015) — insert the
+    // legacy shape so cataloging never breaks on a lagging schema.
     if (!isUndefinedColumn(error)) throw error;
-    const { posterType: _p, variantOf: _v, ...legacy } = values;
+    const {
+      posterType: _a,
+      variantOf: _b,
+      designId: _c,
+      condition: _d,
+      framed: _e,
+      acquiredOn: _f,
+      acquiredPrice: _g,
+      privateNotes: _h,
+      ...legacy
+    } = values;
     await db.insert(t.posters).values(legacy);
   }
   await recordPosterArtist(db, formData, designer);
@@ -455,6 +491,23 @@ export async function updatePosterAction(formData: FormData) {
   // A poster can't be a variant of itself.
   const variantOfInput = optional(str(formData, "variantOf"));
   const variantOf = variantOfInput === posterId ? undefined : variantOfInput;
+
+  // Re-link the canonical design (title/designer/show may have changed).
+  let designId: string | undefined;
+  try {
+    designId = await upsertPosterDesign(db, {
+      showId,
+      tourId,
+      posterType,
+      title,
+      designer,
+      year,
+      imageUrl: imageUrls[0],
+    });
+  } catch {
+    // poster_design not migrated yet
+  }
+
   const set = {
     title,
     designer,
@@ -464,19 +517,35 @@ export async function updatePosterAction(formData: FormData) {
     state: str(formData, "state") || "own",
     posterType,
     variantOf: variantOf ?? null,
+    designId: designId ?? null,
     showId: showId ?? null,
     tourId: tourId ?? null,
     imageUrl: imageUrls[0] ?? null,
     imageUrls: imageUrls.length > 1 ? imageUrls.slice(1) : null,
     editions: [edition],
+    condition: optional(str(formData, "condition")) ?? null,
+    framed: formData.get("framed") !== null,
+    acquiredOn: optional(str(formData, "acquiredOn")) ?? null,
+    acquiredPrice: optional(str(formData, "acquiredPrice")) ?? null,
+    privateNotes: optional(str(formData, "privateNotes")) ?? null,
   };
   const where = and(eq(t.posters.id, posterId), eq(t.posters.userId, userId));
   try {
     await db.update(t.posters).set(set).where(where);
   } catch (error) {
-    // poster_type column not yet migrated (0011) — update without it.
+    // Newer columns not migrated yet — update the legacy shape instead.
     if (!isUndefinedColumn(error)) throw error;
-    const { posterType: _omit, ...legacy } = set;
+    const {
+      posterType: _a,
+      variantOf: _b,
+      designId: _c,
+      condition: _d,
+      framed: _e,
+      acquiredOn: _f,
+      acquiredPrice: _g,
+      privateNotes: _h,
+      ...legacy
+    } = set;
     await db.update(t.posters).set(legacy).where(where);
   }
   await recordPosterArtist(db, formData, designer);

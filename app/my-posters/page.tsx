@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Award, Frame, Plus } from "lucide-react";
 
 import { findArtist, findShow, getArchive, posterState } from "@/lib/archive";
+import { getDb } from "@/lib/db";
+import * as t from "@/lib/db/schema";
 import { enrichPosters } from "@/lib/expressobeans";
 import { formatShortDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,23 @@ export default async function MyPostersPage({
   const isFoundingCollector = owned.length >= FOUNDING_GOAL;
   const showStats =
     !archive.demo && !stateFilter && !missing && archive.posters.length > 0;
+
+  // Persist the Founding Collector badge the moment the goal is reached —
+  // permanent even if the collection later shrinks. Idempotent + guarded
+  // (no-op until migration 0014 runs).
+  if (isFoundingCollector && archive.userId) {
+    const db = getDb();
+    if (db) {
+      try {
+        await db
+          .insert(t.userBadges)
+          .values({ userId: archive.userId, badge: "founding_collector" })
+          .onConflictDoNothing();
+      } catch {
+        // user_badge not migrated yet
+      }
+    }
+  }
 
   // Flatten to serializable props for the client-side rack.
   const rackPosters: RackPoster[] = enriched.map((poster) => {

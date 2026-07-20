@@ -4,12 +4,62 @@
  * the same way (unique constraints in lib/db/schema.ts back these up).
  */
 
+import { createHash } from "crypto";
 import { and, eq } from "drizzle-orm";
 
 import type { Db } from "@/lib/db";
 import * as t from "@/lib/db/schema";
 import { gradientFor } from "@/lib/archive";
 import { posterArtistSlug } from "@/lib/utils";
+
+/**
+ * Deterministic canonical-design id — MUST mirror the SQL backfill in
+ * drizzle/0015: md5(coalesce(show_id,'') | lower(trim(title)) |
+ * lower(trim(designer))), so app writes and the backfill converge on the
+ * same design rows.
+ */
+export function posterDesignId(
+  showId: string | undefined,
+  title: string,
+  designer: string,
+): string {
+  return createHash("md5")
+    .update(
+      `${showId ?? ""}|${title.trim().toLowerCase()}|${designer.trim().toLowerCase()}`,
+    )
+    .digest("hex");
+}
+
+/** Find-or-create the canonical design for a poster copy; returns its id.
+ * Throws if poster_design isn't migrated — callers wrap best-effort. */
+export async function upsertPosterDesign(
+  db: Db,
+  input: {
+    showId?: string;
+    tourId?: string;
+    posterType: string;
+    title: string;
+    designer: string;
+    year: number;
+    imageUrl?: string;
+  },
+): Promise<string> {
+  const id = posterDesignId(input.showId, input.title, input.designer);
+  await db
+    .insert(t.posterDesigns)
+    .values({
+      id,
+      title: input.title,
+      designer: input.designer,
+      year: input.year,
+      showId: input.showId,
+      tourId: input.tourId,
+      posterType: input.posterType,
+      imageUrl: input.imageUrl,
+    })
+    .onConflictDoNothing();
+  return id;
+}
 
 /**
  * Record a poster artist (print designer) keyed by slug, optionally with a

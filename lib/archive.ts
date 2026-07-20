@@ -241,6 +241,12 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
           ...r,
           posterType: "show",
           variantOf: null,
+          designId: null,
+          condition: null,
+          framed: false,
+          acquiredOn: null,
+          acquiredPrice: null,
+          privateNotes: null,
         })) as PosterRow[];
       } catch (err2) {
         console.warn("[archive] legacy poster query also failed:", err2);
@@ -355,6 +361,12 @@ async function loadUserArchive(userId: string): Promise<ArchiveData> {
       tourId: row.tourId ?? undefined,
       posterType: (row.posterType ?? "show") as PosterType,
       variantOf: row.variantOf ?? undefined,
+      designId: row.designId ?? undefined,
+      condition: row.condition ?? undefined,
+      framed: row.framed ?? false,
+      acquiredOn: row.acquiredOn ?? undefined,
+      acquiredPrice: row.acquiredPrice ?? undefined,
+      privateNotes: row.privateNotes ?? undefined,
       title: row.title,
       designer: row.designer,
       year: row.year,

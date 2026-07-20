@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Award, CalendarDays, MapPin } from "lucide-react";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
 import * as t from "@/lib/db/schema";
@@ -95,11 +95,27 @@ export default async function ProfilePage({
     .from(t.posters)
     .where(eq(t.posters.userId, user.id));
 
-  // Founding Collector: one of the first archives to catalog 10+ prints.
+  // Founding Collector: persisted badge first (permanent), derived count
+  // as fallback until migration 0014 runs.
+  let hasBadge = false;
+  try {
+    const [b] = await db
+      .select({ badge: t.userBadges.badge })
+      .from(t.userBadges)
+      .where(
+        and(
+          eq(t.userBadges.userId, user.id),
+          eq(t.userBadges.badge, "founding_collector"),
+        ),
+      );
+    hasBadge = Boolean(b);
+  } catch {
+    // user_badge not migrated yet
+  }
   const ownedCount = posterRows.filter(
     (p) => (p.state ?? (p.owned ? "own" : "want")) !== "want",
   ).length;
-  const isFoundingCollector = ownedCount >= 10;
+  const isFoundingCollector = hasBadge || ownedCount >= 10;
 
   const wall = posterRows.filter((p) => p.imageUrl);
   const name = user.name ?? "A collector";

@@ -208,6 +208,58 @@ export default async function AddPosterPage({
                 <option value="sell">For Sale</option>
               </select>
             </Field>
+
+            {/* Copy details — all optional; price + private notes are never
+                shown to anyone else. */}
+            <details className="rounded-lg border border-dashed border-border px-3 py-2">
+              <summary className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground">
+                My copy — condition, framing, acquisition (optional)
+              </summary>
+              <div className="mt-3 space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Field label="Condition">
+                    <select name="condition" defaultValue="" className={selectClass}>
+                      <option value="">Not graded</option>
+                      <option>Mint</option>
+                      <option>Near Mint</option>
+                      <option>Very Good</option>
+                      <option>Good</option>
+                      <option>Fair</option>
+                      <option>Poor</option>
+                    </select>
+                  </Field>
+                  <Field label="Acquired on">
+                    <input type="date" name="acquiredOn" className={inputClass} />
+                  </Field>
+                  <Field label="Paid (private)">
+                    <input
+                      name="acquiredPrice"
+                      placeholder="$60"
+                      className={inputClass}
+                    />
+                  </Field>
+                  <label className="flex items-center gap-2 self-end pb-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="framed"
+                      className="h-4 w-4 accent-[#f5a524]"
+                    />
+                    Framed
+                  </label>
+                </div>
+                <Field
+                  label="Private notes"
+                  hint="Only you can see the price and these notes."
+                >
+                  <textarea
+                    name="privateNotes"
+                    rows={2}
+                    placeholder="Bought at the merch table; slight ding top-left…"
+                    className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </Field>
+              </div>
+            </details>
             <Button type="submit">
               <Frame />
               Save to archive

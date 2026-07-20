@@ -110,6 +110,15 @@ export interface Poster {
   posterType?: PosterType;
   /** Parent poster design when this print is a variant (foil, AP, …). */
   variantOf?: string;
+  /** Canonical design this copy belongs to (cross-collector grouping). */
+  designId?: string;
+  /* Copy-level collector fields. acquiredPrice and privateNotes are
+     owner-only — never render them on public surfaces. */
+  condition?: string;
+  framed?: boolean;
+  acquiredOn?: string;
+  acquiredPrice?: string;
+  privateNotes?: string;
   title: string;
   /** The print artist / designer, not the band. */
   designer: string;

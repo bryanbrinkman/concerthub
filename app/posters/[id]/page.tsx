@@ -284,6 +284,32 @@ export default async function PosterRecordPage({
     }
   }
 
+  // Cross-collector counts via the canonical design (0015) — aggregate
+  // who-has/who-wants only, never anyone's copy details.
+  let communityHave = 0;
+  let communityWant = 0;
+  if (db) {
+    try {
+      const [me] = await db
+        .select({ designId: t.posters.designId })
+        .from(t.posters)
+        .where(eq(t.posters.id, record.id));
+      if (me?.designId) {
+        const copies = await db
+          .select({ state: t.posters.state, owned: t.posters.owned })
+          .from(t.posters)
+          .where(eq(t.posters.designId, me.designId));
+        for (const c of copies) {
+          const s = c.state ?? (c.owned ? "own" : "want");
+          if (s === "want") communityWant++;
+          else communityHave++;
+        }
+      }
+    } catch {
+      // poster_design not migrated yet (0015) — counts stay hidden
+    }
+  }
+
   const edition = record.editions[0];
   const isTour = record.posterType === "tour";
   const isFestival = record.posterType === "festival";
@@ -490,6 +516,13 @@ export default async function PosterRecordPage({
                   </div>
                 ) : null}
               </dl>
+              {communityHave + communityWant > 1 ? (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Community: {communityHave} collector
+                  {communityHave === 1 ? "" : "s"} have this design
+                  {communityWant > 0 ? ` · ${communityWant} want it` : ""}
+                </p>
+              ) : null}
               {record.isOwner ? (
                 <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-border pt-4">
                   <span className="mr-1 text-xs text-muted-foreground">
@@ -554,6 +587,61 @@ export default async function PosterRecordPage({
                   </div>
                   <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" />
                 </Link>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {/* My copy — owner-only; price and private notes never render for
+              anyone else. */}
+          {record.isOwner &&
+          mine &&
+          (mine.condition ||
+            mine.framed ||
+            mine.acquiredOn ||
+            mine.acquiredPrice ||
+            mine.privateNotes) ? (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>My copy</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="space-y-2 text-sm">
+                  {mine.condition ? (
+                    <div className="flex gap-3">
+                      <dt className="w-32 shrink-0 text-muted-foreground">Condition</dt>
+                      <dd className="min-w-0 flex-1 font-medium">{mine.condition}</dd>
+                    </div>
+                  ) : null}
+                  {mine.framed ? (
+                    <div className="flex gap-3">
+                      <dt className="w-32 shrink-0 text-muted-foreground">Framing</dt>
+                      <dd className="min-w-0 flex-1 font-medium">Framed</dd>
+                    </div>
+                  ) : null}
+                  {mine.acquiredOn ? (
+                    <div className="flex gap-3">
+                      <dt className="w-32 shrink-0 text-muted-foreground">Acquired</dt>
+                      <dd className="min-w-0 flex-1 font-medium">
+                        {formatShortDate(mine.acquiredOn)}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {mine.acquiredPrice ? (
+                    <div className="flex gap-3">
+                      <dt className="w-32 shrink-0 text-muted-foreground">Paid</dt>
+                      <dd className="min-w-0 flex-1 font-medium">{mine.acquiredPrice}</dd>
+                    </div>
+                  ) : null}
+                  {mine.privateNotes ? (
+                    <div className="flex gap-3">
+                      <dt className="w-32 shrink-0 text-muted-foreground">Notes</dt>
+                      <dd className="min-w-0 flex-1">{mine.privateNotes}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+                <p className="mt-3 text-[11px] text-muted-foreground">
+                  Price and notes are private — only you can see them.
+                </p>
               </CardContent>
             </Card>
           ) : null}
