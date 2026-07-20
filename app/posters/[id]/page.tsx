@@ -568,9 +568,7 @@ export default async function PosterRecordPage({
               </CardHeader>
               <CardContent>
                 <Link
-                  href={
-                    mine ? `/shows/${record.showId}` : `/u/${record.ownerId}`
-                  }
+                  href={`/shows/${record.showId}`}
                   className="group flex items-center justify-between gap-3"
                 >
                   <div className="min-w-0">
