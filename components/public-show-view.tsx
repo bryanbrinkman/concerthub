@@ -134,6 +134,24 @@ export function PublicShowView({
         </div>
       </section>
 
+      {/* Posters & Prints — the artwork leads; everything else is context */}
+      {show.posterId ? (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">Posters &amp; Prints</h2>
+          <Link
+            href={`/posters/${show.posterId}`}
+            className="inline-block w-48 rounded-lg border border-white/10 transition-transform duration-300 hover:scale-[1.02] sm:w-56"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={show.posterImage}
+              alt={`${title} concert poster`}
+              className="aspect-[3/4] w-full rounded-lg bg-black/40 object-contain"
+            />
+          </Link>
+        </section>
+      ) : null}
+
       {/* Setlist — the real songs, viewable by everyone */}
       {setlist && setlist.sets.length > 0 ? (
         <SetlistCard
@@ -174,23 +192,6 @@ export function PublicShowView({
               );
             })}
           </ul>
-        </section>
-      ) : null}
-
-      {show.posterId ? (
-        <section>
-          <h2 className="mb-3 text-lg font-semibold">Poster</h2>
-          <Link
-            href={`/posters/${show.posterId}`}
-            className="inline-block w-40 rounded-lg border border-white/10"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={show.posterImage}
-              alt={`${title} concert poster`}
-              className="aspect-[3/4] w-full rounded-lg bg-black/40 object-contain"
-            />
-          </Link>
         </section>
       ) : null}
 

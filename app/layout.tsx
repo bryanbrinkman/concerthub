@@ -59,32 +59,9 @@ export default async function RootLayout({
     }
   }
 
-  // ⌘K search index: the viewer's archive + app pages.
+  // ⌘K search index: posters lead (the primary collectible), then the
+  // show-graph entities that give them context.
   const searchItems: SearchItem[] = [
-    ...archive.shows.map((show) => ({
-      label: `${showTitleFor(archive, show)} — ${
-        findVenue(archive, show.venueId)?.name ?? ""
-      }`,
-      sublabel: formatShortDate(show.date),
-      // Whole bill is searchable: "OutKast Governors Ball" resolves the
-      // festival even though the title doesn't contain OutKast.
-      keywords: (show.performers ?? [])
-        .map((p) => findArtist(archive, p.artistId)?.name ?? "")
-        .join(" "),
-      href: `/shows/${show.id}`,
-      group: "Shows",
-    })),
-    ...archive.artists.map((artist) => ({
-      label: artist.name,
-      href: `/artists/${artist.id}`,
-      group: "Performers",
-    })),
-    ...archive.venues.map((venue) => ({
-      label: venue.name,
-      sublabel: venue.city,
-      href: `/venues/${venue.id}`,
-      group: "Venues",
-    })),
     ...archive.posters.map((poster) => {
       const show = poster.showId
         ? archive.shows.find((s) => s.id === poster.showId)
@@ -111,6 +88,30 @@ export default async function RootLayout({
       sublabel: "Poster artist",
       href: `/poster-artists/${slug}`,
       group: "Poster Artists",
+    })),
+    ...archive.shows.map((show) => ({
+      label: `${showTitleFor(archive, show)} — ${
+        findVenue(archive, show.venueId)?.name ?? ""
+      }`,
+      sublabel: formatShortDate(show.date),
+      // Whole bill is searchable: "OutKast Governors Ball" resolves the
+      // festival even though the title doesn't contain OutKast.
+      keywords: (show.performers ?? [])
+        .map((p) => findArtist(archive, p.artistId)?.name ?? "")
+        .join(" "),
+      href: `/shows/${show.id}`,
+      group: "Shows",
+    })),
+    ...archive.artists.map((artist) => ({
+      label: artist.name,
+      href: `/artists/${artist.id}`,
+      group: "Performers",
+    })),
+    ...archive.venues.map((venue) => ({
+      label: venue.name,
+      sublabel: venue.city,
+      href: `/venues/${venue.id}`,
+      group: "Venues",
     })),
     { label: "Explore the archive", href: "/explore", group: "Pages" },
     { label: "Poster Artists", href: "/poster-artists", group: "Pages" },

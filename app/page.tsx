@@ -81,25 +81,25 @@ export default async function HomePage() {
       {/* ---- 1 · Hero: search live music history ---- */}
       <section className="mx-auto max-w-3xl space-y-5 pt-8 text-center sm:pt-14">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          Every show. Everything it left behind.
+          The definitive archive for concert posters.
         </h1>
         <p className="mx-auto max-w-xl text-muted-foreground sm:text-lg">
-          Your personal archive for the concerts you&apos;ve been to — posters,
-          ticket stubs, setlists, and the memories behind them.
+          Explore the art, artists, editions, and variants behind live music —
+          and the shows that made them.
         </p>
 
-        <form action="/shows" method="get" className="mx-auto flex max-w-2xl gap-2 pt-2">
+        <form action="/posters" method="get" className="mx-auto flex max-w-2xl gap-2 pt-2">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <input
               type="search"
               name="q"
-              placeholder="Search an artist, venue, show, or poster…"
+              placeholder="Search posters, poster artists, bands…"
               className="h-13 w-full rounded-xl border border-border bg-secondary pl-11 pr-4 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-14"
             />
           </div>
           <Button type="submit" size="lg" className="h-13 px-6 sm:h-14">
-            Explore
+            Search
           </Button>
         </form>
 

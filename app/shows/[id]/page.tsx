@@ -340,6 +340,42 @@ export default async function ShowDetailPage({
         collections={collectionOptions}
       />
 
+      {/* Posters & Prints — the show's artwork leads. The digital-exhibition
+          section: every print for this event, variants beside their parent,
+          before any supporting memorabilia. (Single-poster shows are already
+          led by the hero's large poster.) */}
+      {showPosters.length > 1 ? (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">Posters &amp; Prints</h2>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {showPosters.map((p) => (
+              <Link key={p.id} href={`/posters/${p.id}`} className="group block">
+                {p.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={p.imageUrl}
+                    alt={`${p.title} — poster art by ${p.designer}`}
+                    loading="lazy"
+                    className="aspect-[3/4] w-full rounded-lg border border-white/10 bg-black/40 object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                  />
+                ) : (
+                  <div className="flex aspect-[3/4] items-center justify-center rounded-lg border border-border bg-secondary p-2 text-center font-mono text-[10px] uppercase text-muted-foreground">
+                    {p.title}
+                  </div>
+                )}
+                <div className="mt-1.5 space-y-0.5 px-0.5">
+                  <p className="truncate text-sm font-medium">{p.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {p.designer !== "Unknown" ? `${p.designer} · ` : ""}
+                    {p.year}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {showLineupCard ? <LineupCard items={lineup} /> : null}
 
       {/* Main content + right rail */}
@@ -349,7 +385,7 @@ export default async function ShowDetailPage({
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="setlist">Setlist</TabsTrigger>
-              <TabsTrigger value="poster">Poster</TabsTrigger>
+              <TabsTrigger value="poster">Posters &amp; Prints</TabsTrigger>
               <TabsTrigger value="photos">
                 Photos{photos.length > 0 ? ` (${photos.length})` : ""}
               </TabsTrigger>
