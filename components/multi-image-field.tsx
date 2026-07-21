@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { ImagePlus, Link2, Loader2, Plus, X } from "lucide-react";
+import { ImagePlus, Link2, Loader2, Plus, Wand2, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { PerspectiveEditor } from "@/components/perspective-editor";
 
 /**
  * Multiple-image input for the poster forms. The first image is the
@@ -34,6 +35,8 @@ export function MultiImageField({
   const [dragging, setDragging] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [showUrl, setShowUrl] = React.useState(false);
+  // Which image URL is open in the straighten (perspective) editor.
+  const [editing, setEditing] = React.useState<string | null>(null);
   const canUpload = Boolean(CLOUD && PRESET);
 
   const add = (url: string) => {
@@ -42,31 +45,52 @@ export function MultiImageField({
     setUrls((list) => (list.includes(trimmed) ? list : [...list, trimmed]));
   };
 
-  const uploadFiles = React.useCallback(async (files: File[]) => {
-    const images = files.filter((f) => f.type.startsWith("image/"));
-    if (images.length === 0) return;
-    setBusy(true);
-    setError(null);
-    try {
-      for (const file of images) {
-        const body = new FormData();
-        body.append("file", file);
-        body.append("upload_preset", PRESET as string);
-        const res = await fetch(
-          `https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`,
-          { method: "POST", body },
-        );
-        if (!res.ok) throw new Error(`Upload failed (HTTP ${res.status})`);
-        const data = (await res.json()) as { secure_url?: string };
-        if (!data.secure_url) throw new Error("Upload returned no URL");
-        add(data.secure_url);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setBusy(false);
-    }
+  const uploadOne = React.useCallback(async (file: File): Promise<string> => {
+    const body = new FormData();
+    body.append("file", file);
+    body.append("upload_preset", PRESET as string);
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`,
+      { method: "POST", body },
+    );
+    if (!res.ok) throw new Error(`Upload failed (HTTP ${res.status})`);
+    const data = (await res.json()) as { secure_url?: string };
+    if (!data.secure_url) throw new Error("Upload returned no URL");
+    return data.secure_url;
   }, []);
+
+  const uploadFiles = React.useCallback(
+    async (files: File[]) => {
+      const images = files.filter((f) => f.type.startsWith("image/"));
+      if (images.length === 0) return;
+      setBusy(true);
+      setError(null);
+      try {
+        for (const file of images) {
+          add(await uploadOne(file));
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Upload failed");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [uploadOne],
+  );
+
+  /** Flattened result from the straighten editor: upload it and swap it in
+   * for the original, keeping list order (cover stays cover). */
+  const applyFlattened = React.useCallback(
+    async (blob: Blob) => {
+      const original = editing;
+      if (!original) return;
+      const flatUrl = await uploadOne(
+        new File([blob], "straightened.jpg", { type: "image/jpeg" }),
+      );
+      setUrls((list) => list.map((u) => (u === original ? flatUrl : u)));
+    },
+    [editing, uploadOne],
+  );
 
   // Paste an image straight from the clipboard while the field is focused.
   const onPaste = (e: React.ClipboardEvent) => {
@@ -113,9 +137,28 @@ export function MultiImageField({
               >
                 <X className="h-3 w-3" />
               </button>
+              {canUpload ? (
+                <button
+                  type="button"
+                  aria-label="Straighten this photo"
+                  title="Photo taken at an angle? Pin the corners and flatten it."
+                  onClick={() => setEditing(url)}
+                  className="absolute -bottom-1.5 -right-1.5 cursor-pointer rounded-full bg-black/80 p-1 text-white/80 transition-colors hover:text-primary"
+                >
+                  <Wand2 className="h-3 w-3" />
+                </button>
+              ) : null}
             </div>
           ))}
         </div>
+      ) : null}
+
+      {editing ? (
+        <PerspectiveEditor
+          imageUrl={editing}
+          onApply={applyFlattened}
+          onClose={() => setEditing(null)}
+        />
       ) : null}
 
       {/* Upload dropzone */}
