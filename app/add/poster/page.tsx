@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Field, inputClass, selectClass } from "@/components/form-controls";
 import { MultiImageField } from "@/components/multi-image-field";
 import { PosterTargetField } from "@/components/poster-target-field";
+import { EbPrefillField } from "@/components/eb-prefill-field";
 import { addPosterAction } from "../actions";
 
 export const metadata = { title: "Add poster" };
@@ -57,6 +58,12 @@ export default async function AddPosterPage({
               hint="First image is the cover. Add close-ups of the numbering, signature, foil, or condition — collectors love the details."
             >
               <MultiImageField />
+            </Field>
+            <Field
+              label="Expresso Beans link (optional)"
+              hint="Paste the EB item page and we'll fill in edition size, dimensions, and technique for you."
+            >
+              <EbPrefillField />
             </Field>
             <PosterTargetField
               shows={shows.map((show) => ({

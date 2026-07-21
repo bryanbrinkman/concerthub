@@ -424,6 +424,11 @@ export async function addPosterAction(formData: FormData) {
     imageUrls: imageUrls.length > 1 ? imageUrls.slice(1) : undefined,
     gradient: gradientFor(title),
     editions: [edition],
+    // EB reference from the prefill field, when one was linked.
+    expressoBeansId: (() => {
+      const n = Number(str(formData, "expressoBeansId"));
+      return Number.isFinite(n) && n > 0 ? n : undefined;
+    })(),
     // Copy-level collector fields (0014). Price + private notes stay
     // owner-only in every read surface.
     condition: optional(str(formData, "condition")),
