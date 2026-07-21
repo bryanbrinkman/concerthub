@@ -128,6 +128,30 @@ export default async function EditPosterPage({
                   className={inputClass}
                 />
               </Field>
+              <Field label="Year">
+                <input
+                  name="year"
+                  required
+                  type="number"
+                  min={1950}
+                  max={2100}
+                  defaultValue={poster.year}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+
+            {/* Grouped like the add form; open on edit so nothing saved is
+                hidden from the person editing it. */}
+            <details
+              open
+              className="rounded-lg border border-dashed border-border px-3 py-2"
+            >
+              <summary className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground">
+                Edition &amp; print details — size, run, technique
+              </summary>
+              <div className="mt-3 space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field
                 label="Poster Artist website"
                 hint="e.g. killeracid.com — shown on their poster-artist page."
@@ -140,17 +164,6 @@ export default async function EditPosterPage({
                   spellCheck={false}
                   defaultValue={designerWebsite ?? ""}
                   placeholder="killeracid.com"
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Year">
-                <input
-                  name="year"
-                  required
-                  type="number"
-                  min={1950}
-                  max={2100}
-                  defaultValue={poster.year}
                   className={inputClass}
                 />
               </Field>
@@ -234,30 +247,32 @@ export default async function EditPosterPage({
                   className={inputClass}
                 />
               </Field>
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                name="signed"
-                defaultChecked={edition?.signed ?? false}
-                className="h-4 w-4 accent-[#f5a524]"
-              />
-              Signed / autographed
-            </label>
-            <Field label="Markings (optional)">
-              <input
-                name="markings"
-                defaultValue={edition?.markings ?? ""}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Notes (optional)">
-              <input
-                name="notes"
-                defaultValue={poster.notes ?? ""}
-                className={inputClass}
-              />
-            </Field>
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="signed"
+                    defaultChecked={edition?.signed ?? false}
+                    className="h-4 w-4 accent-[#f5a524]"
+                  />
+                  Signed / autographed
+                </label>
+                <Field label="Markings">
+                  <input
+                    name="markings"
+                    defaultValue={edition?.markings ?? ""}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Notes">
+                  <input
+                    name="notes"
+                    defaultValue={poster.notes ?? ""}
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+            </details>
             <Field
               label="Artwork"
               hint="First image is the cover. Add close-ups of the numbering, signature, foil, or condition."

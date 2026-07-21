@@ -59,12 +59,6 @@ export default async function AddPosterPage({
             >
               <MultiImageField />
             </Field>
-            <Field
-              label="Expresso Beans link (optional)"
-              hint="Paste the EB item page and we'll fill in edition size, dimensions, and technique for you."
-            >
-              <EbPrefillField />
-            </Field>
             <PosterTargetField
               shows={shows.map((show) => ({
                 id: show.id,
@@ -90,6 +84,42 @@ export default async function AddPosterPage({
                   className={inputClass}
                 />
               </Field>
+              <Field label="Year">
+                <input
+                  name="year"
+                  required
+                  type="number"
+                  min={1950}
+                  max={2100}
+                  placeholder="2025"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+
+            <Field label="Collection status">
+              <select name="state" defaultValue="own" className={selectClass}>
+                <option value="own">Own — it's in my collection</option>
+                <option value="want">Want — hunting a copy</option>
+                <option value="trade">For Trade</option>
+                <option value="sell">For Sale</option>
+              </select>
+            </Field>
+
+            {/* Everything below the fold is optional — save now, add detail
+                later; the record page prompts for whatever's missing. */}
+            <details className="rounded-lg border border-dashed border-border px-3 py-2">
+              <summary className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground">
+                Edition &amp; print details — size, run, technique (optional)
+              </summary>
+              <div className="mt-3 space-y-4">
+                <Field
+                  label="Expresso Beans link"
+                  hint="Paste the EB item page and we'll fill in edition size, dimensions, and technique for you."
+                >
+                  <EbPrefillField />
+                </Field>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field
                 label="Poster Artist website"
                 hint="e.g. killeracid.com — shown on their poster-artist page."
@@ -101,17 +131,6 @@ export default async function AddPosterPage({
                   autoCapitalize="none"
                   spellCheck={false}
                   placeholder="killeracid.com"
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Year">
-                <input
-                  name="year"
-                  required
-                  type="number"
-                  min={1950}
-                  max={2100}
-                  placeholder="2025"
                   className={inputClass}
                 />
               </Field>
@@ -184,37 +203,31 @@ export default async function AddPosterPage({
                   className={inputClass}
                 />
               </Field>
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                name="signed"
-                className="h-4 w-4 accent-[#f5a524]"
-              />
-              Signed / autographed
-            </label>
-            <Field label="Markings (optional)">
-              <input
-                name="markings"
-                placeholder="Signed & numbered in pencil"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Notes (optional)">
-              <input
-                name="notes"
-                placeholder="Official show poster"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Collection status">
-              <select name="state" defaultValue="own" className={selectClass}>
-                <option value="own">Own — it's in my collection</option>
-                <option value="want">Want — hunting a copy</option>
-                <option value="trade">For Trade</option>
-                <option value="sell">For Sale</option>
-              </select>
-            </Field>
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="signed"
+                    className="h-4 w-4 accent-[#f5a524]"
+                  />
+                  Signed / autographed
+                </label>
+                <Field label="Markings">
+                  <input
+                    name="markings"
+                    placeholder="Signed & numbered in pencil"
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label="Notes">
+                  <input
+                    name="notes"
+                    placeholder="Official show poster"
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+            </details>
 
             {/* Copy details — all optional; price + private notes are never
                 shown to anyone else. */}
