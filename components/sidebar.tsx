@@ -59,12 +59,12 @@ const MAIN_NAV: NavItem[] = [
   { label: "Home", href: "/", icon: Home },
   { label: "Posters", href: "/posters", icon: ImageIcon },
   { label: "Poster Artists", href: "/poster-artists", icon: Paintbrush },
-  { label: "Shows", href: "/shows", icon: CalendarDays },
   { label: "Explore", href: "/explore", icon: Compass },
 ];
 
 /** Collapsed-by-default secondary browse nav. */
 const MORE_NAV: NavItem[] = [
+  { label: "Shows", href: "/shows", icon: CalendarDays },
   { label: "Performers", href: "/artists", icon: Users },
   { label: "Venues", href: "/venues", icon: MapPin },
   { label: "Trading Post", href: "/trading", icon: ArrowLeftRight },
