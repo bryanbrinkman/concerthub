@@ -19,24 +19,24 @@ import { SearchPalette, type SearchItem } from "@/components/search-palette";
 export const metadata: Metadata = {
   metadataBase: new URL("https://concertcollect.com"),
   title: {
-    default: "Concert Collect",
+    default: "Concert Collect — The Concert Poster Archive",
     template: "%s · Concert Collect",
   },
   description:
-    "Your shows. Your story. A personal archive for live music memories — setlists, posters, ticket stubs, and everything you kept.",
+    "The definitive archive for concert posters — explore the art, artists, editions, and variants behind live music, and catalog your own collection.",
   openGraph: {
-    title: "Concert Collect",
+    title: "Concert Collect — The Concert Poster Archive",
     description:
-      "Your shows. Your story. A personal archive for live music memories.",
+      "The definitive archive for concert posters — the art, artists, editions, and shows behind live music.",
     url: "https://concertcollect.com",
     siteName: "Concert Collect",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Concert Collect",
+    title: "Concert Collect — The Concert Poster Archive",
     description:
-      "Your shows. Your story. A personal archive for live music memories.",
+      "The definitive archive for concert posters — the art, artists, editions, and shows behind live music.",
   },
 };
 

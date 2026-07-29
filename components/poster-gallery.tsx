@@ -59,6 +59,7 @@ export function PosterGallery({
         <img
           src={current}
           alt={`Poster: ${title}`}
+          fetchPriority="high"
           className="aspect-[3/4] w-full bg-black/40 object-contain"
         />
       </button>

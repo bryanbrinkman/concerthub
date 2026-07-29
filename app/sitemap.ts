@@ -93,5 +93,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.warn("[sitemap] dynamic route query failed:", error);
   }
 
+  // Public collection pages (/c/[id]) — only ones with posters in them, so
+  // thin/empty pages stay out. Isolated: a pending migration can't drop the
+  // rest of the sitemap.
+  try {
+    const rows = await db
+      .select({ collectionId: t.collectionPosters.collectionId })
+      .from(t.collectionPosters)
+      .limit(20000);
+    for (const id of new Set(rows.map((r) => r.collectionId))) {
+      dynamicRoutes.push(url(`/c/${id}`));
+    }
+  } catch (error) {
+    console.warn("[sitemap] collection route query failed:", error);
+  }
+
   return [...staticRoutes, ...dynamicRoutes];
 }

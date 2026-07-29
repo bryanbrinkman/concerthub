@@ -74,6 +74,7 @@ export function ShowHero({
             <img
               src={poster.resolvedImageUrl}
               alt={`Poster: ${artist?.name ?? "Unknown artist"}`}
+              fetchPriority="high"
               className="w-full rounded-lg border border-white/10 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.85)]"
             />
             {posterVariants.length > 1 ? (
